@@ -1,5 +1,6 @@
 #pragma once
 
+#include "urdfx/export.h"
 #include "urdfx/kinematics.h"
 #include <Eigen/Dense>
 #include <memory>
@@ -39,7 +40,7 @@ struct SolverStatus {
     std::vector<double> error_history;
 };
 
-class IKSolver {
+class URDFX_API IKSolver {
 public:
     IKSolver(
         std::shared_ptr<const Robot> robot,
@@ -75,7 +76,7 @@ protected:
     std::optional<Eigen::VectorXd> warm_start_;
 };
 
-class SQPIKSolver final : public IKSolver {
+class URDFX_API SQPIKSolver final : public IKSolver {
 public:
     SQPIKSolver(
         std::shared_ptr<const Robot> robot,

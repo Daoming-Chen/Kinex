@@ -1,5 +1,6 @@
 #pragma once
 
+#include "urdfx/export.h"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <string>
@@ -13,7 +14,7 @@ namespace urdfx {
 /**
  * @brief Wrapper around Eigen::Isometry3d for representing 3D transformations
  */
-class Transform {
+class URDFX_API Transform {
 public:
     Transform() : transform_(Eigen::Isometry3d::Identity()) {}
     explicit Transform(const Eigen::Isometry3d& t) : transform_(t) {}
@@ -146,7 +147,7 @@ struct Collision {
 /**
  * @brief Robot link with physical and geometric properties
  */
-class Link {
+class URDFX_API Link {
 public:
     explicit Link(const std::string& name) : name_(name) {}
     
@@ -201,7 +202,7 @@ struct JointDynamics {
 /**
  * @brief Robot joint connecting two links
  */
-class Joint {
+class URDFX_API Joint {
 public:
     Joint(const std::string& name, JointType type) 
         : name_(name), type_(type) {}
@@ -254,7 +255,7 @@ private:
 /**
  * @brief Complete robot model with links and joints
  */
-class Robot {
+class URDFX_API Robot {
 public:
     explicit Robot(const std::string& name) : name_(name) {}
     

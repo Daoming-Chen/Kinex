@@ -1,5 +1,6 @@
 #pragma once
 
+#include "urdfx/export.h"
 #include "urdfx/robot_model.h"
 #include <string>
 #include <memory>
@@ -10,7 +11,7 @@ namespace urdfx {
 /**
  * @brief Exception thrown during URDF parsing
  */
-class URDFParseException : public std::runtime_error {
+class URDFX_API URDFParseException : public std::runtime_error {
 public:
     URDFParseException(const std::string& message, int line = -1)
         : std::runtime_error(formatMessage(message, line))
@@ -35,7 +36,7 @@ private:
  * This class uses pugixml to parse URDF XML files and construct
  * a Robot model with links, joints, and their properties.
  */
-class URDFParser {
+class URDFX_API URDFParser {
 public:
     URDFParser();
     ~URDFParser();

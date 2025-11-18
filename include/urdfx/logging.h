@@ -17,10 +17,10 @@ namespace urdfx {
 inline std::shared_ptr<spdlog::logger> getLogger() {
     static auto logger = []() {
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        auto logger = std::make_shared<spdlog::logger>("urdfx", console_sink);
-        logger->set_level(spdlog::level::info);
-        logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%^%l%$] %v");
-        return logger;
+        auto log = std::make_shared<spdlog::logger>("urdfx", console_sink);
+        log->set_level(spdlog::level::info);
+        log->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%^%l%$] %v");
+        return log;
     }();
     return logger;
 }

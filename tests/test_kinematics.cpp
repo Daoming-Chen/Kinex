@@ -9,6 +9,11 @@
 #include <thread>
 #include <cmath>
 
+// Define M_PI for MSVC
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 using namespace urdfx;
 
 class ForwardKinematicsTest : public ::testing::Test {

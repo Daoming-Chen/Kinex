@@ -3,13 +3,18 @@ cmake_minimum_required(VERSION 3.20)
 project(urdfx
     VERSION 1.0.0
     DESCRIPTION "Modern C++20 robotics kinematics library"
-    LANGUAGES CXX
+    LANGUAGES CXX C
 )
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# For MSVC, explicitly set the C++20 flag
+if(MSVC)
+    add_compile_options(/std:c++20)
+endif()
 
 # Check compiler version
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -34,14 +39,31 @@ option(BUILD_WASM "Build WebAssembly bindings" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_BENCHMARKS "Build benchmark suite" OFF)
 
+# Force static libraries for WASM builds (Emscripten doesn't support shared libraries)
+if(EMSCRIPTEN)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+    message(STATUS "Forcing static libraries for Emscripten/WASM build")
+endif()
+
 # Compiler flags
 if(MSVC)
     add_compile_options(/W4 /WX)
     add_compile_options(/bigobj)  # For large template instantiations
+    add_compile_options(/EHsc)    # Enable exception handling
+    # Disable specific warnings
+    add_compile_options(/wd4127)  # conditional expression is constant (from Eigen)
+    add_compile_options(/wd4251)  # needs to have dll-interface (handled by export.h)
+    add_compile_options(/wd4275)  # non dll-interface class used as base
 else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
     add_compile_options(-Wno-unused-parameter)
     add_compile_options(-Wno-empty-body)
+    # Enable __declspec support for Emscripten (needed for CppAD)
+    if(EMSCRIPTEN)
+        add_compile_options(-fdeclspec)
+        # Emscripten doesn't support dllimport/dllexport, ignore the attributes
+        add_compile_options(-Wno-ignored-attributes)
+    endif()
 endif()
 
 # Optimization flags for Release build
@@ -101,8 +123,8 @@ if(NOT EMSCRIPTEN)
         FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
     )
 
+    # Install library
     install(TARGETS urdfx
-        EXPORT urdfxTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -110,12 +132,21 @@ if(NOT EMSCRIPTEN)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/urdfx
     )
 
-    # Export CMake targets
-    install(EXPORT urdfxTargets
-        FILE urdfxTargets.cmake
-        NAMESPACE urdfx::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/urdfx
-    )
+    # Only export targets if all dependencies are system packages (not submodules)
+    # This avoids export errors when building with submodule dependencies
+    if(Eigen3_FOUND AND spdlog_FOUND AND pugixml_FOUND)
+        install(TARGETS urdfx
+            EXPORT urdfxTargets
+        )
+        
+        install(EXPORT urdfxTargets
+            FILE urdfxTargets.cmake
+            NAMESPACE urdfx::
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/urdfx
+        )
+    else()
+        message(STATUS "Skipping CMake export (using submodule dependencies)")
+    endif()
 
     # Generate and install CMake config file
     include(CMakePackageConfigHelpers)
