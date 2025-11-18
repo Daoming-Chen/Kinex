@@ -16,6 +16,7 @@
 #include <vector>
 #include <cmath>
 #include <utility>
+#include <mutex>
 
 namespace urdfx {
 
@@ -309,6 +310,7 @@ void ForwardKinematics::checkJointLimits(const Eigen::VectorXd& joint_angles) co
 namespace {
 
 constexpr size_t kPoseVectorSize = 12;
+std::mutex g_cppad_mutex;
 
 Eigen::Matrix3d skew(const Eigen::Vector3d& v) {
     Eigen::Matrix3d m;
@@ -372,7 +374,10 @@ JacobianCalculator::JacobianCalculator(
         throw std::invalid_argument("Base link not found in robot model: " + base_link_);
     }
 
-    ensureTape(default_end_link_);
+    {
+        std::lock_guard<std::mutex> lock(g_cppad_mutex);
+        ensureTape(default_end_link_);
+    }
 }
 
 std::string JacobianCalculator::resolveLink(const std::string& target_link) const {
@@ -452,6 +457,7 @@ Eigen::MatrixXd JacobianCalculator::compute(
     JacobianType type,
     const std::string& target_link) const
 {
+    std::lock_guard<std::mutex> lock(g_cppad_mutex);
     const std::string link = resolveLink(target_link);
     auto& tape = ensureTape(link);
 
@@ -483,6 +489,7 @@ Eigen::MatrixXd JacobianCalculator::computeJacobianDerivative(
     JacobianType type,
     const std::string& target_link) const
 {
+    std::lock_guard<std::mutex> lock(g_cppad_mutex);
     const std::string link = resolveLink(target_link);
     auto& tape = ensureTape(link);
 
