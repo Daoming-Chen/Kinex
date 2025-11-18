@@ -32,6 +32,7 @@ option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(BUILD_WASM "Build WebAssembly bindings" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_BENCHMARKS "Build benchmark suite" OFF)
 
 # Compiler flags
 if(MSVC)
@@ -40,6 +41,7 @@ if(MSVC)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
     add_compile_options(-Wno-unused-parameter)
+    add_compile_options(-Wno-empty-body)
 endif()
 
 # Optimization flags for Release build
@@ -69,6 +71,11 @@ endif()
 # Examples
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+# Benchmarks
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
 
 # Python bindings

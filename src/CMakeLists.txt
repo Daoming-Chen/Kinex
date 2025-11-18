@@ -3,6 +3,7 @@ set(URDFX_SOURCES
     robot_model.cpp
     urdf_parser.cpp
     kinematics.cpp
+    inverse_kinematics.cpp
     ${PROJECT_SOURCE_DIR}/third_party/CppAD/cppad_lib/temp_file.cpp
 )
 
@@ -11,6 +12,7 @@ set(URDFX_HEADERS
     ${PROJECT_SOURCE_DIR}/include/urdfx/robot_model.h
     ${PROJECT_SOURCE_DIR}/include/urdfx/urdf_parser.h
     ${PROJECT_SOURCE_DIR}/include/urdfx/kinematics.h
+    ${PROJECT_SOURCE_DIR}/include/urdfx/inverse_kinematics.h
 )
 
 # Create core library

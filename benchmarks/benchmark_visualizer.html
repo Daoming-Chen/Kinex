@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IK 基准测试可视化</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .benchmark-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #764ba2;
+        }
+
+        .detail-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        canvas {
+            max-height: 300px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .system-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 IK 基准测试结果</h1>
+            <div class="system-info" id="systemInfo"></div>
+        </div>
+
+        <div class="grid">
+            <div class="card full-width">
+                <h2 class="card-title">⏱️ 执行时间对比</h2>
+                <canvas id="timeChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">📍 位置误差</h2>
+                <canvas id="posErrorChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔄 旋转误差</h2>
+                <canvas id="rotErrorChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔁 每次求解迭代次数</h2>
+                <canvas id="iterChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">✅ 成功率</h2>
+                <canvas id="successChart"></canvas>
+            </div>
+        </div>
+
+        <div class="grid" id="benchmarkCards"></div>
+    </div>
+
+    <script>
+        const data = {
+            "context": {
+                "date": "2025-11-18T16:59:46+08:00",
+                "host_name": "FAITDT0589",
+                "executable": "./build/benchmarks/ik_benchmarks",
+                "num_cpus": 20,
+                "mhz_per_cpu": 3610,
+                "cpu_scaling_enabled": false,
+                "library_build_type": "release"
+            },
+            "benchmarks": [
+                {
+                    "name": "BM_IK_ColdStart",
+                    "real_time": 307.31,
+                    "cpu_time": 305.60,
+                    "iterations": 2256,
+                    "avg_position_error_mm": 0.0227,
+                    "avg_rotation_error_deg": 0.00214,
+                    "iterations_per_solve": 9.5,
+                    "success_rate": 100
+                },
+                {
+                    "name": "BM_IK_ColdStart",
+                    "real_time": 308.68,
+                    "cpu_time": 306.71,
+                    "iterations": 2206,
+                    "avg_position_error_mm": 0.0227,
+                    "avg_rotation_error_deg": 0.00214,
+                    "iterations_per_solve": 9.5,
+                    "success_rate": 100
+                },
+                {
+                    "name": "BM_IK_WarmStart",
+                    "real_time": 147.32,
+                    "cpu_time": 146.31,
+                    "iterations": 4685,
+                    "avg_position_error_mm": 0.1139,
+                    "avg_rotation_error_deg": 0.00166,
+                    "iterations_per_solve": 5.0,
+                    "success_rate": 100
+                },
+                {
+                    "name": "BM_IK_Trajectory",
+                    "real_time": 218.98,
+                    "cpu_time": 217.38,
+                    "iterations": 3334,
+                    "avg_position_error_mm": 0.0860,
+                    "avg_rotation_error_deg": 0.00510,
+                    "iterations_per_solve": 2.42,
+                    "success_rate": 100
+                }
+            ]
+        };
+
+        // 系统信息
+        const sysInfo = document.getElementById('systemInfo');
+        sysInfo.innerHTML = `
+            <div class="info-card">
+                <div class="info-label">主机名</div>
+                <div class="info-value">${data.context.host_name}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">CPU 核心数</div>
+                <div class="info-value">${data.context.num_cpus}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">CPU 频率</div>
+                <div class="info-value">${data.context.mhz_per_cpu} MHz</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">构建类型</div>
+                <div class="info-value">${data.context.library_build_type}</div>
+            </div>
+        `;
+
+        // 聚合数据
+        const benchNames = ['ColdStart', 'WarmStart', 'Trajectory'];
+        const aggregated = {
+            'ColdStart': {
+                real_time: (data.benchmarks[0].real_time + data.benchmarks[1].real_time) / 2,
+                cpu_time: (data.benchmarks[0].cpu_time + data.benchmarks[1].cpu_time) / 2,
+                avg_position_error_mm: data.benchmarks[0].avg_position_error_mm,
+                avg_rotation_error_deg: data.benchmarks[0].avg_rotation_error_deg,
+                iterations_per_solve: data.benchmarks[0].iterations_per_solve,
+                success_rate: data.benchmarks[0].success_rate,
+                iterations: Math.round((data.benchmarks[0].iterations + data.benchmarks[1].iterations) / 2)
+            },
+            'WarmStart': data.benchmarks[2],
+            'Trajectory': data.benchmarks[3]
+        };
+
+        // 图表配置
+        const chartColors = {
+            ColdStart: '#667eea',
+            WarmStart: '#764ba2',
+            Trajectory: '#f093fb'
+        };
+
+        // 时间对比图
+        new Chart(document.getElementById('timeChart'), {
+            type: 'bar',
+            data: {
+                labels: benchNames,
+                datasets: [{
+                    label: '实际时间 (μs)',
+                    data: benchNames.map(name => aggregated[name].real_time),
+                    backgroundColor: benchNames.map(name => chartColors[name] + '99'),
+                    borderColor: benchNames.map(name => chartColors[name]),
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: '微秒 (μs)' } }
+                }
+            }
+        });
+
+        // 位置误差图
+        new Chart(document.getElementById('posErrorChart'), {
+            type: 'bar',
+            data: {
+                labels: benchNames,
+                datasets: [{
+                    label: '位置误差 (mm)',
+                    data: benchNames.map(name => aggregated[name].avg_position_error_mm),
+                    backgroundColor: '#11998e99',
+                    borderColor: '#11998e',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 旋转误差图
+        new Chart(document.getElementById('rotErrorChart'), {
+            type: 'bar',
+            data: {
+                labels: benchNames,
+                datasets: [{
+                    label: '旋转误差 (度)',
+                    data: benchNames.map(name => aggregated[name].avg_rotation_error_deg),
+                    backgroundColor: '#fc466b99',
+                    borderColor: '#fc466b',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 迭代次数图
+        new Chart(document.getElementById('iterChart'), {
+            type: 'bar',
+            data: {
+                labels: benchNames,
+                datasets: [{
+                    label: '迭代次数',
+                    data: benchNames.map(name => aggregated[name].iterations_per_solve),
+                    backgroundColor: '#f093fb99',
+                    borderColor: '#f093fb',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // 成功率图
+        new Chart(document.getElementById('successChart'), {
+            type: 'doughnut',
+            data: {
+                labels: benchNames,
+                datasets: [{
+                    data: benchNames.map(name => aggregated[name].success_rate),
+                    backgroundColor: Object.values(chartColors),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // 详细卡片
+        const cardsContainer = document.getElementById('benchmarkCards');
+        benchNames.forEach(name => {
+            const bench = aggregated[name];
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <h2 class="card-title">${name}</h2>
+                <div class="benchmark-details">
+                    <div class="detail-item">
+                        <div class="detail-label">实际时间</div>
+                        <div class="detail-value">${bench.real_time.toFixed(2)} μs</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">CPU 时间</div>
+                        <div class="detail-value">${bench.cpu_time.toFixed(2)} μs</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">迭代次数</div>
+                        <div class="detail-value">${bench.iterations}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">每次求解迭代</div>
+                        <div class="detail-value">${bench.iterations_per_solve.toFixed(2)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">位置误差</div>
+                        <div class="detail-value">${bench.avg_position_error_mm.toFixed(4)} mm</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">旋转误差</div>
+                        <div class="detail-value">${bench.avg_rotation_error_deg.toFixed(5)}°</div>
+                    </div>
+                </div>
+                <span class="success-badge">✓ 成功率: ${bench.success_rate}%</span>
+            `;
+            cardsContainer.appendChild(card);
+        });
+    </script>
+</body>
+</html>

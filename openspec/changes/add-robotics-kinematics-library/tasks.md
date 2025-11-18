@@ -156,46 +156,46 @@ This document outlines the implementation tasks in dependency order. Each task s
 ## Phase 5: Core C++ Library - Inverse Kinematics
 
 ### 19. Integrate DaQP QP Solver
-- [ ] Study DaQP API and examples
-- [ ] Create wrapper for DaQP solver initialization
-- [ ] Implement QP formulation helper functions
-- [ ] Test basic QP solving with simple problems
+- [x] Study DaQP API and examples
+- [x] Create wrapper for DaQP solver initialization
+- [x] Implement QP formulation helper functions
+- [x] Test basic QP solving with simple problems
 
 ### 20. Implement SQP IK Solver
-- [ ] Create IKSolver abstract base class
-- [ ] Create SQPIKSolver implementation
-- [ ] Implement solve(target, initial_guess) method
-- [ ] Implement SQP iteration loop
-- [ ] Compute FK and Jacobian in each iteration
-- [ ] Formulate and solve QP subproblem with DaQP
-- [ ] Enforce joint limit constraints
-- [ ] Implement line search for step size
-- [ ] Check convergence criteria
-- [ ] Return solution and status
+- [x] Create IKSolver abstract base class
+- [x] Create SQPIKSolver implementation
+- [x] Implement solve(target, initial_guess) method
+- [x] Implement SQP iteration loop
+- [x] Compute FK and Jacobian in each iteration
+- [x] Formulate and solve QP subproblem with DaQP
+- [x] Enforce joint limit constraints
+- [x] Implement line search for step size
+- [x] Check convergence criteria
+- [x] Return solution and status
 
 ### 21. Implement IK Solver Configuration
-- [ ] Add SolverConfig struct (tolerances, max_iterations, step_limits)
-- [ ] Implement setSolverConfig() method
-- [ ] Add methods for position-only and orientation-only IK
-- [ ] Implement warm-starting support
+- [x] Add SolverConfig struct (tolerances, max_iterations, step_limits)
+- [x] Implement setSolverConfig() method
+- [x] Add methods for position-only and orientation-only IK
+- [x] Implement warm-starting support
 
 ### 22. Implement IK Diagnostics
-- [ ] Create SolverStatus struct (converged, iterations, error, etc.)
-- [ ] Track convergence history (optional)
-- [ ] Provide detailed error reporting
-- [ ] Handle unreachable poses gracefully
+- [x] Create SolverStatus struct (converged, iterations, error, etc.)
+- [x] Track convergence history (optional)
+- [x] Provide detailed error reporting
+- [x] Handle unreachable poses gracefully
 
 ### 23. Write Inverse Kinematics Tests
-- [ ] Test IK for reachable poses
-- [ ] Test IK with warm start vs cold start
-- [ ] Test joint limit enforcement
-- [ ] Test position-only and orientation-only IK
-- [ ] Test multiple solutions (elbow-up vs elbow-down)
-- [ ] Test unreachable pose handling
-- [ ] Test convergence for various target poses
-- [ ] Benchmark IK performance (target < 10ms)
-- [ ] Test thread-safety
-- [ ] Run tests and verify all pass
+- [x] Test IK for reachable poses
+- [x] Test IK with warm start vs cold start
+- [x] Test joint limit enforcement
+- [x] Test position-only and orientation-only IK
+- [x] Test multiple solutions (elbow-up vs elbow-down)
+- [x] Test unreachable pose handling
+- [x] Test convergence for various target poses
+- [x] Benchmark IK performance (target < 10ms)
+- [x] Test thread-safety
+- [x] Run tests and verify all pass
 
 ## Phase 6: Python Bindings
 

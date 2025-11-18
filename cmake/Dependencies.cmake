@@ -87,6 +87,25 @@ if(BUILD_TESTING)
     message(STATUS "Using GoogleTest")
 endif()
 
+# Google Benchmark (only if building benchmarks)
+if(BUILD_BENCHMARKS)
+    find_package(benchmark QUIET)
+    if(NOT benchmark_FOUND)
+        message(STATUS "Google Benchmark not found, fetching via FetchContent")
+        include(FetchContent)
+        set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+        set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
+        set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(
+            googlebenchmark
+            GIT_REPOSITORY https://github.com/google/benchmark.git
+            GIT_TAG v1.8.3
+        )
+        FetchContent_MakeAvailable(googlebenchmark)
+    endif()
+    message(STATUS "Using Google Benchmark")
+endif()
+
 # nanobind (only if building Python bindings)
 if(BUILD_PYTHON_BINDINGS)
     find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
