@@ -2,6 +2,7 @@
 set(TEST_SOURCES
     test_main.cpp
     test_urdf_parser.cpp
+    test_kinematics.cpp
 )
 
 # Create test executable

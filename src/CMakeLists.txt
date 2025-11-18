@@ -2,12 +2,14 @@
 set(URDFX_SOURCES
     robot_model.cpp
     urdf_parser.cpp
+    kinematics.cpp
 )
 
 set(URDFX_HEADERS
     ${PROJECT_SOURCE_DIR}/include/urdfx/logging.h
     ${PROJECT_SOURCE_DIR}/include/urdfx/robot_model.h
     ${PROJECT_SOURCE_DIR}/include/urdfx/urdf_parser.h
+    ${PROJECT_SOURCE_DIR}/include/urdfx/kinematics.h
 )
 
 # Create core library

@@ -91,35 +91,35 @@ This document outlines the implementation tasks in dependency order. Each task s
 ## Phase 3: Core C++ Library - Forward Kinematics
 
 ### 11. Implement Kinematic Chain Builder
-- [ ] Create KinematicChain class
-- [ ] Implement buildChain(robot, end_link) method
-- [ ] Traverse from end_link to root
-- [ ] Store ordered list of joints and transformations
-- [ ] Pre-compute static transformations
+- [x] Create KinematicChain class
+- [x] Implement buildChain(robot, end_link) method
+- [x] Traverse from end_link to root
+- [x] Store ordered list of joints and transformations
+- [x] Pre-compute static transformations
 
 ### 12. Implement Forward Kinematics
-- [ ] Create ForwardKinematics class
-- [ ] Implement compute(joint_angles) → Transform
-- [ ] Use Eigen for matrix operations
-- [ ] Support computing to intermediate links
-- [ ] Implement bounds checking (optional)
-- [ ] Optimize for repeated calls (pre-allocate matrices)
+- [x] Create ForwardKinematics class
+- [x] Implement compute(joint_angles) → Transform
+- [x] Use Eigen for matrix operations
+- [x] Support computing to intermediate links
+- [x] Implement bounds checking (optional)
+- [x] Optimize for repeated calls (pre-allocate matrices)
 
 ### 13. Implement Pose Representations
-- [ ] Implement asMatrix() → Eigen::Matrix4d
-- [ ] Implement asPositionQuaternion() → (Vector3d, Quaterniond)
-- [ ] Implement asPositionEuler() → (Vector3d, Vector3d)
-- [ ] Ensure quaternion normalization
+- [x] Implement asMatrix() → Eigen::Matrix4d
+- [x] Implement asPositionQuaternion() → (Vector3d, Quaterniond)
+- [x] Implement asPositionEuler() → (Vector3d, Vector3d)
+- [x] Ensure quaternion normalization
 
 ### 14. Write Forward Kinematics Tests
-- [ ] Test FK at zero configuration
-- [ ] Test FK at various configurations
-- [ ] Compare with analytical solutions (UR5e known poses)
-- [ ] Test FK to intermediate links
-- [ ] Test bounds checking functionality
-- [ ] Benchmark FK performance (target < 1ms)
-- [ ] Test thread-safety with concurrent calls
-- [ ] Run tests and verify all pass
+- [x] Test FK at zero configuration
+- [x] Test FK at various configurations
+- [x] Compare with analytical solutions (UR5e known poses)
+- [x] Test FK to intermediate links
+- [x] Test bounds checking functionality
+- [x] Benchmark FK performance (target < 1ms)
+- [x] Test thread-safety with concurrent calls
+- [x] Run tests and verify all pass
 
 ## Phase 4: Core C++ Library - Jacobian Computation
 
