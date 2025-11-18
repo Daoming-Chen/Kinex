@@ -4,7 +4,6 @@ set(URDFX_SOURCES
     urdf_parser.cpp
     kinematics.cpp
     inverse_kinematics.cpp
-    ${PROJECT_SOURCE_DIR}/third_party/CppAD/cppad_lib/temp_file.cpp
 )
 
 set(URDFX_HEADERS

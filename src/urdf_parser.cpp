@@ -221,14 +221,14 @@ JointType parseJointType(const std::string& type_str) {
 
 class URDFParser::Impl {
 public:
-    std::shared_ptr<Robot> parse(const std::string& content, const std::string& source, const std::string& base_dir) {
+    std::shared_ptr<Robot> parse(const std::string& content, [[maybe_unused]] const std::string& source, const std::string& base_dir) {
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_string(content.c_str());
         
         if (!result) {
             throw URDFParseException(
                 std::string("XML parse error: ") + result.description(),
-                result.offset
+                static_cast<int>(result.offset)
             );
         }
         

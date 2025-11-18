@@ -3,10 +3,16 @@
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#elif defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 4244)  // Conversion warnings
+#pragma warning(disable: 4267)  // size_t conversion warnings
 #endif
 #include <cppad/cppad.hpp>
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
 #endif
 #include <stdexcept>
 #include <algorithm>

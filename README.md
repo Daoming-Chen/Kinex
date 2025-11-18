@@ -80,17 +80,35 @@ const solution = ik.solve(targetPose);
 
 ### Prerequisites
 
-- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 2019+)
+- C++20 compatible compiler (GCC 10+, Clang 12+, MSVC 19.29+ / Visual Studio 2019 16.11+)
 - CMake 3.20 or later
 - Python 3.8+ (for Python bindings)
+- Node.js 18+ (for visualization app)
 - Emscripten (for WebAssembly bindings)
 
+
+**Platform-Specific Requirements:**
+- **Linux**: Build tools via `apt`, `yum`, or similar package manager
+- **macOS**: Xcode Command Line Tools or Homebrew
+- **Windows**:
+    - Visual Studio 2019 (16.11+) or Visual Studio 2022 with "Desktop development with C++" workload
+    - CMake 3.20+ (recommended to install via [Chocolatey](https://chocolatey.org/packages/cmake) or manually)
+    - Python 3.8+ (for Python bindings)
+    - Node.js 18+ (for visualization)
+    - [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html) (for WASM)
+    - All-in-one dependency check and environment setup: `scripts/setup.ps1`
+
 ### Building from Source
+
+#### Linux / macOS
 
 ```bash
 # Clone with submodules
 git clone --recursive https://github.com/Daoming-Chen/urdfx.git
 cd urdfx
+
+# Run setup script to check dependencies
+./scripts/setup.sh
 
 # Build C++ library
 mkdir build && cd build
@@ -100,6 +118,45 @@ cmake --build .
 # Install
 sudo cmake --install .
 ```
+
+
+#### Windows
+
+```powershell
+# Clone with submodules
+git clone --recursive https://github.com/Daoming-Chen/urdfx.git
+cd urdfx
+
+# Run Windows setup script (checks/install dependencies: CMake, Python, Node.js, Emscripten, Visual Studio)
+./scripts/setup.ps1
+
+# Build C++ library (from PowerShell or VS Developer Command Prompt)
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -j
+
+# Install (run as Administrator)
+cmake --install build --prefix "C:\Program Files\urdfx"
+```
+
+**Windows Build Notes & Troubleshooting:**
+- Always use `scripts/setup.ps1` to check/install all required tools and dependencies for Windows/MSVC builds.
+- If CMake can't find MSVC, open a "Developer Command Prompt for VS 2022" or "x64 Native Tools Command Prompt" and retry.
+- For long path issues, enable long paths in Windows:
+    ```powershell
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name LongPathsEnabled -Value 1
+    ```
+- If submodules fail to clone, check proxy settings or manually run:
+    ```powershell
+    git submodule update --init --recursive
+    ```
+- If you see errors about missing DLL exports or import macros, ensure you are using the latest CMake and Visual Studio versions as required above.
+- All dependencies (Eigen, pugixml, CppAD, DaQP, spdlog) are built from source and tested for MSVC compatibility.
+- For Emscripten/WebAssembly builds, run `setup.ps1` to install and activate the Emscripten SDK on Windows.
+
+**Tested on:**
+- Windows 10 and 11, Visual Studio 2019/2022, CMake 3.20+, Python 3.8+, Node.js 18+, Emscripten 3.1+
+
+For more details, see `openspec/changes/add-windows-build-support/`.
 
 ### Building Python Bindings
 

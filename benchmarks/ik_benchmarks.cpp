@@ -222,7 +222,7 @@ static void BM_IK_ColdStart(benchmark::State& state) {
     state.counters["iterations_per_solve"] = static_cast<double>(total_iterations) / static_cast<double>(solves);
     state.counters["success_rate"] = (static_cast<double>(successes) / static_cast<double>(solves)) * 100.0;
     state.counters["avg_position_error_mm"] = (total_position_error / static_cast<double>(successes)) * 1000.0;
-    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / M_PI;
+    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / std::numbers::pi;
 }
 
 BENCHMARK(BM_IK_ColdStart)->Unit(benchmark::kMicrosecond);
@@ -273,7 +273,7 @@ static void BM_IK_WarmStart(benchmark::State& state) {
     state.counters["iterations_per_solve"] = static_cast<double>(total_iterations) / static_cast<double>(solves);
     state.counters["success_rate"] = (static_cast<double>(successes) / static_cast<double>(solves)) * 100.0;
     state.counters["avg_position_error_mm"] = (total_position_error / static_cast<double>(successes)) * 1000.0;
-    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / M_PI;
+    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / std::numbers::pi;
 }
 
 static void BM_IK_Trajectory(benchmark::State& state) {
@@ -319,7 +319,7 @@ static void BM_IK_Trajectory(benchmark::State& state) {
     state.counters["iterations_per_solve"] = static_cast<double>(total_iterations) / static_cast<double>(solves);
     state.counters["success_rate"] = (static_cast<double>(successes) / static_cast<double>(solves)) * 100.0;
     state.counters["avg_position_error_mm"] = (total_position_error / static_cast<double>(successes)) * 1000.0;
-    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / M_PI;
+    state.counters["avg_rotation_error_deg"] = (total_rotation_error / static_cast<double>(successes)) * 180.0 / std::numbers::pi;
 }
 
 BENCHMARK(BM_IK_ColdStart)->Unit(benchmark::kMicrosecond);

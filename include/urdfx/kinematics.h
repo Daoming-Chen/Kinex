@@ -1,5 +1,6 @@
 #pragma once
 
+#include "urdfx/export.h"
 #include "robot_model.h"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -25,7 +26,7 @@ namespace urdfx {
  * transformations from a base link to an end-effector link. This class
  * pre-computes static transformations for efficiency.
  */
-class KinematicChain {
+class URDFX_API KinematicChain {
 public:
     /**
      * @brief Construct a kinematic chain
@@ -103,7 +104,7 @@ private:
  * Given joint angles, computes the pose of the end-effector or any
  * intermediate link in the kinematic chain.
  */
-class ForwardKinematics {
+class URDFX_API ForwardKinematics {
 public:
     /**
      * @brief Construct a forward kinematics solver
@@ -196,8 +197,16 @@ enum class JacobianType {
 /**
  * @brief Automatic differentiation-powered Jacobian computation and metrics
  */
-class JacobianCalculator {
+class URDFX_API JacobianCalculator {
 public:
+    // Delete copy operations since this class contains unique_ptr members
+    JacobianCalculator(const JacobianCalculator&) = delete;
+    JacobianCalculator& operator=(const JacobianCalculator&) = delete;
+    
+    // Allow move operations
+    JacobianCalculator(JacobianCalculator&&) = default;
+    JacobianCalculator& operator=(JacobianCalculator&&) = default;
+    
     JacobianCalculator(
         std::shared_ptr<const Robot> robot,
         const std::string& end_link,
