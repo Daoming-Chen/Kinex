@@ -178,6 +178,35 @@ cd visualization
 npm test
 ```
 
+## Benchmarking
+
+Run the Google Benchmark-based IK suite to measure cold-start, warm-start, and trajectory performance:
+
+```bash
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
+cmake --build build --target ik_benchmarks -j
+./build/benchmarks/ik_benchmarks \
+    --benchmark_out=benchmarks/results/ik_benchmarks_<date>.json \
+    --benchmark_out_format=json
+```
+
+基准套件会依次覆盖三个典型场景：
+- **ColdStart**：每次都从全零初值求解，反映最差收敛时间；
+- **WarmStart**：先跑一次获得热启动，再用上一帧解作为初值，观察迭代数是否明显下降；
+- **Trajectory**：连续 24 个目标姿态，通过热启动评估轨迹场景的稳态速度。
+
+报告中的指标含义：
+- `real_time`/`cpu_time` 代表每轮 6 或 24 次求解的平均耗时（微秒），越小越好；
+- `avg_iterations` 是单次 IK 的平均迭代次数，反映数值稳定性；
+- `solves_per_iteration` 表示一次 `state` 循环里批量了多少个目标；
+- `success_rate` 为收敛比率，理想情况下应为 1；
+- `iterations` 列出 Google Benchmark 实际重复次数，可用于衡量统计置信度。
+
+基准结果会写入 `benchmarks/results/`，可直接提交或留作历史对比。若想快速查看曲线，可用 `benchmarks/benchmark_visualizer.html`：
+1. 在浏览器打开该文件；
+2. 上传 `ik_benchmarks_<date>.json`；
+3. 页面会展示系统信息、指标卡片以及耗时/迭代的对比柱状图。
+
 ## Architecture
 
 ```

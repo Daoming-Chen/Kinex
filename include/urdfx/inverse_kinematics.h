@@ -55,6 +55,10 @@ public:
     void setSolverConfig(const SolverConfig& config);
     const SolverConfig& getSolverConfig() const { return config_; }
 
+    std::shared_ptr<const Robot> getRobot() const { return robot_; }
+    const std::string& getEndLink() const { return end_link_; }
+    const std::string& getBaseLink() const { return base_link_; }
+
     void setPositionOnly(bool enable);
     void setOrientationOnly(bool enable);
 
