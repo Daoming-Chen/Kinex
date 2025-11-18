@@ -28,6 +28,7 @@ endif()
 
 # Build options
 option(BUILD_TESTING "Build tests" ON)
+option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 option(BUILD_WASM "Build WebAssembly bindings" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -63,6 +64,11 @@ add_subdirectory(src)
 if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+# Examples
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 # Python bindings
@@ -128,6 +134,7 @@ message(STATUS "  C++ compiler:        ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMP
 message(STATUS "  Build type:          ${CMAKE_BUILD_TYPE}")
 message(STATUS "  Build shared libs:   ${BUILD_SHARED_LIBS}")
 message(STATUS "  Build testing:       ${BUILD_TESTING}")
+message(STATUS "  Build examples:      ${BUILD_EXAMPLES}")
 message(STATUS "  Build Python:        ${BUILD_PYTHON_BINDINGS}")
 message(STATUS "  Build WASM:          ${BUILD_WASM}")
 message(STATUS "  Install prefix:      ${CMAKE_INSTALL_PREFIX}")
