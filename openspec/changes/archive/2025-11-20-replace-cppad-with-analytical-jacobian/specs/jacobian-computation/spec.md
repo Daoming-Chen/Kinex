@@ -8,6 +8,8 @@
 
 The system SHALL compute the Jacobian matrix relating joint velocities to end-effector twist using **analytical geometric methods** based on the kinematic chain structure.
 
+**Change from previous**: Previously used CppAD automatic differentiation. Now uses hand-crafted analytical formulas for improved performance.
+
 #### Scenario: Compute Spatial Jacobian for Revolute Chain
 **Given** a robot with 6 revolute joints  
 **And** joint configuration q = [0.1, -0.5, 0.3, 1.2, -0.8, 0.6] rad  
@@ -48,6 +50,8 @@ The system SHALL correctly compute Jacobian columns for prismatic joints.
 
 The system SHALL support conversion between Analytic (spatial) and Geometric (body) Jacobian representations.
 
+**Change from previous**: No change to this requirement, but underlying implementation now uses analytical base Jacobian.
+
 #### Scenario: Convert Spatial to Body Jacobian
 **Given** a spatial Jacobian J_spatial computed at configuration q  
 **And** the end-effector pose T_ee = FK(q)  
@@ -62,7 +66,9 @@ The system SHALL support conversion between Analytic (spatial) and Geometric (bo
 **ID**: JAC-004  
 **Priority**: P0
 
-The analytical Jacobian computation SHALL maintain high numerical accuracy.
+The analytical Jacobian computation SHALL maintain numerical accuracy equivalent to or better than the previous CppAD implementation.
+
+**Change from previous**: New requirement to ensure migration doesn't degrade accuracy.
 
 #### Scenario: Validate Against Finite Difference
 **Given** a random joint configuration q  
@@ -71,26 +77,38 @@ The analytical Jacobian computation SHALL maintain high numerical accuracy.
 **Then** the Frobenius norm error SHALL be less than 1e-4  
 **And** the test SHALL pass for 10,000 random configurations
 
+#### Scenario: Validate Against CppAD Reference (Migration Only)
+**Given** the old CppAD-based implementation is available  
+**And** a random joint configuration q  
+**When** computing Jacobian with both methods  
+**Then** the Frobenius norm error SHALL be less than 1e-6  
+**And** the test SHALL pass for 10,000 random configurations  
+**And** this test is used only during migration validation period
+
 ---
 
 ### Requirement: Performance Targets
 **ID**: JAC-005  
 **Priority**: P1
 
-The analytical Jacobian implementation SHALL achieve high performance suitable for real-time robotics applications.
+The analytical Jacobian implementation SHALL achieve significant performance improvements over the CppAD-based implementation.
+
+**Change from previous**: New requirement defining performance expectations.
 
 #### Scenario: Jacobian Computation Performance
 **Given** a UR5e robot with 6 DOF  
 **And** a representative joint configuration  
 **When** computing the Jacobian 10,000 times in a benchmark loop  
 **Then** the mean computation time SHALL be less than 5µs per call  
-**And** the 95th percentile SHALL be less than 8µs
+**And** the 95th percentile SHALL be less than 8µs  
+**And** the performance SHALL be at least 5× faster than the previous CppAD implementation
 
 #### Scenario: End-to-End IK Performance
 **Given** an IK problem with convergence requiring 10-15 iterations  
 **And** using the SQP solver with DaQP QP backend  
 **When** solving from a cold start  
-**Then** the total solve time SHALL be less than 100µs
+**Then** the total solve time SHALL be less than 100µs  
+**And** the performance SHALL be at least 2× faster than the previous implementation
 
 ---
 
@@ -98,13 +116,16 @@ The analytical Jacobian implementation SHALL achieve high performance suitable f
 **ID**: JAC-006  
 **Priority**: P1
 
-The analytical implementation SHALL minimize memory usage through efficient caching.
+The analytical implementation SHALL reduce memory usage compared to CppAD tape storage.
 
-#### Scenario: Efficient Data Storage
+**Change from previous**: New requirement focused on memory improvements.
+
+#### Scenario: No Tape Storage Overhead
 **Given** a JacobianCalculator instance for multiple end-effector links  
 **When** the calculator is initialized  
-**Then** only kinematic chain structures SHALL be cached  
-**And** memory usage SHALL remain minimal
+**Then** no CppAD tape SHALL be stored in memory  
+**And** the only cached data SHALL be kinematic chain structures  
+**And** memory usage SHALL be reduced by at least 80% compared to CppAD implementation
 
 #### Scenario: Minimal Runtime Allocation
 **Given** a pre-warmed JacobianCalculator instance  
@@ -122,6 +143,8 @@ The analytical implementation SHALL minimize memory usage through efficient cach
 
 The system SHALL compute Jacobians for any link in the kinematic chain, not just the end-effector.
 
+**New requirement**: Clarifies existing behavior that must be preserved.
+
 #### Scenario: Compute Jacobian to Mid-Chain Link
 **Given** a UR5e robot with links [base, shoulder, upper_arm, forearm, wrist_1, wrist_2, wrist_3, tool0]  
 **And** joint configuration q = [q1, q2, q3, q4, q5, q6]  
@@ -132,22 +155,27 @@ The system SHALL compute Jacobians for any link in the kinematic chain, not just
 
 ---
 
-### Requirement: API Compatibility
+### Requirement: API Backward Compatibility
 **ID**: JAC-008  
 **Priority**: P0
 
-The JacobianCalculator SHALL provide a consistent and stable API.
+The new analytical implementation SHALL maintain 100% API compatibility with the existing JacobianCalculator interface.
 
-#### Scenario: Standard Usage Pattern
-**Given** code using `JacobianCalculator calculator(robot, "tool0")`  
+**New requirement**: Ensures drop-in replacement for existing code.
+
+#### Scenario: Existing Code Works Without Changes
+**Given** existing code using `JacobianCalculator calculator(robot, "tool0")`  
 **And** code calling `MatrixXd J = calculator.compute(q, JacobianType::Analytic)`  
-**Then** the code SHALL compile and run correctly  
-**And** the results SHALL be numerically accurate (within 1e-6 tolerance)
+**When** the analytical implementation replaces CppAD  
+**Then** the code SHALL compile without changes  
+**And** the code SHALL run without changes  
+**And** the results SHALL be numerically equivalent (within 1e-6 tolerance)
 
-#### Scenario: Python Bindings Consistency
+#### Scenario: Python Bindings Unchanged
 **Given** Python code using `urdfx.JacobianCalculator(robot, "tool0")`  
-**Then** the Python API SHALL work correctly  
-**And** Python scripts SHALL execute successfully
+**When** the analytical implementation is deployed  
+**Then** the Python API SHALL remain identical  
+**And** existing Python scripts SHALL work without modification
 
 ---
 
@@ -156,6 +184,8 @@ The JacobianCalculator SHALL provide a consistent and stable API.
 **Priority**: P1
 
 The analytical implementation SHALL handle edge cases robustly.
+
+**New requirement**: Defines behavior for special configurations.
 
 #### Scenario: Zero Joint Angles
 **Given** joint configuration q = [0, 0, 0, 0, 0, 0]  
@@ -184,32 +214,40 @@ The analytical implementation SHALL handle edge cases robustly.
 
 The analytical implementation SHALL perform well across all supported platforms.
 
+**New requirement**: Ensures consistent behavior across build targets.
+
 #### Scenario: Native Platform Performance
 **Given** native builds on Windows (MSVC), Linux (GCC), macOS (Clang)  
 **When** running Jacobian benchmarks  
 **Then** all platforms SHALL achieve <5µs mean computation time  
-**And** performance SHALL be consistent across platforms
+**And** no platform SHALL show performance regression vs CppAD baseline
 
 #### Scenario: WebAssembly Performance
 **Given** a WebAssembly build with Emscripten -O3 optimization  
 **When** running Jacobian benchmarks in browser (Chrome or Firefox)  
 **Then** computation time SHALL be less than 20µs  
-**And** performance SHALL be suitable for interactive applications
+**And** performance SHALL be at least 30% faster than CppAD-based WASM build
 
 ---
 
 ## Implementation Notes
 
-### Key Design Decisions
-1. **Algorithm**: Geometric Jacobian formula using kinematic structure
-2. **Dependencies**: Depends only on Eigen for linear algebra
-3. **Performance**: Achieves sub-5µs computation for typical robots
-4. **Memory**: Minimal overhead with efficient frame caching
+### Key Changes
+1. **Algorithm**: Replaced automatic differentiation with geometric Jacobian formula
+2. **Dependencies**: Removed CppAD, now only depends on Eigen
+3. **Performance**: Expected 5-10× improvement in Jacobian computation
+4. **Memory**: Eliminated tape storage overhead (~10KB per link)
+
+### Migration Approach
+- Implement new `AnalyticalJacobianCalculator` in parallel
+- Validate against existing CppAD implementation (10,000 random tests)
+- Switch IK solver to use analytical implementation
+- Remove CppAD after validation complete
 
 ### Testing Strategy
-- **Accuracy**: Finite difference validation across 10,000+ configurations
+- **Accuracy**: Finite difference validation + CppAD cross-check
 - **Performance**: Micro-benchmarks (Jacobian only) + End-to-end IK benchmarks
-- **Compatibility**: Full test suite coverage
+- **Compatibility**: Existing test suite must pass unchanged
 - **Edge cases**: Zero angles, limits, singular configurations
 
 ### References

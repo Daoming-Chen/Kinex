@@ -2,8 +2,8 @@
 
 ## ADDED Requirements
 
-### Requirement: System SHALL compute geometric Jacobian using automatic differentiation
-The system SHALL compute the geometric Jacobian matrix using CppAD's automatic differentiation.
+### Requirement: System SHALL compute geometric Jacobian using analytical methods
+The system SHALL compute the geometric Jacobian matrix using analytical geometric methods.
 
 #### Scenario: Compute Jacobian for UR5e at zero configuration
 **Given** a UR5e robot model at q = [0, 0, 0, 0, 0, 0]  
@@ -14,18 +14,18 @@ The system SHALL compute the geometric Jacobian matrix using CppAD's automatic d
 
 #### Scenario: Jacobian matches numerical differentiation
 **Given** a robot model and joint angles q  
-**When** the system computes the Jacobian using CppAD  
+**When** the system computes the Jacobian analytically  
 **Then** the result matches numerical differentiation within 1e-6 tolerance  
 **And** the computation is faster than numerical differentiation
 
-### Requirement: System SHALL tape FK computation for efficient Jacobian evaluation
-The system SHALL create a CppAD tape of the FK computation for reuse across multiple Jacobian evaluations.
+### Requirement: System SHALL cache kinematic chain for efficient Jacobian evaluation
+The system SHALL cache the kinematic chain structure for reuse across multiple Jacobian evaluations.
 
-#### Scenario: Reuse CppAD tape for multiple Jacobian computations
+#### Scenario: Reuse cached chain for multiple Jacobian computations
 **Given** a JacobianCalculator initialized with a robot model  
 **When** the user calls compute(q) 100 times with different joint angles  
-**Then** the CppAD tape is created only once during initialization  
-**And** subsequent calls only evaluate the tape (no re-taping)  
+**Then** the kinematic chain is cached during initialization  
+**And** subsequent calls use the cached structure  
 **And** average computation time is < 0.5ms per call
 
 ### Requirement: System SHALL support both geometric and analytic Jacobians
@@ -74,7 +74,7 @@ The system SHALL optionally compute second-order derivatives for acceleration an
 #### Scenario: Compute Jacobian time derivative
 **Given** a robot model, joint angles q, and joint velocities dq  
 **When** the user calls `computeJacobianDerivative(q, dq)`  
-**Then** the system returns dJ/dt using second-order CppAD tape  
+**Then** the system returns dJ/dt using analytical methods  
 **And** the result is used for acceleration-level IK
 
 ### Requirement: System SHALL efficient memory management

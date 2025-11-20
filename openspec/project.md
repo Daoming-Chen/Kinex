@@ -15,7 +15,6 @@ urdfx is a modern C++20 robotics kinematics library providing URDF parsing, forw
 - **Build System**: CMake 3.20+, git submodules for dependencies
 - **Linear Algebra**: Eigen 3.4+
 - **XML Parsing**: pugixml
-- **Automatic Differentiation**: CppAD
 - **Optimization**: DaQP (QP solver)
 - **Testing**: Google Test
 
@@ -71,7 +70,6 @@ urdfx/
 - **Dependency Injection**: Solvers accept strategy objects for customization
 - **RAII**: Automatic resource management for robot models and solvers
 - **Immutability**: Robot model is immutable after parsing
-- **Lazy Evaluation**: CppAD tapes created on first Jacobian request
 
 ### Testing Strategy
 - **Unit Tests**: Each class has dedicated test suite
@@ -132,7 +130,6 @@ urdfx/
 ### Git Submodules (third_party/)
 - **Eigen**: 3.4+ (linear algebra)
 - **pugixml**: 1.13+ (XML parsing)
-- **CppAD**: 20230000+ (automatic differentiation)
 - **DaQP**: Latest (QP solver)
 - **nanobind**: Latest (Python bindings)
 - **googletest**: 1.14+ (C++ testing)

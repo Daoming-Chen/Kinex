@@ -25,7 +25,7 @@ The system SHALL use git submodules for third-party C++ libraries.
 #### Scenario: Clone with submodules
 **Given** the urdfx git repository URL  
 **When** the user runs `git clone --recursive <url>`  
-**Then** all submodules are cloned: Eigen, pugixml, CppAD, DaQP, spdlog, nanobind, googletest  
+**Then** all submodules are cloned: Eigen, pugixml, DaQP, spdlog, nanobind, googletest  
 **And** submodules are at specified commits/tags
 
 #### Scenario: Update submodules after clone

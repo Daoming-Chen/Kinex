@@ -181,7 +181,7 @@ cmake --install build --prefix "C:\Program Files\urdfx"
     git submodule update --init --recursive
     ```
 - If you see errors about missing DLL exports or import macros, ensure you are using the latest CMake and Visual Studio versions as required above.
-- All dependencies (Eigen, pugixml, CppAD, DaQP, spdlog) are built from source and tested for MSVC compatibility.
+- All dependencies (Eigen, pugixml, DaQP, spdlog) are built from source and tested for MSVC compatibility.
 - For Emscripten/WebAssembly builds, run `setup.ps1` to install and activate the Emscripten SDK on Windows.
 
 **Tested on:**
@@ -261,7 +261,6 @@ urdfx/
 ├── third_party/                # Git submodules
 │   ├── eigen/
 │   ├── pugixml/
-│   ├── CppAD/
 │   ├── daqp/
 │   ├── googletest/
 │   ├── nanobind/

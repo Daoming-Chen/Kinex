@@ -7,7 +7,7 @@ Robotics applications require efficient kinematics computations for motion plann
 - Add C++20 core library for robotics kinematics (urdfx)
 - URDF parsing using pugixml
 - Forward kinematics using Eigen transformations
-- Jacobian computation using CppAD automatic differentiation  
+- Jacobian computation using analytical geometric methods  
 - Inverse kinematics solving using DaQP QP solver with joint limit constraints
 - Logging infrastructure using spdlog (must be set up before C++ code implementation)
 - Python bindings via nanobind with NumPy integration
@@ -35,7 +35,7 @@ Robotics applications require efficient kinematics computations for motion plann
 ## Goals
 1. Parse URDF robot descriptions using pugixml
 2. Compute forward kinematics with Eigen transformations
-3. Calculate Jacobians automatically using CppAD
+3. Calculate Jacobians using analytical geometric methods
 4. Solve inverse kinematics with DaQP (SQP-based) respecting joint limits
 5. Provide Python bindings via nanobind
 6. Provide WebAssembly bindings for browser-based applications
@@ -51,14 +51,11 @@ Robotics applications require efficient kinematics computations for motion plann
 
 ## Alternatives Considered
 - **Alternative 1**: Use existing libraries like KDL or Pinocchio
-  - Rejected: Want lightweight, modern C++20 implementation with specific autodiff approach
+  - Rejected: Want lightweight, modern C++20 implementation with specific approach
 - **Alternative 2**: Python-only implementation
   - Rejected: Need performance for real-time applications and browser support
-- **Alternative 3**: Manual Jacobian computation
-  - Rejected: CppAD provides more maintainable and less error-prone solution
 
 ## Risks
-- Learning curve for CppAD integration
 - WebAssembly binary size may be large
 - DaQP solver convergence for complex robot configurations
 
