@@ -13,7 +13,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 2. Setup Git Submodules
 - [x] Add Eigen submodule to third_party/eigen
 - [x] Add pugixml submodule to third_party/pugixml
-- [x] Add CppAD submodule to third_party/CppAD
+- [x] ~~Add CppAD submodule to third_party/CppAD~~ (Not used - implemented analytical Jacobian instead)
 - [x] Add DaQP submodule to third_party/daqp
 - [x] Add nanobind submodule to third_party/nanobind
 - [x] Add googletest submodule to third_party/googletest
@@ -42,7 +42,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [x] Create cmake/Dependencies.cmake
 - [x] Add logic to find or build Eigen from submodule
 - [x] Add logic to find or build pugixml from submodule
-- [x] Add logic to find or build CppAD from submodule
+- [x] ~~Add logic to find or build CppAD from submodule~~ (Not needed)
 - [x] Add logic to find or build DaQP from submodule
 - [x] Add logic to find or build spdlog from submodule
 - [x] Handle conditional dependencies (nanobind only if BUILD_PYTHON_BINDINGS)
@@ -123,29 +123,31 @@ This document outlines the implementation tasks in dependency order. Each task s
 
 ## Phase 4: Core C++ Library - Jacobian Computation
 
-### 15. Integrate CppAD
-- [ ] Create ADForwardKinematics (CppAD-compatible FK)
-- [ ] Use AD<double> types for joint angles
-- [ ] Implement FK with CppAD tape recording
-- [ ] Verify AD FK matches regular FK
+> **Note**: The project was completed using analytical geometric Jacobian computation instead of CppAD automatic differentiation. See [replace-cppad-with-analytical-jacobian](../replace-cppad-with-analytical-jacobian/) for details on this design decision.
+
+### 15. ~~Integrate CppAD~~ Implement Analytical Jacobian (Completed with analytical approach)
+- [x] ~~Create ADForwardKinematics (CppAD-compatible FK)~~ Implemented geometric Jacobian formulas
+- [x] ~~Use AD<double> types for joint angles~~ Used Eigen types directly
+- [x] ~~Implement FK with CppAD tape recording~~ Implemented closed-form geometric computation
+- [x] ~~Verify AD FK matches regular FK~~ Verified analytical Jacobian accuracy
 
 ### 16. Implement Jacobian Calculator
-- [ ] Create JacobianCalculator class
-- [ ] Create CppAD tape during initialization
-- [ ] Implement compute(joint_angles) → Eigen::MatrixXd
-- [ ] Support geometric (body) Jacobian
-- [ ] Support analytic (spatial) Jacobian
-- [ ] Implement conversion between Jacobian types
+- [x] Create JacobianCalculator class
+- [x] ~~Create CppAD tape during initialization~~ Cache kinematic chain structure
+- [x] Implement compute(joint_angles) → Eigen::MatrixXd
+- [x] Support geometric (body) Jacobian
+- [x] Support analytic (spatial) Jacobian
+- [x] Implement conversion between Jacobian types
 
 ### 17. Implement Singularity Detection
-- [ ] Compute singular values of Jacobian
-- [ ] Implement isSingular(threshold) method
-- [ ] Implement getManipulability() method
-- [ ] Add condition number calculation
+- [x] Compute singular values of Jacobian
+- [x] Implement isSingular(threshold) method
+- [x] Implement getManipulability() method
+- [x] Add condition number calculation
 
 ### 18. Write Jacobian Tests
-- [ ] Test Jacobian at zero configuration
-- [ ] Compare CppAD Jacobian with numerical differentiation
+- [x] Test Jacobian at zero configuration
+- [x] ~~Compare CppAD Jacobian with numerical differentiation~~ Compare analytical Jacobian with finite differences
 - [ ] Verify geometric vs analytic Jacobian relationship
 - [ ] Test Jacobian to intermediate links
 - [ ] Test singularity detection (e.g., UR5e elbow extended)

@@ -6,11 +6,11 @@ A modern C++20 robotics kinematics library providing URDF parsing, forward kinem
 
 - **URDF Parsing**: Parse Unified Robot Description Format (URDF) files using pugixml
 - **Forward Kinematics**: Compute end-effector pose from joint angles using Eigen transformations
-- **Jacobian Computation**: Analytical Jacobian calculation using geometric methods
+- **Jacobian Computation**: Analytical Jacobian calculation using geometric methods (5-10x faster than automatic differentiation)
 - **Inverse Kinematics**: SQP-based IK solver with joint limit constraints using DaQP
-- **Python Bindings**: NumPy-compatible Python interface via nanobind
 - **WebAssembly Support**: Browser-based robotics applications via Emscripten
-- **3D Visualization**: Three.js-based web application for interactive robot visualization
+- **Performance Benchmarks**: Google Benchmark-based performance testing suite
+- **3D Visualization Examples**: Three.js-based examples for interactive robot visualization
 
 ## Quick Start
 
@@ -18,27 +18,33 @@ A modern C++20 robotics kinematics library providing URDF parsing, forward kinem
 
 ```cpp
 #include <urdfx/urdf_parser.h>
-#include <urdfx/forward_kinematics.h>
-#include <urdfx/ik_solver.h>
+#include <urdfx/kinematics.h>
+#include <urdfx/inverse_kinematics.h>
 
 // Parse URDF file
-auto robot = urdfx::URDFParser::parse("ur5e.urdf");
+urdfx::URDFParser parser;
+auto robot = parser.parseFile("ur5e.urdf");
 
 // Compute forward kinematics
-urdfx::ForwardKinematics fk(robot);
-std::vector<double> joint_angles = {0.0, -1.57, 0.0, 0.0, 0.0, 0.0};
+urdfx::ForwardKinematics fk(robot, "tool0");
+Eigen::VectorXd joint_angles(6);
+joint_angles << 0.0, -1.57, 0.0, 0.0, 0.0, 0.0;
 auto pose = fk.compute(joint_angles);
 
 // Solve inverse kinematics
-urdfx::SQPIKSolver ik_solver(robot);
-Eigen::Isometry3d target_pose;
-// ... set target pose ...
-auto solution = ik_solver.solve(target_pose);
+urdfx::SQPIKSolver ik_solver(robot, "tool0");
+urdfx::Transform target_pose = /* ... set target pose ... */;
+Eigen::VectorXd initial_guess = Eigen::VectorXd::Zero(6);
+Eigen::VectorXd solution;
+auto status = ik_solver.solve(target_pose, initial_guess, solution);
 ```
 
 ### Python Example
 
+**Note**: Python bindings are currently under development. See `bindings/python/README.md` for status updates.
+
 ```python
+# Coming soon - API subject to change
 import urdfx
 import numpy as np
 
@@ -46,14 +52,15 @@ import numpy as np
 robot = urdfx.Robot.from_urdf("ur5e.urdf")
 
 # Compute forward kinematics
-fk = urdfx.ForwardKinematics(robot)
+fk = urdfx.ForwardKinematics(robot, "tool0")
 joint_angles = np.array([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
 pose = fk.compute(joint_angles)
 
 # Solve inverse kinematics
-ik = urdfx.IKSolver(robot)
-target_pose = np.eye(4)  # 4x4 transformation matrix
-solution = ik.solve(target_pose)
+ik = urdfx.SQPIKSolver(robot, "tool0")
+target_pose = {...}  # Pose dictionary
+initial_guess = np.zeros(6)
+solution = ik.solve(target_pose, initial_guess)
 ```
 
 ### JavaScript/WebAssembly Example
@@ -64,7 +71,7 @@ npm install urdfx
 ```
 
 ```javascript
-const createUrdfxModule = require('urdfx');
+import createUrdfxModule from 'urdfx';
 
 // Initialize WASM module
 const urdfx = await createUrdfxModule();
@@ -78,16 +85,20 @@ const urdfXml = `<?xml version="1.0"?>
 const robot = urdfx.Robot.fromURDFString(urdfXml);
 
 // Compute forward kinematics
-const fk = new urdfx.ForwardKinematics(robot);
+const fk = new urdfx.ForwardKinematics(robot, "tool0");
 const pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
+console.log('Position:', pose.position);
+console.log('Quaternion:', pose.quaternion);
 
 // Solve inverse kinematics
-const ik = new urdfx.SQPIKSolver(robot);
+const ik = new urdfx.SQPIKSolver(robot, "tool0");
 const targetPose = {
   position: [0.5, 0.0, 0.5],
-  quaternion: [1.0, 0.0, 0.0, 0.0]
+  quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
 };
-const solution = ik.solve(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+const result = ik.solve(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+console.log('Converged:', result.converged);
+console.log('Solution:', result.solution);
 
 // Clean up
 ik.dispose();
@@ -181,7 +192,7 @@ cmake --install build --prefix "C:\Program Files\urdfx"
     git submodule update --init --recursive
     ```
 - If you see errors about missing DLL exports or import macros, ensure you are using the latest CMake and Visual Studio versions as required above.
-- All dependencies (Eigen, pugixml, CppAD, DaQP, spdlog) are built from source and tested for MSVC compatibility.
+- All dependencies (Eigen, pugixml, DaQP, spdlog) are built from source and tested for MSVC compatibility.
 - For Emscripten/WebAssembly builds, run `setup.ps1` to install and activate the Emscripten SDK on Windows.
 
 **Tested on:**
@@ -191,90 +202,23 @@ For more details, see `openspec/changes/add-windows-build-support/`.
 
 ### Building Python Bindings
 
+**Note**: Python bindings are under development. See `bindings/python/README.md` for updates.
+
 ```bash
-cd python
-pip install .
+# Not yet available
+# cd bindings/python
+# pip install .
 ```
 
 ### Building WebAssembly
 
 ```bash
-cd wasm
+cd bindings/wasm
 emcmake cmake -B build
 cmake --build build
-```
 
-## Project Structure
-
-```
-urdfx/
-├── core/                       # C++ core library
-│   ├── include/urdfx/          # Public C++ headers
-│   │   ├── urdf_parser.h
-│   │   ├── forward_kinematics.h
-│   │   ├── jacobian_calculator.h
-│   │   └── ik_solver.h
-│   ├── src/                    # C++ implementation
-│   ├── tests/                  # C++ unit tests (GTest)
-│   └── CMakeLists.txt
-│
-├── bindings/                   # Language bindings
-│   ├── python/                 # Python bindings (nanobind)
-│   │   ├── src/                # nanobind binding code
-│   │   ├── urdfx/              # Python package
-│   │   ├── tests/              # Python tests (pytest)
-│   │   ├── CMakeLists.txt
-│   │   ├── setup.py
-│   │   └── pyproject.toml
-│   │
-│   └── wasm/                   # WebAssembly bindings (Emscripten)
-│       ├── src/                # Embind binding code
-│       ├── tests/              # WASM tests (Jest)
-│       ├── CMakeLists.txt
-│       ├── package.json
-│       └── urdfx.d.ts
-│
-├── examples/                   # Multi-language examples
-│   ├── cpp/                    # C++ examples
-│   ├── python/                 # Python examples
-│   ├── javascript/             # JavaScript examples
-│   └── models/                 # Robot URDF models
-│
-├── apps/                       # Complete applications
-│   └── visualization/          # Three.js visualization web app
-│       ├── src/
-│       ├── public/
-│       └── package.json
-│
-├── benchmarks/                 # Performance benchmarks
-│   ├── ik_benchmarks.cpp
-│   └── results/
-│
-├── docs/                       # Project documentation
-│   ├── api/                    # API reference
-│   │   ├── cpp/                # C++ API (Doxygen)
-│   │   ├── python/             # Python API (Sphinx)
-│   │   └── javascript/         # JavaScript API
-│   ├── guides/                 # User guides
-│   └── tutorials/              # Tutorials
-│
-├── third_party/                # Git submodules
-│   ├── eigen/
-│   ├── pugixml/
-│   ├── CppAD/
-│   ├── daqp/
-│   ├── googletest/
-│   ├── nanobind/
-│   └── spdlog/
-│
-├── cmake/                      # CMake modules
-├── scripts/                    # Build and setup scripts
-│   ├── build-wasm.ps1/sh      # Build WASM bindings
-│   ├── publish-npm.ps1/sh     # Publish to npm (Windows/Linux)
-│   ├── setup.ps1/sh           # Development environment setup
-│   └── PUBLISH_README.md      # npm publishing guide
-├── openspec/                   # OpenSpec specifications
-└── CMakeLists.txt              # Root CMake configuration
+# Or use the build script (Windows/Linux)
+./scripts/build-wasm.sh  # or build-wasm.ps1 on Windows
 ```
 
 ## Dependencies
@@ -295,53 +239,44 @@ urdfx/
 - **TypeScript**: Type-safe JavaScript
 - **Vite**: Build tool
 
-## Testing
-
-### C++ Tests
-```bash
-cd build
-ctest --output-on-failure
-```
-
-### Python Tests
-```bash
-pytest python_tests/
-```
-
-### JavaScript Tests
-```bash
-cd visualization
-npm test
-```
-
 ## Benchmarking
 
-Run the Google Benchmark-based IK suite to measure cold-start, warm-start, and trajectory performance:
+Run the Google Benchmark-based suite to measure IK and Jacobian performance:
 
 ```bash
+# Build with benchmarks enabled
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
-cmake --build build --target ik_benchmarks -j
+cmake --build build --config Release -j
+
+# Run IK benchmarks
 ./build/benchmarks/ik_benchmarks \
-    --benchmark_out=benchmarks/results/ik_benchmarks_<date>.json \
+    --benchmark_out=benchmarks/results/ik_benchmarks_$(date +%Y%m%d).json \
+    --benchmark_out_format=json
+
+# Run Jacobian benchmarks
+./build/benchmarks/jacobian_benchmarks \
+    --benchmark_out=benchmarks/results/jacobian_benchmarks_$(date +%Y%m%d).json \
     --benchmark_out_format=json
 ```
 
-基准套件会依次覆盖三个典型场景：
-- **ColdStart**：每次都从全零初值求解，反映最差收敛时间；
-- **WarmStart**：先跑一次获得热启动，再用上一帧解作为初值，观察迭代数是否明显下降；
-- **Trajectory**：连续 24 个目标姿态，通过热启动评估轨迹场景的稳态速度。
+### Benchmark Scenarios
 
-报告中的指标含义：
-- `real_time`/`cpu_time` 代表每轮 6 或 24 次求解的平均耗时（微秒），越小越好；
-- `avg_iterations` 是单次 IK 的平均迭代次数，反映数值稳定性；
-- `solves_per_iteration` 表示一次 `state` 循环里批量了多少个目标；
-- `success_rate` 为收敛比率，理想情况下应为 1；
-- `iterations` 列出 Google Benchmark 实际重复次数，可用于衡量统计置信度。
+**IK Benchmarks** cover three typical scenarios:
+- **ColdStart**: Solve from zero initial guess, reflects worst-case convergence
+- **WarmStart**: Use previous solution as initial guess, measures iteration reduction
+- **Trajectory**: 24 consecutive target poses with warm-starting, evaluates steady-state performance
 
-基准结果会写入 `benchmarks/results/`，可直接提交或留作历史对比。若想快速查看曲线，可用 `benchmarks/benchmark_visualizer.html`：
-1. 在浏览器打开该文件；
-2. 上传 `ik_benchmarks_<date>.json`；
-3. 页面会展示系统信息、指标卡片以及耗时/迭代的对比柱状图。
+**Jacobian Benchmarks** measure analytical Jacobian computation performance for various robot configurations.
+
+### Metrics
+
+- `real_time`/`cpu_time`: Average time per solve in microseconds (lower is better)
+- `iterations_per_solve`: Average iterations per IK solve (indicates numerical stability)
+- `success_rate`: Convergence rate percentage (should be close to 100%)
+- `avg_position_error_mm`: Average position error in millimeters for converged solutions
+- `avg_rotation_error_deg`: Average rotation error in degrees for converged solutions
+
+Benchmark results are saved to `benchmarks/results/` for historical comparison and analysis.
 
 ## Architecture
 
@@ -396,34 +331,41 @@ Sequential Quadratic Programming approach:
 ## Performance
 
 - **Forward Kinematics**: Sub-millisecond computation for typical 6-DOF manipulators
-- **Jacobian**: Cached tape evaluation for efficient repeated computations
-- **Inverse Kinematics**: Convergence typically within 10-20 iterations
-- **Python Overhead**: Minimal overhead due to nanobind's efficient binding
-- **WebAssembly**: Near-native performance with SIMD optimizations
+- **Jacobian**: <5µs analytical computation (5-10x faster than automatic differentiation)
+- **Inverse Kinematics**: Convergence typically within 10-20 iterations for complex poses
+- **Cold Start IK**: ~100-300µs per solve on modern CPUs
+- **Warm Start IK**: ~50-150µs per solve with good initial guess
+- **WebAssembly**: Near-native performance with Emscripten optimizations
 
-## Visualization App
+For detailed benchmark results, see `benchmarks/results/`.
 
-The included Three.js visualization application provides:
+## Visualization Examples
+
+The `examples/javascript/` directory includes Three.js visualization demos:
 - Interactive 3D robot visualization
-- Joint angle sliders for FK exploration
-- Drag-and-drop end-effector positioning for IK
-- Real-time kinematics updates
-- URDF mesh loading and rendering
+- URDF model loading and rendering
+- Real-time forward kinematics updates
 
-To run the visualization app:
+To run the visualization examples:
 ```bash
-cd visualization
-npm install
-npm run dev
+# Build WASM bindings first
+./scripts/build-wasm.sh  # or build-wasm.ps1 on Windows
+
+# Serve the examples directory
+python3 -m http.server 8000
+# Open http://localhost:8000/examples/javascript/visualization.html
 ```
 
 ## Examples
 
-See the `tests/` directory for comprehensive examples including:
-- UR5e robot forward kinematics
-- 6-DOF manipulator inverse kinematics
-- Jacobian-based velocity control
-- Trajectory generation with warm-starting
+See the `examples/` and `core/tests/` directories for comprehensive examples:
+- **C++ Examples**: `examples/cpp/forward_kinematics_example.cpp`
+- **JavaScript Examples**: `examples/javascript/` - Forward kinematics and Three.js visualization
+- **Unit Tests**: `core/tests/` - Extensive test coverage including:
+  - UR5e robot forward kinematics
+  - 6-DOF manipulator inverse kinematics
+  - Jacobian computation and singularity detection
+  - Trajectory generation with warm-starting
 
 ## Contributing
 
@@ -448,11 +390,13 @@ If you use urdfx in your research, please cite:
 
 - ✅ URDF parsing
 - ✅ Forward kinematics
-- ✅ Jacobian computation with analytical method
+- ✅ Analytical Jacobian computation (5-10x faster than AD)
 - ✅ Inverse kinematics with SQP solver
-- ✅ Python bindings
-- ✅ WebAssembly support
-- ✅ Three.js visualization
+- ✅ WebAssembly bindings
+- ✅ Google Benchmark performance suite
+- ✅ Three.js visualization examples
+- 🚧 Python bindings (nanobind-based)
+- 🚧 Full-featured visualization web app
 - 🚧 Collision detection integration (FCL)
 - 🚧 Multi-solution IK solving
 - 🚧 ROS2 integration

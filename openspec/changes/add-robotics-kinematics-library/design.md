@@ -8,7 +8,7 @@
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
 │  │ URDF Parser  │→ │   Forward    │→ │   Jacobian   │     │
 │  │  (pugixml)   │  │  Kinematics  │  │Computation   │     │
-│  └──────────────┘  │   (Eigen)    │  │   (CppAD)    │     │
+│  └──────────────┘  │   (Eigen)    │  │ (Analytical) │     │
 │                     └──────────────┘  └──────────────┘     │
 │                            ↓                  ↓             │
 │                     ┌──────────────────────────────┐       │
@@ -67,27 +67,29 @@ return T_end;
 ```
 
 ### 3. Jacobian Computation
-**Responsibility**: Compute Jacobian matrix using automatic differentiation
+**Responsibility**: Compute Jacobian matrix using analytical geometric methods
 
 **Key Classes**:
-- `JacobianCalculator`: Uses CppAD to compute Jacobian
-- `ADForwardKinematics`: CppAD-compatible FK implementation
+- `JacobianCalculator`: Uses analytical geometric methods to compute Jacobian
+- Geometric formulas based on kinematic structure
 
 **Design Decisions**:
-- Use CppAD's AD<double> type for automatic differentiation
-- Tape FK computation once, evaluate Jacobian multiple times
+- Use closed-form geometric formulas for revolute and prismatic joints
+- Cache kinematic chain structure for efficient repeated computation
 - Support both geometric and analytic Jacobians
 
-**Integration with CppAD**:
+**Geometric Method**:
 ```cpp
-// Create tape
-std::vector<AD<double>> ad_q(n_joints);
-CppAD::Independent(ad_q);
-std::vector<AD<double>> ad_pose = forwardKinematics(ad_q);
-CppAD::ADFun<double> tape(ad_q, ad_pose);
+// For revolute joint i:
+// J_linear[i] = z_i × (p_ee - p_i)
+// J_angular[i] = z_i
+
+// For prismatic joint i:
+// J_linear[i] = z_i
+// J_angular[i] = 0
 
 // Compute Jacobian
-Eigen::MatrixXd J = tape.Jacobian(q);
+Eigen::MatrixXd J = calculator.compute(q);
 ```
 
 ### 4. Inverse Kinematics
@@ -119,7 +121,7 @@ Eigen::MatrixXd J = tape.Jacobian(q);
 
 ### 5. Build System
 **Dependency Management**:
-- Git submodules for: Eigen, pugixml, CppAD, DaQP, spdlog, nanobind, googletest
+- Git submodules for: Eigen, pugixml, DaQP, spdlog, nanobind, googletest
 - Custom install script for system-level dependencies (Emscripten)
 
 **CMake Structure**:
@@ -250,7 +252,7 @@ Three.js App
 
 ## Performance Considerations
 - Pre-allocate matrices for FK/Jacobian computation
-- Reuse CppAD tape across IK iterations
+- Reuse cached kinematic chain across IK iterations
 - Warm-start IK solver for trajectory generation
 - Use move semantics for large data structures
 - Profile with perf/valgrind before optimization
