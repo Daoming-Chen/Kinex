@@ -41,6 +41,8 @@ class MixedChainGenerator:
         self.joint_limits = []
         self.link_lengths = []
         self.link_rpy = []  # Roll-Pitch-Yaw for link visuals/collisions
+        self.joint_origins_xyz = []
+        self.joint_origins_rpy = []
 
         for i in range(self.dof):
             # Determine joint type
@@ -48,11 +50,56 @@ class MixedChainGenerator:
             joint_type = "prismatic" if is_prismatic else "revolute"
             self.joint_types.append(joint_type)
 
-            # Determine axis
-            # Simple randomization: choose one of principal axes or random vector
-            # Spec suggests: alternating X/Y/Z to ensure spatial complexity
-            axis_choice = self.rng.choice([(1, 0, 0), (0, 1, 0), (0, 0, 1)])
-            self.joint_axes.append(axis_choice)
+            # Determine link length (distance to next joint)
+            length = self.rng.uniform(*self.link_length_range)
+            self.link_lengths.append(length)
+            self.link_rpy.append((0, 0, 0))
+
+            # Determine Origin XYZ
+            if i == 0:
+                xyz = (0, 0, 0.1)
+            else:
+                # Attach to the end of the previous link (along its Z axis)
+                xyz = (0, 0, self.link_lengths[i-1])
+            self.joint_origins_xyz.append(xyz)
+
+            # Determine Origin RPY and Axis
+            # Heuristic for arm-like structure:
+            # - Base rotates around Z
+            # - Shoulder turns 90 deg to be horizontal
+            # - Elbow/Wrist segments might turn or go straight
+            if i == 0:
+                # Base: Vertical
+                rpy = (0, 0, 0)
+                axis = (0, 0, 1)
+            elif i == 1:
+                # Shoulder: Turn 90 degrees to be horizontal (e.g. around Y)
+                rpy = (0, np.pi/2, 0)
+                axis = (0, 1, 0)
+            elif i == 2:
+                # Elbow: Keep going straight relative to previous, axis Y
+                rpy = (0, 0, 0)
+                axis = (0, 1, 0)
+            else:
+                # Subsequent joints: Randomly turn or go straight
+                if self.rng.random() < 0.4:
+                    # Turn 90 degrees
+                    pick = self.rng.choice([
+                        (np.pi/2, 0, 0), (-np.pi/2, 0, 0),
+                        (0, np.pi/2, 0), (0, -np.pi/2, 0)
+                    ])
+                    rpy = pick
+                else:
+                    rpy = (0, 0, 0)
+                
+                # Random axis, but favor Y (pitch) for articulation
+                if self.rng.random() < 0.6:
+                    axis = (0, 1, 0)
+                else:
+                    axis = self.rng.choice([(1, 0, 0), (0, 0, 1)])
+
+            self.joint_origins_rpy.append(rpy)
+            self.joint_axes.append(axis)
 
             # Determine limits
             if is_prismatic:
@@ -64,13 +111,6 @@ class MixedChainGenerator:
                 lower = -np.pi
                 upper = np.pi
             self.joint_limits.append((lower, upper))
-
-            # Determine link length (distance to next joint)
-            length = self.rng.uniform(*self.link_length_range)
-            self.link_lengths.append(length)
-            
-            # Random orientation for visual variety
-            self.link_rpy.append((0, 0, 0))
 
     def to_urdf_string(self) -> str:
         """
@@ -101,16 +141,12 @@ class MixedChainGenerator:
             ET.SubElement(joint, "parent", link=parent_link)
             ET.SubElement(joint, "child", link=child_link_name)
             
-            # Origin: We stack links along Z for simplicity in base pose, 
-            # or we could rotate them. 
-            # To make it a "chain", let's say the joint is at the end of the previous link.
-            # For simplicity, let's assume standard DH-like structure or just translation along Z of previous link.
-            # Here we place joint at (0, 0, prev_length) relative to parent
-            prev_length = 0.0 if i == 0 else self.link_lengths[i-1]
-            # Actually, for the first joint, it can be at 0,0,0 of base. 
-            # But let's give base some height.
-            xyz = f"0 0 {prev_length}" if i > 0 else "0 0 0.1" 
-            ET.SubElement(joint, "origin", xyz=xyz, rpy="0 0 0")
+            # Origin
+            xyz = self.joint_origins_xyz[i]
+            rpy = self.joint_origins_rpy[i]
+            ET.SubElement(joint, "origin", 
+                          xyz=f"{xyz[0]} {xyz[1]} {xyz[2]}", 
+                          rpy=f"{rpy[0]} {rpy[1]} {rpy[2]}")
             
             # Axis
             axis = self.joint_axes[i]
