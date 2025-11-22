@@ -41,10 +41,9 @@ auto status = ik_solver.solve(target_pose, initial_guess, solution);
 
 ### Python Example
 
-**Note**: Python bindings are currently under development. See `bindings/python/README.md` for status updates.
+**Note**: Python bindings are currently under active development. Core functionality is working with ongoing improvements. See `bindings/python/README.md` for latest updates.
 
 ```python
-# Coming soon - API subject to change
 import urdfx
 import numpy as np
 
@@ -202,12 +201,11 @@ For more details, see `openspec/changes/add-windows-build-support/`.
 
 ### Building Python Bindings
 
-**Note**: Python bindings are under development. See `bindings/python/README.md` for updates.
+**Note**: Python bindings are functional but under active development. See `bindings/python/README.md` for latest status.
 
 ```bash
-# Not yet available
-# cd bindings/python
-# pip install .
+cd bindings/python
+pip install .
 ```
 
 ### Building WebAssembly
@@ -277,6 +275,12 @@ cmake --build build --config Release -j
 - `avg_rotation_error_deg`: Average rotation error in degrees for converged solutions
 
 Benchmark results are saved to `benchmarks/results/` for historical comparison and analysis.
+
+### Benchmark Results
+
+![Tier A Benchmark Results](benchmarks/results/tier_a_visualization.png)
+
+*Benchmark results for UR5e robot showing IK solver performance across different scenarios (ColdStart, WarmStart, Trajectory) with position and rotation constraints.*
 
 ## Architecture
 
@@ -413,3 +417,13 @@ For questions, issues, or contributions:
 - Eigen for fast linear algebra
 - DaQP for efficient QP solving
 - The robotics community for URDF standardization
+- The LoIK paper for insights on differential inverse kinematics:
+  ```bibtex
+  @inproceedings{wingoLoIK2024,
+    title = {{Linear-time Differential Inverse Kinematics: an Augmented Lagrangian Perspective}},
+    author = {Wingo, Bruce and Sathya, Ajay and Caron, Stéphane and Hutchinson, Seth and Carpentier, Justin},
+    year = {2024},
+    booktitle={Robotics: Science and Systems},
+    note = {https://inria.hal.science/hal-04607809v1}
+  }
+  ```
