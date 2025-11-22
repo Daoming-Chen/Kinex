@@ -243,10 +243,6 @@ def main():
     parser.add_argument('--output', '-o', type=str, default='benchmarks/results',
                        help='Output directory for results')
     
-    # Visualization
-    parser.add_argument('--visualize', action='store_true',
-                       help='Generate visualization after benchmarking')
-    
     args = parser.parse_args()
     
     # Setup paths
@@ -319,18 +315,6 @@ def main():
     print(f"✓ All benchmarks completed in {total_elapsed:.2f}s")
     print(f"✓ Results saved to: {results_file}")
     print("=" * 70)
-    
-    # Generate visualization if requested
-    if args.visualize:
-        print("\nGenerating visualizations...")
-        try:
-            from visualize import visualize_tier_b_results
-            visualize_tier_b_results(str(results_file), str(output_dir))
-            print(f"✓ Visualizations saved to: {output_dir}")
-        except ImportError:
-            print("Warning: Could not import visualization module")
-        except Exception as e:
-            print(f"Error during visualization: {e}")
 
 
 if __name__ == "__main__":
