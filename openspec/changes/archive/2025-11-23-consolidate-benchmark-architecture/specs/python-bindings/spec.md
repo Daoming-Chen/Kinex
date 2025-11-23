@@ -58,7 +58,7 @@ The Python bindings SHALL include benchmarks that measure the performance overhe
 
 ## REMOVED Requirements
 
-### Requirement: Comprehensive Performance Benchmarking
+### Requirement: Performance Benchmarks
 
 **Reason**: Comprehensive performance benchmarking (Tier A/B, DOF sweeps, trajectory tracking) should be in `benchmarks/`, not in the bindings directory. Binding benchmarks should focus solely on measuring binding layer overhead.
 
