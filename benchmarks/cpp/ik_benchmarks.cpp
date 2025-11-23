@@ -11,6 +11,7 @@
 #include <cmath>
 #include <filesystem>
 #include <numbers>
+#include <random>
 #include <stdexcept>
 #include <vector>
 
@@ -123,41 +124,56 @@ private:
     }
 
     void preparePrimaryTargets(const ForwardKinematics& fk) {
-        const std::vector<std::array<double, 6>> seeds = {
-            {0.0, -1.2, 1.2, -1.5, 0.9, 0.2},
-            {0.3, -0.8, 1.4, -1.0, 0.6, -0.1},
-            {-0.4, -1.5, 1.1, -1.2, 1.0, 0.4},
-            {0.2, -1.0, 1.3, -1.6, 0.8, 0.0},
-            {-0.2, -0.9, 1.0, -1.1, 0.7, -0.3},
-            {0.1, -1.3, 1.5, -1.4, 0.5, 0.6}
-        };
-
-        for (const auto& seed : seeds) {
+        // Sample 1000 random joint configurations within joint limits
+        constexpr size_t num_samples = 1000;
+        constexpr unsigned int seed = 42;
+        std::mt19937 rng(seed);
+        
+        // Create uniform distribution for each joint
+        std::vector<std::uniform_real_distribution<double>> joint_dists;
+        joint_dists.reserve(dof_);
+        for (size_t i = 0; i < dof_; ++i) {
+            joint_dists.emplace_back(
+                lower_limits_[static_cast<Eigen::Index>(i)],
+                upper_limits_[static_cast<Eigen::Index>(i)]
+            );
+        }
+        
+        // Sample random joint configurations and compute FK to get target poses
+        primary_targets_.reserve(num_samples);
+        for (size_t sample = 0; sample < num_samples; ++sample) {
             Eigen::VectorXd q = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(dof_));
-            const size_t copy = std::min(dof_, seed.size());
-            for (size_t i = 0; i < copy; ++i) {
-                q[static_cast<Eigen::Index>(i)] = seed[i];
+            for (size_t joint = 0; joint < dof_; ++joint) {
+                q[static_cast<Eigen::Index>(joint)] = joint_dists[joint](rng);
             }
-            q = clamp(q);
             primary_targets_.push_back({fk.compute(q), q});
         }
     }
 
     void prepareTrajectoryTargets(const ForwardKinematics& fk) {
-        if (primary_targets_.empty()) {
-            return;
+        // Sample random joint configurations for trajectory test
+        constexpr size_t num_trajectory_samples = 100;
+        constexpr unsigned int seed = 43;  // Different seed from primary targets
+        std::mt19937 rng(seed);
+        
+        // Create uniform distribution for each joint
+        std::vector<std::uniform_real_distribution<double>> joint_dists;
+        joint_dists.reserve(dof_);
+        for (size_t i = 0; i < dof_; ++i) {
+            joint_dists.emplace_back(
+                lower_limits_[static_cast<Eigen::Index>(i)],
+                upper_limits_[static_cast<Eigen::Index>(i)]
+            );
         }
-        Eigen::VectorXd base = primary_targets_.front().nominal;
-        const double step = 0.08;
-        const int segments = 24;
-        for (int i = 0; i < segments; ++i) {
-            Eigen::VectorXd sample = base;
+        
+        // Sample random joint configurations and compute FK to get trajectory poses
+        trajectory_poses_.reserve(num_trajectory_samples);
+        for (size_t sample = 0; sample < num_trajectory_samples; ++sample) {
+            Eigen::VectorXd q = Eigen::VectorXd::Zero(static_cast<Eigen::Index>(dof_));
             for (size_t joint = 0; joint < dof_; ++joint) {
-                double phase = static_cast<double>(i) * 0.25 + static_cast<double>(joint) * 0.1;
-                sample[static_cast<Eigen::Index>(joint)] += step * std::sin(phase);
+                q[static_cast<Eigen::Index>(joint)] = joint_dists[joint](rng);
             }
-            sample = clamp(sample);
-            trajectory_poses_.push_back(fk.compute(sample));
+            trajectory_poses_.push_back(fk.compute(q));
         }
     }
 

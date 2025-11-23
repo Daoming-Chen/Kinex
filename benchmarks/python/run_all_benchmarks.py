@@ -124,39 +124,23 @@ def run_visualizations():
     print("GENERATING VISUALIZATIONS")
     print("="*70)
     
-    success = True
-    
     # Add benchmarks root to path for tools import
     benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
     tools_dir = os.path.join(benchmarks_root, "tools")
     
-    # Python benchmarks visualization
-    print("\nGenerating Python benchmark visualizations...")
+    # Unified visualization for all benchmarks (Python + C++)
+    print("\nGenerating unified benchmark visualizations...")
     result = subprocess.run([
         sys.executable, os.path.join(tools_dir, "visualize_benchmarks.py"),
         "--results-dir", results_dir
     ])
     
     if result.returncode == 0:
-        print("✓ Python benchmark visualizations completed")
+        print("✓ Benchmark visualizations completed")
+        return True
     else:
-        print("✗ Python benchmark visualizations failed")
-        success = False
-    
-    # C++ benchmarks visualization
-    print("\nGenerating C++ benchmark visualizations...")
-    result = subprocess.run([
-        sys.executable, os.path.join(tools_dir, "visualize_cpp_benchmarks.py"),
-        "--results-dir", results_dir
-    ])
-    
-    if result.returncode == 0:
-        print("✓ C++ benchmark visualizations completed")
-    else:
-        print("✗ C++ benchmark visualizations failed")
-        success = False
-    
-    return success
+        print("✗ Benchmark visualizations failed")
+        return False
 
 
 def main():
@@ -228,12 +212,11 @@ def main():
     print("="*70)
     print(f"\nResults available in: {results_dir}")
     print("\nGenerated files:")
-    print("  - benchmark_summary.md (Python benchmarks)")
-    print("  - cpp_benchmark_summary.md (C++ benchmarks)")
-    print("  - tier_a_visualization.png/pdf (Python Tier A)")
-    print("  - tier_b_visualization.png/pdf (Python Tier B)")
-    print("  - cpp_ik_benchmarks.png/pdf (C++ IK)")
-    print("  - cpp_jacobian_benchmarks.png/pdf (C++ Jacobian)")
+    print("  - benchmark_summary.md (Unified summary)")
+    print("  - cpp_ik_benchmarks.png/pdf (C++ IK visualizations)")
+    print("  - cpp_jacobian_benchmarks.png/pdf (C++ Jacobian visualizations)")
+    print("  - python_ik_benchmarks.png/pdf (Python IK visualizations)")
+    print("  - *_results.json (Raw benchmark data)")
     print("="*70 + "\n")
     
     return 0 if success else 1

@@ -166,10 +166,57 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
         print(f"    Avg position error: {avg_pos_error:.6f} mm")
         print(f"    Avg rotation error: {avg_rot_error:.6f}")
     
-    # Save results
+    # Save results in Google Benchmark JSON format
+    import socket
+    import platform
+    from datetime import datetime
+    
+    benchmark_results = []
+    
+    # Helper to create benchmark entry
+    def make_benchmark_entry(name, robot_name, case_data, num_samples):
+        return {
+            "name": f"BM_IK_{name}/{robot_name}",
+            "run_name": f"BM_IK_{name}/{robot_name}",
+            "run_type": "iteration",
+            "repetitions": 1,
+            "repetition_index": 0,
+            "threads": 1,
+            "iterations": num_samples,
+            "real_time": case_data["avg_time_us"],
+            "cpu_time": case_data["avg_time_us"],
+            "time_unit": "us",
+            "avg_position_error_mm": case_data["avg_pos_error_mm"],
+            "avg_rotation_error_deg": case_data["avg_rot_error"],
+            "iterations_per_solve": case_data["avg_iterations"],
+            "success_rate": case_data["success_rate"]
+        }
+    
+    benchmark_results.append(make_benchmark_entry("ColdStart_Zero", robot_name, 
+                                                   results["cold_start_zero"], num_samples))
+    benchmark_results.append(make_benchmark_entry("ColdStart_Random", robot_name,
+                                                   results["cold_start_random"], num_samples))
+    benchmark_results.append(make_benchmark_entry("WarmStart", robot_name,
+                                                   results["warm_start"], num_samples))
+    
+    # Create full Google Benchmark JSON structure
+    output_data = {
+        "context": {
+            "date": datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "host_name": socket.gethostname(),
+            "executable": sys.executable,
+            "num_cpus": os.cpu_count() or 1,
+            "library_build_type": "release",
+            "robot_name": robot_name,
+            "dof": dof,
+            "seed": seed
+        },
+        "benchmarks": benchmark_results
+    }
+    
     output_path = os.path.join(output_dir, f"{robot_name}_results.json")
     with open(output_path, 'w') as f:
-        json.dump(results, f, indent=2)
+        json.dump(output_data, f, indent=2)
     print(f"\n  Results saved to {output_path}")
     
     return results

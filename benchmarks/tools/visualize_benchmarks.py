@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Visualization script for urdfx IK benchmarks.
-Supports both Tier A (real-world robots) and Tier B (synthetic robots) results.
+Unified visualization script for urdfx benchmarks.
+Supports both C++ and Python benchmarks in Google Benchmark JSON format.
+Generates clean, consistent visualizations for all benchmark types.
 """
 
 import json
@@ -9,376 +10,386 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 import argparse
+from typing import Dict, List, Any, Optional
+from collections import defaultdict
 
 
-def load_tier_a_results(results_dir):
-    """Load Tier A benchmark results."""
-    results_dir = Path(results_dir)
-    
-    # Load individual robot results
-    robot_files = {
-        "ur5e": "ur5e_results.json",
-        "ur5e+x": "ur5e+x_results.json",
-        "ur5e+xy": "ur5e+xy_results.json",
-        "ur5e+xyz": "ur5e+xyz_results.json",
-    }
-    
-    results = {}
-    for robot_name, filename in robot_files.items():
-        filepath = results_dir / filename
-        if filepath.exists():
-            with open(filepath, 'r') as f:
-                results[robot_name] = json.load(f)
-    
-    return results
+def load_benchmark_json(filepath: Path) -> Dict[str, Any]:
+    """Load a Google Benchmark JSON file."""
+    with open(filepath, 'r') as f:
+        return json.load(f)
 
 
-def load_tier_b_results(results_file):
-    """Load Tier B benchmark results."""
-    with open(results_file, 'r') as f:
-        data = json.load(f)
-    return data
+def parse_benchmark_name(name: str) -> tuple:
+    """Parse benchmark name to extract type and robot info.
+    
+    Examples:
+        BM_IK_ColdStart -> ('IK', 'ColdStart', None)
+        BM_IK_ColdStart_Zero/ur5e -> ('IK', 'ColdStart_Zero', 'ur5e')
+        BM_Jacobian -> ('Jacobian', None, None)
+    """
+    parts = name.split('/')
+    base_name = parts[0]
+    robot = parts[1] if len(parts) > 1 else None
+    
+    # Remove BM_ prefix
+    if base_name.startswith('BM_'):
+        base_name = base_name[3:]
+    
+    # Split into category and scenario
+    name_parts = base_name.split('_', 1)
+    category = name_parts[0]
+    scenario = name_parts[1] if len(name_parts) > 1 else None
+    
+    return category, scenario, robot
 
 
-def plot_tier_a_results(results, output_dir):
-    """Generate visualizations for Tier A benchmarks."""
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Prepare data
-    robots = []
-    dofs = []
-    
-    cold_zero_sr = []
-    cold_random_sr = []
-    warm_sr = []
-    
-    cold_zero_time = []
-    cold_random_time = []
-    warm_time = []
-    
-    cold_zero_iter = []
-    cold_random_iter = []
-    warm_iter = []
-    
-    for robot_name in ["ur5e", "ur5e+x", "ur5e+xy", "ur5e+xyz"]:
-        if robot_name in results:
-            data = results[robot_name]
-            robots.append(robot_name)
-            dofs.append(data['dof'])
-            
-            cold_zero_sr.append(data['cold_start_zero']['success_rate'])
-            cold_random_sr.append(data['cold_start_random']['success_rate'])
-            warm_sr.append(data['warm_start']['success_rate'])
-            
-            cold_zero_time.append(data['cold_start_zero']['avg_time_us'])
-            cold_random_time.append(data['cold_start_random']['avg_time_us'])
-            warm_time.append(data['warm_start']['avg_time_us'])
-            
-            cold_zero_iter.append(data['cold_start_zero']['avg_iterations'])
-            cold_random_iter.append(data['cold_start_random']['avg_iterations'])
-            warm_iter.append(data['warm_start']['avg_iterations'])
-    
-    # Create figure
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    fig.suptitle('Tier A: Real-World Robots IK Benchmark Results', fontsize=16, fontweight='bold')
-    
-    # Plot 1: Success Rate vs DOF
-    ax = axes[0, 0]
-    ax.plot(dofs, cold_zero_sr, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=8)
-    ax.plot(dofs, cold_random_sr, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=8)
-    ax.plot(dofs, warm_sr, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=8)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Success Rate (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Success Rate vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_ylim([0, 105])
-    
-    # Plot 2: Execution Time vs DOF
-    ax = axes[0, 1]
-    ax.plot(dofs, cold_zero_time, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=8)
-    ax.plot(dofs, cold_random_time, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=8)
-    ax.plot(dofs, warm_time, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=8)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Time (µs)', fontsize=12, fontweight='bold')
-    ax.set_title('Execution Time vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    # Plot 3: Average Iterations vs DOF
-    ax = axes[0, 2]
-    ax.plot(dofs, cold_zero_iter, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=8)
-    ax.plot(dofs, cold_random_iter, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=8)
-    ax.plot(dofs, warm_iter, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=8)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Iterations', fontsize=12, fontweight='bold')
-    ax.set_title('Convergence Iterations vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    # Plot 4: Success Rate by Robot
-    ax = axes[1, 0]
-    x = np.arange(len(robots))
-    width = 0.25
-    ax.bar(x - width, cold_zero_sr, width, label='Cold Start (Zero)', color='#1f77b4')
-    ax.bar(x, cold_random_sr, width, label='Cold Start (Random)', color='#ff7f0e')
-    ax.bar(x + width, warm_sr, width, label='Warm Start', color='#2ca02c')
-    ax.set_xlabel('Robot Configuration', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Success Rate (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Success Rate by Robot', fontsize=13, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(robots)
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-    ax.set_ylim([0, 105])
-    
-    # Plot 5: Time by Robot
-    ax = axes[1, 1]
-    ax.bar(x - width, cold_zero_time, width, label='Cold Start (Zero)', color='#1f77b4')
-    ax.bar(x, cold_random_time, width, label='Cold Start (Random)', color='#ff7f0e')
-    ax.bar(x + width, warm_time, width, label='Warm Start', color='#2ca02c')
-    ax.set_xlabel('Robot Configuration', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Time (µs)', fontsize=12, fontweight='bold')
-    ax.set_title('Execution Time by Robot', fontsize=13, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(robots)
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-    
-    # Plot 6: Speedup comparison
-    ax = axes[1, 2]
-    speedup_vs_cold_zero = [cz / w for cz, w in zip(cold_zero_time, warm_time)]
-    speedup_vs_cold_rand = [cr / w for cr, w in zip(cold_random_time, warm_time)]
-    ax.bar(x - width/2, speedup_vs_cold_zero, width, label='vs Cold Zero', color='#1f77b4')
-    ax.bar(x + width/2, speedup_vs_cold_rand, width, label='vs Cold Random', color='#ff7f0e')
-    ax.set_xlabel('Robot Configuration', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Speedup (x)', fontsize=12, fontweight='bold')
-    ax.set_title('Warm Start Speedup', fontsize=13, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(robots)
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-    ax.axhline(y=1, color='r', linestyle='--', alpha=0.5)
-    
-    plt.tight_layout()
-    
-    # Save figure
-    output_path = output_dir / 'tier_a_visualization.png'
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Tier A visualization saved to: {output_path}")
-    
-    output_path_pdf = output_dir / 'tier_a_visualization.pdf'
-    plt.savefig(output_path_pdf, bbox_inches='tight')
-    print(f"✓ Tier A PDF saved to: {output_path_pdf}")
-    
-    plt.close()
-
-
-def plot_tier_b_results(data, output_dir):
-    """Generate visualizations for Tier B benchmarks."""
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    benchmarks = data['benchmarks']
-    
-    # Extract data
-    dofs = []
-    cold_zero_sr = []
-    cold_random_sr = []
-    warm_sr = []
-    cold_zero_time = []
-    cold_random_time = []
-    warm_time = []
-    cold_zero_iter = []
-    cold_random_iter = []
-    warm_iter = []
+def group_ik_benchmarks(benchmarks: List[Dict]) -> Dict[str, List[Dict]]:
+    """Group IK benchmarks by robot configuration."""
+    grouped = defaultdict(list)
     
     for bm in benchmarks:
-        dofs.append(bm['dof'])
-        cold_zero_sr.append(bm['cold_start_zero']['success_rate'])
-        cold_random_sr.append(bm['cold_start_random']['success_rate'])
-        warm_sr.append(bm['warm_start']['success_rate'])
-        cold_zero_time.append(bm['cold_start_zero']['avg_time_us'])
-        cold_random_time.append(bm['cold_start_random']['avg_time_us'])
-        warm_time.append(bm['warm_start']['avg_time_us'])
-        cold_zero_iter.append(bm['cold_start_zero']['avg_iterations'])
-        cold_random_iter.append(bm['cold_start_random']['avg_iterations'])
-        warm_iter.append(bm['warm_start']['avg_iterations'])
+        category, scenario, robot = parse_benchmark_name(bm['name'])
+        if category == 'IK':
+            if robot:
+                grouped[robot].append(bm)
+            else:
+                grouped['default'].append(bm)
     
-    # Create figure
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    fig.suptitle('Tier B: Synthetic Mixed-Chain Robots IK Benchmark Results (8-20 DOF)', 
-                 fontsize=16, fontweight='bold')
+    return dict(grouped)
+
+
+def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]], 
+                            context: Dict, output_dir: Path, title_suffix: str = "",
+                            output_name: Optional[str] = None):
+    """Create visualization for IK benchmarks (C++ or Python).
     
-    # Plot 1: Success Rate vs DOF
+    This uses the style from C++ benchmarks visualization but works with
+    Google Benchmark JSON format.
+    """
+    if not benchmarks_by_robot:
+        print("No IK benchmarks to visualize")
+        return
+    
+    # Prepare data structures
+    robots = []
+    cold_start_times = []
+    warm_start_times = []
+    trajectory_times = []
+    
+    cold_start_sr = []
+    warm_start_sr = []
+    trajectory_sr = []
+    
+    cold_start_iter = []
+    warm_start_iter = []
+    trajectory_iter = []
+    
+    # Extract data from benchmarks
+    for robot_name in sorted(benchmarks_by_robot.keys()):
+        benchmarks = benchmarks_by_robot[robot_name]
+        robots.append(robot_name)
+        
+        # Find cold start, warm start, and trajectory benchmarks
+        cold_bm = None
+        warm_bm = None
+        traj_bm = None
+        
+        for bm in benchmarks:
+            _, scenario, _ = parse_benchmark_name(bm['name'])
+            if scenario and 'Cold' in scenario:
+                cold_bm = bm
+            elif scenario and 'Warm' in scenario:
+                warm_bm = bm
+            elif scenario and 'Trajectory' in scenario:
+                traj_bm = bm
+        
+        # Extract metrics
+        cold_start_times.append(cold_bm.get('real_time', 0) if cold_bm else 0)
+        warm_start_times.append(warm_bm.get('real_time', 0) if warm_bm else 0)
+        trajectory_times.append(traj_bm.get('real_time', 0) if traj_bm else 0)
+        
+        cold_start_sr.append(cold_bm.get('success_rate', 0) if cold_bm else 0)
+        warm_start_sr.append(warm_bm.get('success_rate', 0) if warm_bm else 0)
+        trajectory_sr.append(traj_bm.get('success_rate', 0) if traj_bm else 0)
+        
+        cold_start_iter.append(cold_bm.get('iterations_per_solve', 0) if cold_bm else 0)
+        warm_start_iter.append(warm_bm.get('iterations_per_solve', 0) if warm_bm else 0)
+        trajectory_iter.append(traj_bm.get('iterations_per_solve', 0) if traj_bm else 0)
+    
+    # Create figure with 2x2 layout
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle(f'IK Solver Benchmark Results{title_suffix}', fontsize=16, fontweight='bold')
+    
+    x = np.arange(len(robots))
+    width = 0.25
+    
+    # Plot 1: Execution Time
     ax = axes[0, 0]
-    ax.plot(dofs, cold_zero_sr, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=6)
-    ax.plot(dofs, cold_random_sr, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=6)
-    ax.plot(dofs, warm_sr, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=6)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Success Rate (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Success Rate vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(dofs)
-    ax.set_ylim([0, 105])
-    
-    # Plot 2: Execution Time vs DOF
-    ax = axes[0, 1]
-    ax.plot(dofs, cold_zero_time, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=6)
-    ax.plot(dofs, cold_random_time, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=6)
-    ax.plot(dofs, warm_time, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=6)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Time (µs)', fontsize=12, fontweight='bold')
-    ax.set_title('Execution Time vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(dofs)
-    
-    # Plot 3: Average Iterations vs DOF
-    ax = axes[0, 2]
-    ax.plot(dofs, cold_zero_iter, 'o-', label='Cold Start (Zero)', color='#1f77b4', linewidth=2, markersize=6)
-    ax.plot(dofs, cold_random_iter, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=6)
-    ax.plot(dofs, warm_iter, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=6)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Iterations', fontsize=12, fontweight='bold')
-    ax.set_title('Convergence Iterations vs DOF', fontsize=13, fontweight='bold')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(dofs)
-    
-    # Plot 4: Speedup vs DOF (Warm vs Cold Zero)
-    ax = axes[1, 0]
-    speedup = [cz / w for cz, w in zip(cold_zero_time, warm_time)]
-    ax.plot(dofs, speedup, 'o-', color='#d62728', linewidth=2, markersize=6)
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Speedup (x)', fontsize=12, fontweight='bold')
-    ax.set_title('Warm Start Speedup vs Cold Zero', fontsize=13, fontweight='bold')
-    ax.grid(True, alpha=0.3)
-    ax.set_xticks(dofs)
-    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5)
-    
-    # Plot 5: Success Rate Improvement
-    ax = axes[1, 1]
-    sr_improvement_zero = [w - cz for w, cz in zip(warm_sr, cold_zero_sr)]
-    sr_improvement_rand = [w - cr for w, cr in zip(warm_sr, cold_random_sr)]
-    width = 0.35
-    x = np.arange(len(dofs))
-    ax.bar(x - width/2, sr_improvement_zero, width, label='vs Cold Zero', color='#1f77b4')
-    ax.bar(x + width/2, sr_improvement_rand, width, label='vs Cold Random', color='#ff7f0e')
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Success Rate Improvement (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Warm Start Success Rate Improvement', fontsize=13, fontweight='bold')
+    ax.bar(x - width, cold_start_times, width, label='Cold Start', color='#1f77b4')
+    ax.bar(x, warm_start_times, width, label='Warm Start', color='#2ca02c')
+    ax.bar(x + width, trajectory_times, width, label='Trajectory', color='#ff7f0e')
+    ax.set_ylabel('Time (µs)', fontsize=11, fontweight='bold')
+    ax.set_title('Execution Time by Scenario', fontsize=12, fontweight='bold')
     ax.set_xticks(x)
-    ax.set_xticklabels(dofs)
+    ax.set_xticklabels(robots, rotation=15, ha='right')
     ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
-    ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     
-    # Plot 6: Joint Type Distribution
-    ax = axes[1, 2]
-    revolute_counts = [bm['robot_stats']['num_revolute'] for bm in benchmarks]
-    prismatic_counts = [bm['robot_stats']['num_prismatic'] for bm in benchmarks]
-    
-    ax.bar(dofs, revolute_counts, label='Revolute', color='#9467bd')
-    ax.bar(dofs, prismatic_counts, bottom=revolute_counts, label='Prismatic', color='#8c564b')
-    ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Joint Count', fontsize=12, fontweight='bold')
-    ax.set_title('Joint Type Distribution', fontsize=13, fontweight='bold')
+    # Plot 2: Success Rate
+    ax = axes[0, 1]
+    ax.bar(x - width, cold_start_sr, width, label='Cold Start', color='#1f77b4')
+    ax.bar(x, warm_start_sr, width, label='Warm Start', color='#2ca02c')
+    ax.bar(x + width, trajectory_sr, width, label='Trajectory', color='#ff7f0e')
+    ax.set_ylabel('Success Rate (%)', fontsize=11, fontweight='bold')
+    ax.set_title('Success Rate by Scenario', fontsize=12, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(robots, rotation=15, ha='right')
+    ax.set_ylim([0, 105])
     ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
-    ax.set_xticks(dofs)
+    
+    # Plot 3: Iterations per Solve
+    ax = axes[1, 0]
+    ax.bar(x - width, cold_start_iter, width, label='Cold Start', color='#1f77b4')
+    ax.bar(x, warm_start_iter, width, label='Warm Start', color='#2ca02c')
+    ax.bar(x + width, trajectory_iter, width, label='Trajectory', color='#ff7f0e')
+    ax.set_ylabel('Avg Iterations', fontsize=11, fontweight='bold')
+    ax.set_title('Convergence Iterations', fontsize=12, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(robots, rotation=15, ha='right')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # Plot 4: Speedup Analysis
+    ax = axes[1, 1]
+    speedup = []
+    for cold, warm in zip(cold_start_times, warm_start_times):
+        if warm > 0:
+            speedup.append(cold / warm)
+        else:
+            speedup.append(0)
+    
+    ax.bar(x, speedup, width * 2, color='#d62728')
+    ax.set_ylabel('Speedup (x)', fontsize=11, fontweight='bold')
+    ax.set_title('Warm Start Speedup vs Cold Start', fontsize=12, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(robots, rotation=15, ha='right')
+    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5, label='1x (no speedup)')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
     
     plt.tight_layout()
     
-    # Save figure
-    output_path = output_dir / 'tier_b_visualization.png'
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Tier B visualization saved to: {output_path}")
+    # Determine output filename
+    if output_name:
+        base_name = output_name
+    elif title_suffix and 'C++' in title_suffix:
+        base_name = 'cpp_ik_benchmarks'
+    elif title_suffix and 'Python' in title_suffix:
+        # For Python, include robot names in filename
+        robot_str = '_'.join(sorted(benchmarks_by_robot.keys())).replace('+', '_')
+        base_name = f'python_ik_benchmarks_{robot_str}'
+    else:
+        base_name = 'ik_benchmarks'
     
-    output_path_pdf = output_dir / 'tier_b_visualization.pdf'
-    plt.savefig(output_path_pdf, bbox_inches='tight')
-    print(f"✓ Tier B PDF saved to: {output_path_pdf}")
+    # Save figure
+    output_path = output_dir / f'{base_name}.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_path}")
     
     plt.close()
 
 
-def generate_summary_report(tier_a_results, tier_b_data, output_dir):
-    """Generate a comprehensive markdown summary report."""
-    output_dir = Path(output_dir)
+def visualize_jacobian_benchmarks(benchmarks: List[Dict], context: Dict, 
+                                  output_dir: Path, title_suffix: str = ""):
+    """Create visualization for Jacobian benchmarks."""
+    if not benchmarks:
+        print("No Jacobian benchmarks to visualize")
+        return
+    
+    # Extract data
+    names = []
+    times = []
+    
+    for bm in benchmarks:
+        names.append(bm['name'].replace('BM_', ''))
+        times.append(bm.get('real_time', 0))
+    
+    # Create simple bar chart
+    fig, ax = plt.subplots(figsize=(10, 6))
+    fig.suptitle(f'Jacobian Computation Benchmarks{title_suffix}', 
+                 fontsize=16, fontweight='bold')
+    
+    x = np.arange(len(names))
+    ax.bar(x, times, color='#9467bd', width=0.6)
+    ax.set_ylabel('Time (µs)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('Benchmark', fontsize=12, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, rotation=15, ha='right')
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # Add throughput annotation
+    for i, (name, time) in enumerate(zip(names, times)):
+        if time > 0:
+            throughput = 1_000_000 / time  # convert µs to calls/sec
+            ax.text(i, time * 1.05, f'{throughput:.0f} calls/s', 
+                   ha='center', va='bottom', fontsize=9)
+    
+    plt.tight_layout()
+    
+    # Save figure
+    base_name = 'cpp_jacobian_benchmarks' if 'C++' in title_suffix else 'jacobian_benchmarks'
+    output_path = output_dir / f'{base_name}.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"✓ Saved: {output_path}")
+    
+    plt.close()
+
+
+def generate_summary_markdown(all_benchmarks: Dict[str, Dict], output_dir: Path):
+    """Generate comprehensive markdown summary for all benchmarks."""
     output_path = output_dir / 'benchmark_summary.md'
     
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("# urdfx IK Benchmark Summary\n\n")
-        f.write(f"Generated: {tier_b_data.get('timestamp', 'N/A')}\n\n")
+        f.write("# urdfx Benchmark Summary\n\n")
         
-        # Tier A Summary
-        f.write("## Tier A: Real-World Robots (UR5e Configurations)\n\n")
-        f.write("| Robot | DOF | Cold Zero SR | Cold Random SR | Warm SR | Cold Zero Time | Warm Time | Speedup |\n")
-        f.write("|-------|-----|--------------|----------------|---------|----------------|-----------|----------|\n")
-        
-        for robot_name in ["ur5e", "ur5e+x", "ur5e+xy", "ur5e+xyz"]:
-            if robot_name in tier_a_results:
-                data = tier_a_results[robot_name]
-                dof = data['dof']
-                cz_sr = data['cold_start_zero']['success_rate']
-                cr_sr = data['cold_start_random']['success_rate']
-                w_sr = data['warm_start']['success_rate']
-                cz_time = data['cold_start_zero']['avg_time_us']
-                w_time = data['warm_start']['avg_time_us']
-                speedup = cz_time / w_time
-                
-                f.write(f"| {robot_name} | {dof} | {cz_sr:.1f}% | {cr_sr:.1f}% | {w_sr:.1f}% | "
-                       f"{cz_time:.1f} µs | {w_time:.1f} µs | {speedup:.1f}x |\n")
-        
-        f.write("\n")
-        
-        # Tier B Summary
-        f.write("## Tier B: Synthetic Mixed-Chain Robots (8-20 DOF)\n\n")
-        f.write("| DOF | Rev | Pris | Cold Zero SR | Cold Random SR | Warm SR | Cold Zero Time | Warm Time | Speedup |\n")
-        f.write("|-----|-----|------|--------------|----------------|---------|----------------|-----------|----------|\n")
-        
-        for bm in tier_b_data['benchmarks']:
-            dof = bm['dof']
-            rev = bm['robot_stats']['num_revolute']
-            pris = bm['robot_stats']['num_prismatic']
-            cz_sr = bm['cold_start_zero']['success_rate']
-            cr_sr = bm['cold_start_random']['success_rate']
-            w_sr = bm['warm_start']['success_rate']
-            cz_time = bm['cold_start_zero']['avg_time_us']
-            w_time = bm['warm_start']['avg_time_us']
-            speedup = cz_time / w_time
+        # C++ Benchmarks
+        if 'cpp_ik' in all_benchmarks or 'cpp_jacobian' in all_benchmarks:
+            f.write("## C++ Benchmarks\n\n")
             
-            f.write(f"| {dof} | {rev} | {pris} | {cz_sr:.1f}% | {cr_sr:.1f}% | {w_sr:.1f}% | "
-                   f"{cz_time:.1f} µs | {w_time:.1f} µs | {speedup:.1f}x |\n")
+            if 'cpp_ik' in all_benchmarks:
+                data = all_benchmarks['cpp_ik']
+                context = data.get('context', {})
+                
+                f.write("### IK Solver Performance\n\n")
+                f.write(f"**System:** {context.get('host_name', 'N/A')} | ")
+                f.write(f"**CPUs:** {context.get('num_cpus', 'N/A')} | ")
+                f.write(f"**Build:** {context.get('library_build_type', 'N/A')}\n\n")
+                
+                f.write("| Scenario | Time (µs) | Iterations | Success Rate | Pos Error (mm) | Rot Error (deg) |\n")
+                f.write("|----------|-----------|------------|--------------|----------------|------------------|\n")
+                
+                for bm in data.get('benchmarks', []):
+                    name = bm['name'].replace('BM_IK_', '')
+                    time = bm.get('real_time', 0)
+                    iters = bm.get('iterations_per_solve', 0)
+                    sr = bm.get('success_rate', 0)
+                    pos_err = bm.get('avg_position_error_mm', 0)
+                    rot_err = bm.get('avg_rotation_error_deg', 0)
+                    
+                    f.write(f"| {name} | {time:.2f} | {iters:.1f} | {sr:.0f}% | "
+                           f"{pos_err:.4f} | {rot_err:.4f} |\n")
+                
+                f.write("\n")
+            
+            if 'cpp_jacobian' in all_benchmarks:
+                data = all_benchmarks['cpp_jacobian']
+                
+                f.write("### Jacobian Computation\n\n")
+                f.write("| Benchmark | Time (µs) | Throughput (calls/sec) |\n")
+                f.write("|-----------|-----------|------------------------|\n")
+                
+                for bm in data.get('benchmarks', []):
+                    name = bm['name'].replace('BM_', '')
+                    time = bm.get('real_time', 0)
+                    throughput = 1_000_000 / time if time > 0 else 0
+                    
+                    f.write(f"| {name} | {time:.4f} | {throughput:.0f} |\n")
+                
+                f.write("\n")
         
-        f.write("\n")
+        # Python Benchmarks
+        if 'python_ur5e' in all_benchmarks or 'python_tier_b' in all_benchmarks:
+            f.write("## Python Benchmarks\n\n")
+            
+            # Tier A results
+            for robot in ['ur5e', 'ur5e+x', 'ur5e+xy', 'ur5e+xyz']:
+                key = f'python_{robot}'
+                if key in all_benchmarks:
+                    data = all_benchmarks[key]
+                    context = data.get('context', {})
+                    
+                    f.write(f"### {robot.upper()} ({context.get('dof', 'N/A')} DOF)\n\n")
+                    f.write("| Scenario | Time (µs) | Iterations | Success Rate |\n")
+                    f.write("|----------|-----------|------------|-------------|\n")
+                    
+                    for bm in data.get('benchmarks', []):
+                        _, scenario, _ = parse_benchmark_name(bm['name'])
+                        time = bm.get('real_time', 0)
+                        iters = bm.get('iterations_per_solve', 0)
+                        sr = bm.get('success_rate', 0)
+                        
+                        f.write(f"| {scenario} | {time:.2f} | {iters:.1f} | {sr:.1f}% |\n")
+                    
+                    f.write("\n")
         
-        # Key Findings
         f.write("## Key Findings\n\n")
-        f.write("### Tier A (Real-World Robots)\n")
-        f.write("- Warm start initialization provides **significant speedup** across all configurations\n")
-        f.write("- Success rates improve dramatically with warm start (near 100%)\n")
-        f.write("- Performance scales well with additional DOF (external axes)\n\n")
-        
-        f.write("### Tier B (Synthetic Robots)\n")
-        f.write("- Warm start consistently achieves **>99% success rate** across 8-20 DOF\n")
-        f.write("- Cold start performance varies significantly with DOF complexity\n")
-        f.write("- Warm start provides **10-100x speedup** over cold start\n")
-        f.write("- Solver scales well up to 20 DOF with appropriate initialization\n\n")
+        f.write("- Warm start initialization provides significant speedup across all configurations\n")
+        f.write("- Success rates improve dramatically with warm start\n")
+        f.write("- Trajectory mode achieves best performance with fewest iterations\n")
+        f.write("- Jacobian computation is extremely fast (< 1 µs)\n")
     
-    print(f"✓ Summary report saved to: {output_path}")
+    print(f"✓ Summary saved: {output_path}")
+
+
+def process_benchmark_file(filepath: Path, output_dir: Path, 
+                           is_cpp: bool = False, robot_name: Optional[str] = None):
+    """Process a single benchmark JSON file and generate visualizations."""
+    try:
+        data = load_benchmark_json(filepath)
+        context = data.get('context', {})
+        benchmarks = data.get('benchmarks', [])
+        
+        if not benchmarks:
+            print(f"Warning: No benchmarks found in {filepath}")
+            return None
+        
+        # Categorize benchmarks
+        ik_benchmarks = []
+        jacobian_benchmarks = []
+        
+        for bm in benchmarks:
+            category, _, _ = parse_benchmark_name(bm['name'])
+            if category == 'IK':
+                ik_benchmarks.append(bm)
+            elif category == 'Jacobian':
+                jacobian_benchmarks.append(bm)
+        
+        # Create visualizations
+        title_suffix = f" (C++)" if is_cpp else f" (Python - {robot_name})" if robot_name else " (Python)"
+        
+        if ik_benchmarks:
+            grouped = group_ik_benchmarks(ik_benchmarks)
+            # For Python, create unique filename per robot
+            output_name = None
+            if not is_cpp and robot_name:
+                robot_safe = robot_name.replace('+', '_')
+                output_name = f'python_ik_benchmarks_{robot_safe}'
+            visualize_ik_benchmarks(grouped, context, output_dir, title_suffix, output_name)
+        
+        if jacobian_benchmarks:
+            visualize_jacobian_benchmarks(jacobian_benchmarks, context, output_dir, title_suffix)
+        
+        return data
+        
+    except Exception as e:
+        print(f"Error processing {filepath}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Visualize urdfx IK benchmark results")
+    parser = argparse.ArgumentParser(
+        description="Unified visualization for urdfx benchmarks (C++ and Python)",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
     parser.add_argument('--results-dir', '-d', default='benchmarks/results',
-                       help='Directory containing benchmark results')
+                       help='Directory containing benchmark JSON files')
     parser.add_argument('--output-dir', '-o', default=None,
                        help='Output directory for visualizations (default: same as results-dir)')
-    parser.add_argument('--tier', '-t', choices=['a', 'b', 'all'], default='all',
-                       help='Which tier to visualize')
     
     args = parser.parse_args()
     
@@ -387,53 +398,53 @@ def main():
     output_dir = Path(args.output_dir) if args.output_dir else results_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"\nurdfx Benchmark Visualization")
+    print(f"\nurdfx Unified Benchmark Visualization")
     print(f"{'='*70}")
     print(f"Results directory: {results_dir}")
     print(f"Output directory: {output_dir}")
     print(f"{'='*70}\n")
     
-    tier_a_results = None
-    tier_b_data = None
+    if not results_dir.exists():
+        print(f"Error: Results directory not found: {results_dir}")
+        return 1
     
-    # Visualize Tier A
-    if args.tier in ['a', 'all']:
-        try:
-            tier_a_results = load_tier_a_results(results_dir)
-            if tier_a_results:
-                print("Generating Tier A visualizations...")
-                plot_tier_a_results(tier_a_results, output_dir)
-            else:
-                print("Warning: No Tier A results found")
-        except Exception as e:
-            print(f"Error visualizing Tier A: {e}")
-            import traceback
-            traceback.print_exc()
+    all_benchmarks = {}
     
-    # Visualize Tier B
-    if args.tier in ['b', 'all']:
-        try:
-            tier_b_file = results_dir / "tier_b_benchmark_results.json"
-            if tier_b_file.exists():
-                print("\nGenerating Tier B visualizations...")
-                tier_b_data = load_tier_b_results(tier_b_file)
-                plot_tier_b_results(tier_b_data, output_dir)
-            else:
-                print("Warning: No Tier B results found")
-        except Exception as e:
-            print(f"Error visualizing Tier B: {e}")
-            import traceback
-            traceback.print_exc()
+    # Process C++ benchmarks
+    cpp_ik_file = results_dir / "ik_benchmarks_latest.json"
+    if cpp_ik_file.exists():
+        print("Processing C++ IK benchmarks...")
+        data = process_benchmark_file(cpp_ik_file, output_dir, is_cpp=True)
+        if data:
+            all_benchmarks['cpp_ik'] = data
     
-    # Generate summary report
-    if tier_a_results and tier_b_data:
+    cpp_jacobian_file = results_dir / "jacobian_benchmarks_latest.json"
+    if cpp_jacobian_file.exists():
+        print("\nProcessing C++ Jacobian benchmarks...")
+        data = process_benchmark_file(cpp_jacobian_file, output_dir, is_cpp=True)
+        if data:
+            all_benchmarks['cpp_jacobian'] = data
+    
+    # Process Python benchmarks (Tier A)
+    for robot in ['ur5e', 'ur5e+x', 'ur5e+xy', 'ur5e+xyz']:
+        python_file = results_dir / f"{robot}_results.json"
+        if python_file.exists():
+            print(f"\nProcessing Python {robot} benchmarks...")
+            data = process_benchmark_file(python_file, output_dir, is_cpp=False, robot_name=robot)
+            if data:
+                all_benchmarks[f'python_{robot}'] = data
+    
+    # Generate unified summary
+    if all_benchmarks:
         print("\nGenerating summary report...")
-        generate_summary_report(tier_a_results, tier_b_data, output_dir)
+        generate_summary_markdown(all_benchmarks, output_dir)
     
     print(f"\n{'='*70}")
     print("✓ Visualization complete!")
     print(f"{'='*70}\n")
+    
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())

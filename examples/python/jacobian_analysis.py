@@ -6,18 +6,18 @@ import sys
 def main():
     # Path to URDF
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    urdf_path = os.path.join(script_dir, "../models/ur5/ur5.urdf")
+    urdf_path = os.path.join(script_dir, "../models/ur5/ur5e.urdf")
     
     if not os.path.exists(urdf_path):
-        urdf_path = "examples/models/ur5/ur5.urdf"
+        urdf_path = "examples/models/ur5/ur5e.urdf"
         
     if not os.path.exists(urdf_path):
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
     robot = urdfx.Robot.from_urdf_file(urdf_path)
-    jac_calc = urdfx.JacobianCalculator(robot, "tool0")
-    fk = urdfx.ForwardKinematics(robot, "tool0")
+    jac_calc = urdfx.JacobianCalculator(robot, "wrist_3_link")
+    fk = urdfx.ForwardKinematics(robot, "wrist_3_link")
     
     # Analyze a trajectory
     steps = 20
