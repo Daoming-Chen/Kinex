@@ -1,38 +1,37 @@
 {
   "context": {
-    "date": "2025-11-22T14:12:53+08:00",
-    "host_name": "Asus4090",
-    "executable": "/home/tim/Dev/urdfx/build/benchmarks/jacobian_benchmarks",
-    "num_cpus": 24,
-    "mhz_per_cpu": 3187,
-    "cpu_scaling_enabled": false,
+    "date": "2025-11-23T23:44:01+08:00",
+    "host_name": "ZENBOOK",
+    "executable": "C:\\Users\\Chend\\Documents\\0Code\\CppCode\\urdfx\\build/benchmarks/cpp\\Release\\jacobian_benchmarks.exe",
+    "num_cpus": 16,
+    "mhz_per_cpu": 3686,
     "caches": [
       {
         "type": "Data",
         "level": 1,
         "size": 49152,
-        "num_sharing": 2
+        "num_sharing": 1
       },
       {
         "type": "Instruction",
         "level": 1,
-        "size": 32768,
-        "num_sharing": 2
+        "size": 65536,
+        "num_sharing": 1
       },
       {
         "type": "Unified",
         "level": 2,
-        "size": 1310720,
-        "num_sharing": 2
+        "size": 3145728,
+        "num_sharing": 1
       },
       {
         "type": "Unified",
         "level": 3,
-        "size": 31457280,
-        "num_sharing": 24
+        "size": 25165824,
+        "num_sharing": 14
       }
     ],
-    "load_avg": [0.364746,0.182129,0.118164],
+    "load_avg": [],
     "library_build_type": "release"
   },
   "benchmarks": [
@@ -45,9 +44,9 @@
       "repetitions": 1,
       "repetition_index": 0,
       "threads": 1,
-      "iterations": 2947555,
-      "real_time": 2.3699746094639021e-01,
-      "cpu_time": 2.3699822598730139e-01,
+      "iterations": 2133333,
+      "real_time": 3.4803085123825889e-01,
+      "cpu_time": 3.5156255493164923e-01,
       "time_unit": "us"
     }
   ]

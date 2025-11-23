@@ -1,24 +1,24 @@
-# C++ Benchmark Summary
+# urdfx C++ Benchmark Summary
 
 **System Information:**
-- Host: Asus4090
-- CPUs: 24
-- CPU MHz: 3187
+- Host: ZENBOOK
+- CPUs: 16
+- CPU MHz: 3686
 - Build Type: release
 
 ## IK Solver Benchmarks (UR5e Robot)
 
 | Scenario | Time (µs) | Iterations | Success Rate | Pos Error (mm) | Rot Error (deg) |
 |----------|-----------|------------|--------------|----------------|------------------|
-| ColdStart | 73.57 | 9.5 | 100% | 0.0227 | 0.0021 |
-| WarmStart | 36.30 | 5.0 | 100% | 0.1139 | 0.0017 |
-| Trajectory | 59.15 | 2.4 | 100% | 0.0860 | 0.0051 |
+| ColdStart | 187.03 | 11.0 | 100% | 0.2154 | 0.0021 |
+| WarmStart | 127.05 | 7.0 | 100% | 0.2716 | 0.0019 |
+| Trajectory | 148.43 | 2.7 | 100% | 0.1840 | 0.0031 |
 
 ## Jacobian Computation Benchmarks
 
 | Benchmark | Time (µs) | Throughput (calls/sec) |
 |-----------|-----------|------------------------|
-| BM_Jacobian | 0.2370 | 4219454 |
+| BM_Jacobian | 0.3480 | 2873308 |
 
 ## Key Findings
 

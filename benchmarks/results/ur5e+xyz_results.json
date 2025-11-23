@@ -8,29 +8,29 @@
     "successes": 999,
     "failures": 1,
     "success_rate": 99.9,
-    "avg_time_us": 18.002055012402707,
+    "avg_time_us": 33.64359983243048,
     "avg_iterations": 9.088088088088089,
-    "avg_pos_error_mm": 0.006574933011023479,
-    "avg_rot_error": 1.370560007794076e-05
+    "avg_pos_error_mm": 0.0065749330115105805,
+    "avg_rot_error": 1.3705600075454969e-05
   },
   "cold_start_random": {
     "cases": 1000,
     "successes": 970,
     "failures": 30,
     "success_rate": 97.0,
-    "avg_time_us": 26.021754006251285,
+    "avg_time_us": 65.98689989186823,
     "avg_iterations": 9.249484536082473,
-    "avg_pos_error_mm": 0.006243582373194253,
-    "avg_rot_error": 1.832604541308033e-05
+    "avg_pos_error_mm": 0.006243582374652525,
+    "avg_rot_error": 1.832604541207127e-05
   },
   "warm_start": {
     "cases": 1000,
     "successes": 1000,
     "failures": 0,
     "success_rate": 100.0,
-    "avg_time_us": 6.047829999261012,
-    "avg_iterations": 3.102,
-    "avg_pos_error_mm": 0.004868648144458331,
-    "avg_rot_error": 1.6264483174115296e-05
+    "avg_time_us": 10.315400606486946,
+    "avg_iterations": 3.124,
+    "avg_pos_error_mm": 0.004838286045062227,
+    "avg_rot_error": 1.6414886283218008e-05
   }
 }

@@ -186,8 +186,8 @@ def generate_cpp_summary(ik_data, jacobian_data, output_dir):
     output_dir = Path(output_dir)
     output_path = output_dir / 'cpp_benchmark_summary.md'
     
-    with open(output_path, 'w') as f:
-        f.write("# C++ Benchmark Summary\n\n")
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write("# urdfx C++ Benchmark Summary\n\n")
         
         # System info
         if 'context' in ik_data:

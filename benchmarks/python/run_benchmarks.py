@@ -173,13 +173,19 @@ def main():
         'sample_seed': args.sample_seed,
     }
     
+    # Set default output directory if not provided
+    if not args_dict['output']:
+        args_dict['output'] = os.path.join(
+            os.path.abspath(os.path.join(current_dir, "../..")),
+            "benchmarks/results"
+        )
+    
     # Print header
     print("\n" + "="*70)
     print("urdfx Unified Benchmark Runner")
     print("="*70)
     print(f"Running: {'Tier A' if run_a else ''} {'+ Tier B' if run_a and run_b else 'Tier B' if run_b else ''}")
-    if args.output:
-        print(f"Output directory: {args.output}")
+    print(f"Output directory: {args_dict['output']}")
     print("="*70)
     
     # Run benchmarks
@@ -211,13 +217,12 @@ def main():
         print("GENERATING VISUALIZATIONS")
         print("="*70)
         
-        output_dir = args_dict.get('output') or os.path.join(
-            os.path.abspath(os.path.join(current_dir, "../../..")),
-            "benchmarks/results"
-        )
+        # Tools directory is in ../tools relative to this script
+        tools_dir = os.path.abspath(os.path.join(current_dir, "../tools"))
+        viz_script = os.path.join(tools_dir, "visualize_benchmarks.py")
         
-        viz_cmd = [sys.executable, "visualize_benchmarks.py", 
-                  "--results-dir", output_dir]
+        viz_cmd = [sys.executable, viz_script, 
+                  "--results-dir", args_dict['output']]
         viz_result = subprocess.run(viz_cmd, cwd=current_dir)
         
         if viz_result.returncode == 0:

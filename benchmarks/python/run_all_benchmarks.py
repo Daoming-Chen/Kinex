@@ -27,10 +27,17 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Determine project root
-project_root = os.path.abspath(os.path.join(current_dir, "../../.."))
+# Determine project root (from benchmarks/python to project root)
+project_root = os.path.abspath(os.path.join(current_dir, "../.."))
 results_dir = os.path.join(project_root, "benchmarks/results")
-cpp_build_dir = os.path.join(project_root, "build/benchmarks")
+cpp_build_dir = os.path.join(project_root, "build/benchmarks/cpp")
+
+# Adjust for Windows Release/Debug folders if needed
+if os.name == 'nt':
+    if os.path.exists(os.path.join(cpp_build_dir, "Release")):
+        cpp_build_dir = os.path.join(cpp_build_dir, "Release")
+    elif os.path.exists(os.path.join(cpp_build_dir, "Debug")):
+        cpp_build_dir = os.path.join(cpp_build_dir, "Debug")
 
 
 def run_python_benchmarks(args):
@@ -43,8 +50,9 @@ def run_python_benchmarks(args):
     
     if args.samples:
         cmd.extend(["--samples", str(args.samples)])
-    if args.visualize:
-        cmd.append("--visualize")
+    
+    # We don't pass --visualize here because run_all_benchmarks.py handles 
+    # visualization for both Python and C++ at the end
     
     result = subprocess.run(cmd, cwd=current_dir)
     return result.returncode == 0
@@ -65,6 +73,9 @@ def run_cpp_benchmarks():
     
     # Run IK benchmarks
     ik_executable = os.path.join(cpp_build_dir, "ik_benchmarks")
+    if os.name == 'nt' and not ik_executable.endswith('.exe'):
+        ik_executable += '.exe'
+        
     if os.path.exists(ik_executable):
         print("\nRunning C++ IK benchmarks...")
         output_file = os.path.join(results_dir, "ik_benchmarks_latest.json")
@@ -84,6 +95,9 @@ def run_cpp_benchmarks():
     
     # Run Jacobian benchmarks
     jacobian_executable = os.path.join(cpp_build_dir, "jacobian_benchmarks")
+    if os.name == 'nt' and not jacobian_executable.endswith('.exe'):
+        jacobian_executable += '.exe'
+
     if os.path.exists(jacobian_executable):
         print("\nRunning C++ Jacobian benchmarks...")
         output_file = os.path.join(results_dir, "jacobian_benchmarks_latest.json")
@@ -112,12 +126,16 @@ def run_visualizations():
     
     success = True
     
+    # Add benchmarks root to path for tools import
+    benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
+    tools_dir = os.path.join(benchmarks_root, "tools")
+    
     # Python benchmarks visualization
     print("\nGenerating Python benchmark visualizations...")
     result = subprocess.run([
-        sys.executable, "visualize_benchmarks.py",
+        sys.executable, os.path.join(tools_dir, "visualize_benchmarks.py"),
         "--results-dir", results_dir
-    ], cwd=current_dir)
+    ])
     
     if result.returncode == 0:
         print("✓ Python benchmark visualizations completed")
@@ -128,9 +146,9 @@ def run_visualizations():
     # C++ benchmarks visualization
     print("\nGenerating C++ benchmark visualizations...")
     result = subprocess.run([
-        sys.executable, "visualize_cpp_benchmarks.py",
+        sys.executable, os.path.join(tools_dir, "visualize_cpp_benchmarks.py"),
         "--results-dir", results_dir
-    ], cwd=current_dir)
+    ])
     
     if result.returncode == 0:
         print("✓ C++ benchmark visualizations completed")

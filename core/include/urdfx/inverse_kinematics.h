@@ -28,6 +28,11 @@ struct SolverConfig {
     double joint_limit_margin = 1e-4;
     double unbounded_joint_limit = 50.0;
     bool enable_warm_start = true;
+    
+    // Adaptive damping (DLS) parameters
+    bool enable_adaptive_damping = true;
+    double damping_threshold = 0.1; // Manipulability threshold below which damping increases
+    double max_damping = 0.1;       // Maximum damping factor added at singularity
 };
 
 struct SolverStatus {

@@ -239,23 +239,28 @@ cmake --build build
 
 ## Benchmarking
 
-Run the Google Benchmark-based suite to measure IK and Jacobian performance:
+Run the comprehensive benchmark suite to measure IK and Jacobian performance:
 
 ```bash
 # Build with benchmarks enabled
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
 cmake --build build --config Release -j
 
-# Run IK benchmarks
-./build/benchmarks/ik_benchmarks \
+# Run all benchmarks (Python + C++)
+cd benchmarks/python
+python run_all_benchmarks.py
+
+# Or run C++ benchmarks only
+./build/benchmarks/cpp/ik_benchmarks \
     --benchmark_out=benchmarks/results/ik_benchmarks_$(date +%Y%m%d).json \
     --benchmark_out_format=json
 
-# Run Jacobian benchmarks
-./build/benchmarks/jacobian_benchmarks \
+./build/benchmarks/cpp/jacobian_benchmarks \
     --benchmark_out=benchmarks/results/jacobian_benchmarks_$(date +%Y%m%d).json \
     --benchmark_out_format=json
 ```
+
+For detailed benchmarking documentation, see [`benchmarks/README.md`](benchmarks/README.md).
 
 ### Benchmark Scenarios
 

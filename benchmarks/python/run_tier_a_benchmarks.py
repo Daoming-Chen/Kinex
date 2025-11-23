@@ -10,25 +10,33 @@ import time
 import json
 import numpy as np
 from pathlib import Path
+from scipy.spatial.transform import Rotation as R
 
 # Add current directory to path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
     
-# Add bindings path
-bindings_path = os.path.abspath(os.path.join(current_dir, ".."))
-if bindings_path not in sys.path:
-    sys.path.insert(0, bindings_path)
+# Add benchmarks root to path for tools import
+benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
+if benchmarks_root not in sys.path:
+    sys.path.insert(0, benchmarks_root)
+
+# Add Python bindings to path
+project_root = os.path.abspath(os.path.join(current_dir, "../.."))
+python_bindings_path = os.path.join(project_root, "bindings/python")
+if python_bindings_path not in sys.path:
+    sys.path.insert(0, python_bindings_path)
 
 try:
     import urdfx
 except ImportError as e:
     print(f"Error: urdfx module not found. Please build Python bindings first.")
     print(f"Error details: {e}")
+    print(f"Tried path: {python_bindings_path}")
     sys.exit(1)
 
-from oracle import FKOracle, JointSampler
+from tools.oracle import FKOracle, JointSampler
 
 def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     """Run IK benchmark with real-time generated test cases."""
@@ -95,7 +103,6 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
             target_pos, target_rot = oracle.compute_pose(q_target)
             
             # Convert to Transform
-            from scipy.spatial.transform import Rotation as R
             rpy = R.from_matrix(target_rot).as_euler('xyz', degrees=False)
             target_transform = urdfx.Transform.from_position_rpy(target_pos, rpy)
             
@@ -154,7 +161,7 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
         
         print(f"    Cases: {num_samples}")
         print(f"    Success rate: {success_rate:.1f}%")
-        print(f"    Avg time: {avg_time:.1f} µs")
+        print(f"    Avg time: {avg_time:.1f} us")
         print(f"    Avg iterations: {avg_iterations:.1f}")
         print(f"    Avg position error: {avg_pos_error:.6f} mm")
         print(f"    Avg rotation error: {avg_rot_error:.6f}")
@@ -179,8 +186,8 @@ def main():
                        help="Output directory for results")
     args = parser.parse_args()
     
-    # Navigate from benchmarks directory to project root
-    project_root = os.path.abspath(os.path.join(current_dir, "../../.."))
+    # Navigate from benchmarks/python directory to project root
+    project_root = os.path.abspath(os.path.join(current_dir, "../.."))
     
     models_dir = os.path.join(project_root, "examples/models/ur5")
     output_dir = args.output or os.path.join(project_root, "benchmarks/results")

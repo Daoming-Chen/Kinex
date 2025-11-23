@@ -101,7 +101,7 @@ def plot_tier_a_results(results, output_dir):
     ax.plot(dofs, cold_random_time, 's-', label='Cold Start (Random)', color='#ff7f0e', linewidth=2, markersize=8)
     ax.plot(dofs, warm_time, '^-', label='Warm Start', color='#2ca02c', linewidth=2, markersize=8)
     ax.set_xlabel('Degrees of Freedom', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Avg Time (ms)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Avg Time (µs)', fontsize=12, fontweight='bold')
     ax.set_title('Execution Time vs DOF', fontsize=13, fontweight='bold')
     ax.legend()
     ax.grid(True, alpha=0.3)
@@ -309,7 +309,7 @@ def generate_summary_report(tier_a_results, tier_b_data, output_dir):
     output_dir = Path(output_dir)
     output_path = output_dir / 'benchmark_summary.md'
     
-    with open(output_path, 'w') as f:
+    with open(output_path, 'w', encoding='utf-8') as f:
         f.write("# urdfx IK Benchmark Summary\n\n")
         f.write(f"Generated: {tier_b_data.get('timestamp', 'N/A')}\n\n")
         

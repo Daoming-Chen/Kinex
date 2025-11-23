@@ -28,20 +28,26 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Add bindings path
-bindings_path = os.path.abspath(os.path.join(current_dir, ".."))
-if bindings_path not in sys.path:
-    sys.path.insert(0, bindings_path)
+# Add benchmarks root to path for tools import
+benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
+if benchmarks_root not in sys.path:
+    sys.path.insert(0, benchmarks_root)
+
+# Add Python bindings to path
+project_root = os.path.abspath(os.path.join(current_dir, "../.."))
+python_bindings_path = os.path.join(project_root, "bindings/python")
+if python_bindings_path not in sys.path:
+    sys.path.insert(0, python_bindings_path)
 
 try:
     import urdfx
 except ImportError:
     print("Error: urdfx module not found. Please build Python bindings first.")
-    print(f"Tried paths: {bindings_path}")
+    print(f"Tried paths: {python_bindings_path}")
     sys.exit(1)
 
-from urdf_generator import MixedChainGenerator
-from oracle import FKOracle, JointSampler
+from tools.urdf_generator import MixedChainGenerator
+from tools.oracle import FKOracle, JointSampler
 
 
 class BenchmarkRunner:
