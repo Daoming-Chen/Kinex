@@ -95,7 +95,7 @@ Transform Joint::getTransform(double value) const {
             
         case JointType::Floating:
         case JointType::Planar:
-            URDFX_WARN("Joint type {} not fully supported yet", 
+            KINEX_WARN("Joint type {} not fully supported yet", 
                        static_cast<int>(type_));
             break;
     }
@@ -173,30 +173,30 @@ std::shared_ptr<Joint> Robot::getParentJoint(const std::string& link_name) const
 
 bool Robot::validate() const {
     if (links_.empty()) {
-        URDFX_ERROR("Robot has no links");
+        KINEX_ERROR("Robot has no links");
         return false;
     }
     
     if (root_link_.empty()) {
-        URDFX_ERROR("Robot has no root link specified");
+        KINEX_ERROR("Robot has no root link specified");
         return false;
     }
     
     // Check root link exists
     if (!getLink(root_link_)) {
-        URDFX_ERROR("Root link '{}' not found in robot", root_link_);
+        KINEX_ERROR("Root link '{}' not found in robot", root_link_);
         return false;
     }
     
     // Check all joint parent/child links exist
     for (const auto& joint : joints_) {
         if (!getLink(joint->getParentLink())) {
-            URDFX_ERROR("Joint '{}' references non-existent parent link '{}'",
+            KINEX_ERROR("Joint '{}' references non-existent parent link '{}'",
                        joint->getName(), joint->getParentLink());
             return false;
         }
         if (!getLink(joint->getChildLink())) {
-            URDFX_ERROR("Joint '{}' references non-existent child link '{}'",
+            KINEX_ERROR("Joint '{}' references non-existent child link '{}'",
                        joint->getName(), joint->getChildLink());
             return false;
         }
@@ -214,7 +214,7 @@ bool Robot::validate() const {
             const std::string& child_link = child_joint->getChildLink();
             
             if (rec_stack.find(child_link) != rec_stack.end()) {
-                URDFX_ERROR("Cycle detected in kinematic tree at link '{}'", child_link);
+                KINEX_ERROR("Cycle detected in kinematic tree at link '{}'", child_link);
                 return true;
             }
             
@@ -236,11 +236,11 @@ bool Robot::validate() const {
     // Check for disconnected links (warning only)
     for (const auto& link : links_) {
         if (link->getName() != root_link_ && !getParentJoint(link->getName())) {
-            URDFX_WARN("Link '{}' is disconnected from kinematic tree", link->getName());
+            KINEX_WARN("Link '{}' is disconnected from kinematic tree", link->getName());
         }
     }
     
-    URDFX_INFO("Robot '{}' validation passed", name_);
+    KINEX_INFO("Robot '{}' validation passed", name_);
     return true;
 }
 

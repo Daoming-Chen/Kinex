@@ -180,7 +180,7 @@ TEST_F(ForwardKinematicsTest, ComputeAtZeroConfiguration) {
 TEST_F(ForwardKinematicsTest, ComputeWithRotation) {
     ForwardKinematics fk(simple_robot_, "link2", "base_link");
     
-    // Rotate joint1 by 90 degrees (π/2)
+    // Rotate joint1 by 90 degrees (pi/2)
     Eigen::VectorXd joint_angles(2);
     joint_angles << M_PI / 2.0, 0.0;
     
@@ -204,9 +204,9 @@ TEST_F(ForwardKinematicsTest, ComputeWithBothJointsRotated) {
     
     Transform result = fk.compute(joint_angles);
     
-    // First joint rotates +90° around Z: (1,0,0) �?(0,1,0)
-    // Second joint rotates +90° around Z in link1's frame
-    // The total rotation is 180°, so link2 should point back
+    // First joint rotates +90 deg around Z: (1,0,0) -> (0,1,0)
+    // Second joint rotates +90 deg around Z in link1's frame
+    // The total rotation is 180 deg, so link2 should point back
     // Position should be approximately (0, 1, 0) as both rotations cancel the displacement
     Eigen::Vector3d position = result.translation();
     EXPECT_NEAR(position.x(), 0.0, 1e-6);
@@ -357,7 +357,7 @@ TEST_F(ForwardKinematicsTest, PoseAsPositionRPY) {
     EXPECT_NEAR(position.y(), 1.0, 1e-6);
     EXPECT_NEAR(position.z(), 0.0, 1e-6);
     
-    // At 90 degree rotation around Z, yaw should be π/2
+    // At 90 degree rotation around Z, yaw should be pi/2
     EXPECT_NEAR(rpy(2), M_PI / 2.0, 1e-6);
 }
 
@@ -443,7 +443,7 @@ TEST_F(ForwardKinematicsTest, PerformanceBenchmark) {
     EXPECT_LT(avg_time_ms, 1.0) << "Average FK computation time: " << avg_time_ms << " ms";
     
     // Log performance info
-    std::cout << "FK Performance: " << avg_time_us << " μs per computation" << std::endl;
+    std::cout << "FK Performance: " << avg_time_us << " us per computation" << std::endl;
 }
 
 // ============================================================================
