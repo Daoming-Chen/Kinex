@@ -33,6 +33,28 @@ install(TARGETS _kinex
     LIBRARY DESTINATION kinex
 )
 
+# Install the kinex shared library alongside the Python extension
+install(TARGETS kinex
+    RUNTIME DESTINATION kinex  # For Windows DLLs
+    LIBRARY DESTINATION kinex  # For Unix shared libraries
+)
+
+# Install third-party shared libraries (spdlog, pugixml)
+# These are needed at runtime on all platforms
+if(TARGET spdlog)
+    install(TARGETS spdlog
+        RUNTIME DESTINATION kinex
+        LIBRARY DESTINATION kinex
+    )
+endif()
+
+if(TARGET pugixml)
+    install(TARGETS pugixml
+        RUNTIME DESTINATION kinex
+        LIBRARY DESTINATION kinex
+    )
+endif()
+
 # Install Python package files
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/kinex/"
     DESTINATION kinex
