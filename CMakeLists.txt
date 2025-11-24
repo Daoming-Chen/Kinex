@@ -66,6 +66,11 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
     add_compile_options(-Wno-unused-parameter)
     add_compile_options(-Wno-empty-body)
+    # Suppress warnings from Eigen AVX512 code
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        add_compile_options(-Wno-error=stringop-overflow)
+        add_compile_options(-Wno-stringop-overflow)
+    endif()
     # Enable __declspec support for Emscripten
     if(EMSCRIPTEN)
         add_compile_options(-fdeclspec)
@@ -82,7 +87,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         if(EMSCRIPTEN)
             add_compile_options(-O3)
         else()
-            add_compile_options(-O3 -march=native)
+            # Use -march=x86-64 instead of native for better compatibility
+            # Users can override with -DCMAKE_CXX_FLAGS="-march=native" for local builds
+            add_compile_options(-O3 -march=x86-64)
         endif()
     endif()
 endif()

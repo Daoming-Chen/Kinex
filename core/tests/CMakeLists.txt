@@ -29,6 +29,13 @@ include(GoogleTest)
 # Use add_test for better compatibility
 add_test(NAME urdfx_tests COMMAND urdfx_tests)
 
+# On Windows, set PATH to include DLL directories for the test
+if(WIN32 AND BUILD_SHARED_LIBS)
+    set_tests_properties(urdfx_tests PROPERTIES
+        ENVIRONMENT "PATH=$<TARGET_FILE_DIR:urdfx>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$ENV{PATH}"
+    )
+endif()
+
 # Copy test data files from examples/models
 file(COPY ${PROJECT_SOURCE_DIR}/examples/models/ur5
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
