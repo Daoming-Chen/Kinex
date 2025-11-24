@@ -1,0 +1,78 @@
+{
+  "context": {
+    "date": "2025-11-24T14:29:51",
+    "host_name": "FAITDT0589",
+    "executable": "/usr/bin/python",
+    "num_cpus": 20,
+    "library_build_type": "release",
+    "robot_name": "ur5e+xy",
+    "dof": 8,
+    "seed": 42
+  },
+  "benchmarks": [
+    {
+      "name": "BM_IK_ColdStart_Zero/ur5e+xy",
+      "run_name": "BM_IK_ColdStart_Zero/ur5e+xy",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1000,
+      "real_time": 21.511213008125196,
+      "cpu_time": 21.511213008125196,
+      "time_unit": "us",
+      "avg_position_error_mm": 0.04340580409900195,
+      "avg_rotation_error_deg": 0.002923231257947015,
+      "iterations_per_solve": 9.21725888324873,
+      "success_rate": 98.5
+    },
+    {
+      "name": "BM_IK_ColdStart_Random/ur5e+xy",
+      "run_name": "BM_IK_ColdStart_Random/ur5e+xy",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1000,
+      "real_time": 24.32489000057103,
+      "cpu_time": 24.32489000057103,
+      "time_unit": "us",
+      "avg_position_error_mm": 0.04118204925005934,
+      "avg_rotation_error_deg": 0.0027230697721383336,
+      "iterations_per_solve": 10.253048780487806,
+      "success_rate": 98.4
+    },
+    {
+      "name": "BM_IK_WarmStart/ur5e+xy",
+      "run_name": "BM_IK_WarmStart/ur5e+xy",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1000,
+      "real_time": 6.397403004484659,
+      "cpu_time": 6.397403004484659,
+      "time_unit": "us",
+      "avg_position_error_mm": 0.03216449598218085,
+      "avg_rotation_error_deg": 0.001957751446430335,
+      "iterations_per_solve": 3.131,
+      "success_rate": 100.0
+    },
+    {
+      "name": "BM_IK_Trajectory/ur5e+xy",
+      "run_name": "BM_IK_Trajectory/ur5e+xy",
+      "run_type": "iteration",
+      "repetitions": 1,
+      "repetition_index": 0,
+      "threads": 1,
+      "iterations": 1000,
+      "real_time": 13.683741995009768,
+      "cpu_time": 13.683741995009768,
+      "time_unit": "us",
+      "avg_position_error_mm": 0.06375806867789907,
+      "avg_rotation_error_deg": 0.005560319092944607,
+      "iterations_per_solve": 2.5496342737722046,
+      "success_rate": 95.7
+    }
+  ]
+}

@@ -12,18 +12,13 @@ import numpy as np
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
-# Add current directory to path
+# Add current directory to path (benchmarks/)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
-    
-# Add benchmarks root to path for tools import
-benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
-if benchmarks_root not in sys.path:
-    sys.path.insert(0, benchmarks_root)
 
 # Add Python bindings to path
-project_root = os.path.abspath(os.path.join(current_dir, "../.."))
+project_root = os.path.abspath(os.path.join(current_dir, ".."))
 python_bindings_path = os.path.join(project_root, "bindings/python")
 if python_bindings_path not in sys.path:
     sys.path.insert(0, python_bindings_path)
@@ -36,7 +31,34 @@ except ImportError as e:
     print(f"Tried path: {python_bindings_path}")
     sys.exit(1)
 
-from tools.oracle import FKOracle, JointSampler
+from oracle import FKOracle, JointSampler
+
+class RestrictedJointSampler:
+    """
+    Samples joint configurations within [-pi, pi] to avoid extreme winding,
+    matching the updated C++ benchmark logic.
+    """
+    def __init__(self, robot, rng):
+        self.dof = robot.dof
+        self.rng = rng
+        try:
+            limits = robot.get_joint_limits()
+            if not isinstance(limits, np.ndarray):
+                limits = np.array(limits)
+        except:
+            # Fallback
+            limits = np.array([[-np.pi, np.pi]] * self.dof)
+            
+        self.lower = np.maximum(limits[:, 0], -np.pi)
+        self.upper = np.minimum(limits[:, 1], np.pi)
+        
+        # If limits are weird (low > high), fallback to limits
+        mask = self.lower > self.upper
+        self.lower[mask] = limits[mask, 0]
+        self.upper[mask] = limits[mask, 1]
+
+    def sample(self, n_samples=1):
+        return self.rng.uniform(self.lower, self.upper, size=(n_samples, self.dof))
 
 def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     """Run IK benchmark with real-time generated test cases."""
@@ -53,7 +75,7 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     
     # Setup FK oracle and joint sampler
     oracle = FKOracle(robot)
-    sampler = JointSampler(robot, rng=np.random.RandomState(seed))
+    sampler = RestrictedJointSampler(robot, rng=np.random.RandomState(seed))
     end_link = oracle.end_link
     
     print(f"  End-effector: {end_link}")
@@ -62,18 +84,19 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     print("Creating IK solver...")
     solver = urdfx.SQPIKSolver(robot, end_link)
     
-    # Configure solver
+    # Configure solver (aligned with C++ benchmarks)
     config = urdfx.SolverConfig()
-    config.tolerance = 1e-4
-    config.max_iterations = 100
+    config.tolerance = 5e-4
+    config.max_iterations = 64
     config.enable_warm_start = True
+    config.regularization = 1e-5
     solver.set_solver_config(config)
     
     # Generate test samples (sample random joint configs once)
     print("\n  Generating test cases...")
     q_samples = sampler.sample(num_samples)
     
-    # Run benchmarks with 3 initialization strategies
+    # Run benchmarks with 4 test scenarios
     results = {
         "robot_name": robot_name,
         "dof": dof,
@@ -81,10 +104,11 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
         "seed": seed,
         "cold_start_zero": {},
         "cold_start_random": {},
-        "warm_start": {}
+        "warm_start": {},
+        "trajectory": {}
     }
     
-    for case_type in ["cold_start_zero", "cold_start_random", "warm_start"]:
+    for case_type in ["cold_start_zero", "cold_start_random", "warm_start", "trajectory"]:
         print(f"\n  Testing {case_type}...")
         
         successes = 0
@@ -98,7 +122,34 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
         if case_type == "cold_start_random":
             random_inits = sampler.sample(num_samples)
         
-        for i, q_target in enumerate(q_samples):
+        # Generate trajectory for trajectory scenario
+        if case_type == "trajectory":
+            # Generate multiple trajectories to match num_samples
+            # Each trajectory has 100 waypoints
+            traj_len = 100
+            num_trajs = (num_samples + traj_len - 1) // traj_len
+            
+            trajectory_samples = []
+            for _ in range(num_trajs):
+                q_start = sampler.sample(1)[0]
+                q_end = sampler.sample(1)[0]
+                for k in range(traj_len):
+                    t = k / (traj_len - 1)
+                    q = q_start + (q_end - q_start) * t
+                    trajectory_samples.append(q)
+            
+            # Truncate to exact number of samples requested
+            trajectory_samples = np.array(trajectory_samples[:num_samples])
+        
+        # Determine which samples to iterate over
+        if case_type == "trajectory":
+            test_samples = trajectory_samples
+        else:
+            test_samples = q_samples
+            
+        prev_solution = None
+        
+        for i, q_target in enumerate(test_samples):
             # 1. Compute target pose via FK (very fast)
             target_pos, target_rot = oracle.compute_pose(q_target)
             
@@ -111,15 +162,29 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
                 q_init = np.zeros(dof)
             elif case_type == "cold_start_random":
                 q_init = random_inits[i]
-            else:  # warm_start
+            elif case_type == "warm_start":
                 # Add small noise to ground truth
                 noise = np.random.normal(0, 0.1, size=dof)
                 q_init = q_target + noise
+            else:  # trajectory
+                # Check if this is the start of a new trajectory segment
+                is_new_traj = (i % 100 == 0)
+                
+                # Use previous solution if not start of new trajectory
+                if prev_solution is not None and not is_new_traj:
+                    q_init = prev_solution
+                else:
+                    # For the first point, assume we are at the start configuration
+                    q_init = q_target
             
             # 3. Solve IK (timed)
             start_time = time.perf_counter()
             result = solver.solve(target_transform, q_init)
             solve_time = time.perf_counter() - start_time
+            
+            # Update previous solution for trajectory
+            if case_type == "trajectory":
+                prev_solution = result.solution
             
             total_time += solve_time
             
@@ -135,36 +200,44 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
                 pos_error = np.linalg.norm(achieved_pos - target_pos)
                 pos_errors.append(pos_error)
                 
-                # Rotation error (Frobenius norm of rotation matrix difference)
-                rot_error = np.linalg.norm(achieved_rot - target_rot, 'fro')
+                # Rotation error (angular distance in radians)
+                # Convert to quaternions for proper angular distance
+                q_target_quat = R.from_matrix(target_rot).as_quat()
+                q_achieved_quat = R.from_matrix(achieved_rot).as_quat()
+                # Compute angular distance using quaternion inner product
+                dot_product = np.abs(np.dot(q_target_quat, q_achieved_quat))
+                dot_product = np.clip(dot_product, -1.0, 1.0)
+                rot_error = 2 * np.arccos(dot_product)  # Angular distance in radians
                 rot_errors.append(rot_error)
             else:
                 failures += 1
         
         # Compute statistics
-        success_rate = successes / num_samples * 100
-        avg_time = total_time / num_samples * 1_000_000  # Convert to µs
+        total_cases = len(test_samples)
+        success_rate = successes / total_cases * 100
+        avg_time = total_time / total_cases * 1_000_000  # Convert to µs
         avg_iterations = total_iterations / successes if successes > 0 else 0
         avg_pos_error = np.mean(pos_errors) * 1000 if pos_errors else 0  # Convert to mm
-        avg_rot_error = np.mean(rot_errors) if rot_errors else 0
+        avg_rot_error_rad = np.mean(rot_errors) if rot_errors else 0
+        avg_rot_error_deg = avg_rot_error_rad * 180.0 / np.pi  # Convert to degrees
         
         results[case_type] = {
-            "cases": num_samples,
+            "cases": total_cases,
             "successes": successes,
             "failures": failures,
             "success_rate": success_rate,
             "avg_time_us": avg_time,
             "avg_iterations": avg_iterations,
             "avg_pos_error_mm": avg_pos_error,
-            "avg_rot_error": avg_rot_error
+            "avg_rot_error_deg": avg_rot_error_deg
         }
         
-        print(f"    Cases: {num_samples}")
+        print(f"    Cases: {total_cases}")
         print(f"    Success rate: {success_rate:.1f}%")
         print(f"    Avg time: {avg_time:.1f} us")
         print(f"    Avg iterations: {avg_iterations:.1f}")
         print(f"    Avg position error: {avg_pos_error:.6f} mm")
-        print(f"    Avg rotation error: {avg_rot_error:.6f}")
+        print(f"    Avg rotation error: {avg_rot_error_deg:.6f} deg")
     
     # Save results in Google Benchmark JSON format
     import socket
@@ -187,17 +260,23 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
             "cpu_time": case_data["avg_time_us"],
             "time_unit": "us",
             "avg_position_error_mm": case_data["avg_pos_error_mm"],
-            "avg_rotation_error_deg": case_data["avg_rot_error"],
+            "avg_rotation_error_deg": case_data["avg_rot_error_deg"],
             "iterations_per_solve": case_data["avg_iterations"],
             "success_rate": case_data["success_rate"]
         }
     
     benchmark_results.append(make_benchmark_entry("ColdStart_Zero", robot_name, 
-                                                   results["cold_start_zero"], num_samples))
+                                                   results["cold_start_zero"], 
+                                                   results["cold_start_zero"]["cases"]))
     benchmark_results.append(make_benchmark_entry("ColdStart_Random", robot_name,
-                                                   results["cold_start_random"], num_samples))
+                                                   results["cold_start_random"], 
+                                                   results["cold_start_random"]["cases"]))
     benchmark_results.append(make_benchmark_entry("WarmStart", robot_name,
-                                                   results["warm_start"], num_samples))
+                                                   results["warm_start"], 
+                                                   results["warm_start"]["cases"]))
+    benchmark_results.append(make_benchmark_entry("Trajectory", robot_name,
+                                                   results["trajectory"], 
+                                                   results["trajectory"]["cases"]))
     
     # Create full Google Benchmark JSON structure
     output_data = {
@@ -233,8 +312,8 @@ def main():
                        help="Output directory for results")
     args = parser.parse_args()
     
-    # Navigate from benchmarks/python directory to project root
-    project_root = os.path.abspath(os.path.join(current_dir, "../.."))
+    # Navigate from benchmarks/ directory to project root
+    project_root = os.path.abspath(os.path.join(current_dir, ".."))
     
     models_dir = os.path.join(project_root, "examples/models/ur5")
     output_dir = args.output or os.path.join(project_root, "benchmarks/results")
@@ -275,11 +354,11 @@ def main():
             traceback.print_exc()
     
     # Generate summary report
-    print(f"\n{'='*70}")
+    print(f"\n{'='*80}")
     print("BENCHMARK SUMMARY")
-    print(f"{'='*70}")
-    print(f"\n{'Robot':<15} {'DOF':<5} {'Cold(0)':<12} {'Cold(R)':<12} {'Warm':<12}")
-    print("-" * 70)
+    print(f"{'='*80}")
+    print(f"\n{'Robot':<15} {'DOF':<5} {'Cold(0)':<12} {'Cold(R)':<12} {'Warm':<12} {'Traj':<12}")
+    print("-" * 80)
     
     for result in all_results:
         robot = result['robot_name']
@@ -287,12 +366,13 @@ def main():
         cold_zero_sr = result['cold_start_zero'].get('success_rate', 0)
         cold_rand_sr = result['cold_start_random'].get('success_rate', 0)
         warm_sr = result['warm_start'].get('success_rate', 0)
+        traj_sr = result['trajectory'].get('success_rate', 0)
         
-        print(f"{robot:<15} {dof:<5} {cold_zero_sr:>5.1f}% {cold_rand_sr:>10.1f}% {warm_sr:>10.1f}%")
+        print(f"{robot:<15} {dof:<5} {cold_zero_sr:>5.1f}% {cold_rand_sr:>10.1f}% {warm_sr:>10.1f}% {traj_sr:>10.1f}%")
     
-    print("\n" + "="*70)
+    print("\n" + "="*80)
     print("Benchmark complete!")
-    print("="*70)
+    print("="*80)
 
 if __name__ == "__main__":
     main()

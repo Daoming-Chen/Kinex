@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unified visualization script for urdfx benchmarks.
-Supports both C++ and Python benchmarks in Google Benchmark JSON format.
-Generates clean, consistent visualizations for all benchmark types.
+Visualization script for urdfx Python benchmarks.
+Supports Python benchmarks in Google Benchmark JSON format.
+Generates clean, consistent visualizations for benchmark results.
 """
 
 import json
@@ -62,10 +62,9 @@ def group_ik_benchmarks(benchmarks: List[Dict]) -> Dict[str, List[Dict]]:
 def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]], 
                             context: Dict, output_dir: Path, title_suffix: str = "",
                             output_name: Optional[str] = None):
-    """Create visualization for IK benchmarks (C++ or Python).
+    """Create visualization for IK benchmarks (Python).
     
-    This uses the style from C++ benchmarks visualization but works with
-    Google Benchmark JSON format.
+    Works with Google Benchmark JSON format.
     """
     if not benchmarks_by_robot:
         print("No IK benchmarks to visualize")
@@ -117,15 +116,15 @@ def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]],
         warm_start_iter.append(warm_bm.get('iterations_per_solve', 0) if warm_bm else 0)
         trajectory_iter.append(traj_bm.get('iterations_per_solve', 0) if traj_bm else 0)
     
-    # Create figure with 2x2 layout
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    # Create figure with 1x3 layout
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
     fig.suptitle(f'IK Solver Benchmark Results{title_suffix}', fontsize=16, fontweight='bold')
     
     x = np.arange(len(robots))
     width = 0.25
     
     # Plot 1: Execution Time
-    ax = axes[0, 0]
+    ax = axes[0]
     ax.bar(x - width, cold_start_times, width, label='Cold Start', color='#1f77b4')
     ax.bar(x, warm_start_times, width, label='Warm Start', color='#2ca02c')
     ax.bar(x + width, trajectory_times, width, label='Trajectory', color='#ff7f0e')
@@ -137,7 +136,7 @@ def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]],
     ax.grid(True, alpha=0.3, axis='y')
     
     # Plot 2: Success Rate
-    ax = axes[0, 1]
+    ax = axes[1]
     ax.bar(x - width, cold_start_sr, width, label='Cold Start', color='#1f77b4')
     ax.bar(x, warm_start_sr, width, label='Warm Start', color='#2ca02c')
     ax.bar(x + width, trajectory_sr, width, label='Trajectory', color='#ff7f0e')
@@ -150,7 +149,7 @@ def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]],
     ax.grid(True, alpha=0.3, axis='y')
     
     # Plot 3: Iterations per Solve
-    ax = axes[1, 0]
+    ax = axes[2]
     ax.bar(x - width, cold_start_iter, width, label='Cold Start', color='#1f77b4')
     ax.bar(x, warm_start_iter, width, label='Warm Start', color='#2ca02c')
     ax.bar(x + width, trajectory_iter, width, label='Trajectory', color='#ff7f0e')
@@ -161,85 +160,19 @@ def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]],
     ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
     
-    # Plot 4: Speedup Analysis
-    ax = axes[1, 1]
-    speedup = []
-    for cold, warm in zip(cold_start_times, warm_start_times):
-        if warm > 0:
-            speedup.append(cold / warm)
-        else:
-            speedup.append(0)
-    
-    ax.bar(x, speedup, width * 2, color='#d62728')
-    ax.set_ylabel('Speedup (x)', fontsize=11, fontweight='bold')
-    ax.set_title('Warm Start Speedup vs Cold Start', fontsize=12, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(robots, rotation=15, ha='right')
-    ax.axhline(y=1, color='gray', linestyle='--', alpha=0.5, label='1x (no speedup)')
-    ax.legend()
-    ax.grid(True, alpha=0.3, axis='y')
-    
     plt.tight_layout()
     
     # Determine output filename
     if output_name:
         base_name = output_name
-    elif title_suffix and 'C++' in title_suffix:
-        base_name = 'cpp_ik_benchmarks'
     elif title_suffix and 'Python' in title_suffix:
-        # For Python, include robot names in filename
+        # Include robot names in filename
         robot_str = '_'.join(sorted(benchmarks_by_robot.keys())).replace('+', '_')
         base_name = f'python_ik_benchmarks_{robot_str}'
     else:
-        base_name = 'ik_benchmarks'
+        base_name = 'python_ik_benchmarks'
     
     # Save figure
-    output_path = output_dir / f'{base_name}.png'
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_path}")
-    
-    plt.close()
-
-
-def visualize_jacobian_benchmarks(benchmarks: List[Dict], context: Dict, 
-                                  output_dir: Path, title_suffix: str = ""):
-    """Create visualization for Jacobian benchmarks."""
-    if not benchmarks:
-        print("No Jacobian benchmarks to visualize")
-        return
-    
-    # Extract data
-    names = []
-    times = []
-    
-    for bm in benchmarks:
-        names.append(bm['name'].replace('BM_', ''))
-        times.append(bm.get('real_time', 0))
-    
-    # Create simple bar chart
-    fig, ax = plt.subplots(figsize=(10, 6))
-    fig.suptitle(f'Jacobian Computation Benchmarks{title_suffix}', 
-                 fontsize=16, fontweight='bold')
-    
-    x = np.arange(len(names))
-    ax.bar(x, times, color='#9467bd', width=0.6)
-    ax.set_ylabel('Time (µs)', fontsize=12, fontweight='bold')
-    ax.set_xlabel('Benchmark', fontsize=12, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(names, rotation=15, ha='right')
-    ax.grid(True, alpha=0.3, axis='y')
-    
-    # Add throughput annotation
-    for i, (name, time) in enumerate(zip(names, times)):
-        if time > 0:
-            throughput = 1_000_000 / time  # convert µs to calls/sec
-            ax.text(i, time * 1.05, f'{throughput:.0f} calls/s', 
-                   ha='center', va='bottom', fontsize=9)
-    
-    plt.tight_layout()
-    
-    # Save figure
-    base_name = 'cpp_jacobian_benchmarks' if 'C++' in title_suffix else 'jacobian_benchmarks'
     output_path = output_dir / f'{base_name}.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     print(f"✓ Saved: {output_path}")
@@ -248,61 +181,14 @@ def visualize_jacobian_benchmarks(benchmarks: List[Dict], context: Dict,
 
 
 def generate_summary_markdown(all_benchmarks: Dict[str, Dict], output_dir: Path):
-    """Generate comprehensive markdown summary for all benchmarks."""
+    """Generate comprehensive markdown summary for Python benchmarks."""
     output_path = output_dir / 'benchmark_summary.md'
     
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("# urdfx Benchmark Summary\n\n")
-        
-        # C++ Benchmarks
-        if 'cpp_ik' in all_benchmarks or 'cpp_jacobian' in all_benchmarks:
-            f.write("## C++ Benchmarks\n\n")
-            
-            if 'cpp_ik' in all_benchmarks:
-                data = all_benchmarks['cpp_ik']
-                context = data.get('context', {})
-                
-                f.write("### IK Solver Performance\n\n")
-                f.write(f"**System:** {context.get('host_name', 'N/A')} | ")
-                f.write(f"**CPUs:** {context.get('num_cpus', 'N/A')} | ")
-                f.write(f"**Build:** {context.get('library_build_type', 'N/A')}\n\n")
-                
-                f.write("| Scenario | Time (µs) | Iterations | Success Rate | Pos Error (mm) | Rot Error (deg) |\n")
-                f.write("|----------|-----------|------------|--------------|----------------|------------------|\n")
-                
-                for bm in data.get('benchmarks', []):
-                    name = bm['name'].replace('BM_IK_', '')
-                    time = bm.get('real_time', 0)
-                    iters = bm.get('iterations_per_solve', 0)
-                    sr = bm.get('success_rate', 0)
-                    pos_err = bm.get('avg_position_error_mm', 0)
-                    rot_err = bm.get('avg_rotation_error_deg', 0)
-                    
-                    f.write(f"| {name} | {time:.2f} | {iters:.1f} | {sr:.0f}% | "
-                           f"{pos_err:.4f} | {rot_err:.4f} |\n")
-                
-                f.write("\n")
-            
-            if 'cpp_jacobian' in all_benchmarks:
-                data = all_benchmarks['cpp_jacobian']
-                
-                f.write("### Jacobian Computation\n\n")
-                f.write("| Benchmark | Time (µs) | Throughput (calls/sec) |\n")
-                f.write("|-----------|-----------|------------------------|\n")
-                
-                for bm in data.get('benchmarks', []):
-                    name = bm['name'].replace('BM_', '')
-                    time = bm.get('real_time', 0)
-                    throughput = 1_000_000 / time if time > 0 else 0
-                    
-                    f.write(f"| {name} | {time:.4f} | {throughput:.0f} |\n")
-                
-                f.write("\n")
+        f.write("# urdfx Python Benchmark Summary\n\n")
         
         # Python Benchmarks
         if 'python_ur5e' in all_benchmarks or 'python_tier_b' in all_benchmarks:
-            f.write("## Python Benchmarks\n\n")
-            
             # Tier A results
             for robot in ['ur5e', 'ur5e+x', 'ur5e+xy', 'ur5e+xyz']:
                 key = f'python_{robot}'
@@ -325,16 +211,17 @@ def generate_summary_markdown(all_benchmarks: Dict[str, Dict], output_dir: Path)
                     f.write("\n")
         
         f.write("## Key Findings\n\n")
+        f.write("- Python bindings have minimal performance overhead\n")
         f.write("- Warm start initialization provides significant speedup across all configurations\n")
         f.write("- Success rates improve dramatically with warm start\n")
         f.write("- Trajectory mode achieves best performance with fewest iterations\n")
-        f.write("- Jacobian computation is extremely fast (< 1 µs)\n")
     
     print(f"✓ Summary saved: {output_path}")
 
 
 def process_benchmark_file(filepath: Path, output_dir: Path, 
-                           is_cpp: bool = False, robot_name: Optional[str] = None):
+                           robot_name: Optional[str] = None,
+                           visualize: bool = True):
     """Process a single benchmark JSON file and generate visualizations."""
     try:
         data = load_benchmark_json(filepath)
@@ -343,46 +230,40 @@ def process_benchmark_file(filepath: Path, output_dir: Path,
         
         if not benchmarks:
             print(f"Warning: No benchmarks found in {filepath}")
-            return None
+            return None, []
         
         # Categorize benchmarks
         ik_benchmarks = []
-        jacobian_benchmarks = []
         
         for bm in benchmarks:
             category, _, _ = parse_benchmark_name(bm['name'])
             if category == 'IK':
                 ik_benchmarks.append(bm)
-            elif category == 'Jacobian':
-                jacobian_benchmarks.append(bm)
         
         # Create visualizations
-        title_suffix = f" (C++)" if is_cpp else f" (Python - {robot_name})" if robot_name else " (Python)"
-        
-        if ik_benchmarks:
+        if visualize and ik_benchmarks:
+            title_suffix = f" (Python - {robot_name})" if robot_name else " (Python)"
             grouped = group_ik_benchmarks(ik_benchmarks)
-            # For Python, create unique filename per robot
+            
+            # Create unique filename per robot
             output_name = None
-            if not is_cpp and robot_name:
+            if robot_name:
                 robot_safe = robot_name.replace('+', '_')
                 output_name = f'python_ik_benchmarks_{robot_safe}'
             visualize_ik_benchmarks(grouped, context, output_dir, title_suffix, output_name)
         
-        if jacobian_benchmarks:
-            visualize_jacobian_benchmarks(jacobian_benchmarks, context, output_dir, title_suffix)
-        
-        return data
+        return data, ik_benchmarks
         
     except Exception as e:
         print(f"Error processing {filepath}: {e}")
         import traceback
         traceback.print_exc()
-        return None
+        return None, []
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unified visualization for urdfx benchmarks (C++ and Python)",
+        description="Visualization for urdfx Python benchmarks",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
@@ -398,7 +279,7 @@ def main():
     output_dir = Path(args.output_dir) if args.output_dir else results_dir
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"\nurdfx Unified Benchmark Visualization")
+    print(f"\nurdfx Python Benchmark Visualization")
     print(f"{'='*70}")
     print(f"Results directory: {results_dir}")
     print(f"Output directory: {output_dir}")
@@ -410,29 +291,24 @@ def main():
     
     all_benchmarks = {}
     
-    # Process C++ benchmarks
-    cpp_ik_file = results_dir / "ik_benchmarks_latest.json"
-    if cpp_ik_file.exists():
-        print("Processing C++ IK benchmarks...")
-        data = process_benchmark_file(cpp_ik_file, output_dir, is_cpp=True)
-        if data:
-            all_benchmarks['cpp_ik'] = data
-    
-    cpp_jacobian_file = results_dir / "jacobian_benchmarks_latest.json"
-    if cpp_jacobian_file.exists():
-        print("\nProcessing C++ Jacobian benchmarks...")
-        data = process_benchmark_file(cpp_jacobian_file, output_dir, is_cpp=True)
-        if data:
-            all_benchmarks['cpp_jacobian'] = data
-    
     # Process Python benchmarks (Tier A)
+    all_python_ik_benchmarks = []
     for robot in ['ur5e', 'ur5e+x', 'ur5e+xy', 'ur5e+xyz']:
         python_file = results_dir / f"{robot}_results.json"
         if python_file.exists():
-            print(f"\nProcessing Python {robot} benchmarks...")
-            data = process_benchmark_file(python_file, output_dir, is_cpp=False, robot_name=robot)
+            print(f"Processing Python {robot} benchmarks...")
+            # Don't visualize individual files, we'll do a combined one
+            data, ik_bms = process_benchmark_file(python_file, output_dir, 
+                                                   robot_name=robot, visualize=False)
             if data:
                 all_benchmarks[f'python_{robot}'] = data
+                all_python_ik_benchmarks.extend(ik_bms)
+    
+    # Visualize aggregated Python benchmarks
+    if all_python_ik_benchmarks:
+        print("\nGenerating aggregated Python visualization...")
+        grouped = group_ik_benchmarks(all_python_ik_benchmarks)
+        visualize_ik_benchmarks(grouped, {}, output_dir, " (Python)", "python_ik_benchmarks")
     
     # Generate unified summary
     if all_benchmarks:

@@ -175,10 +175,7 @@ def main():
     
     # Set default output directory if not provided
     if not args_dict['output']:
-        args_dict['output'] = os.path.join(
-            os.path.abspath(os.path.join(current_dir, "../..")),
-            "benchmarks/results"
-        )
+        args_dict['output'] = os.path.join(current_dir, "results")
     
     # Print header
     print("\n" + "="*70)
@@ -217,9 +214,8 @@ def main():
         print("GENERATING VISUALIZATIONS")
         print("="*70)
         
-        # Tools directory is in ../tools relative to this script
-        tools_dir = os.path.abspath(os.path.join(current_dir, "../tools"))
-        viz_script = os.path.join(tools_dir, "visualize_benchmarks.py")
+        # visualize_benchmarks.py is now in benchmarks/ directory
+        viz_script = os.path.join(current_dir, "visualize_benchmarks.py")
         
         viz_cmd = [sys.executable, viz_script, 
                   "--results-dir", args_dict['output']]

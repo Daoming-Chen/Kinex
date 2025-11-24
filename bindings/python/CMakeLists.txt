@@ -43,9 +43,6 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
             ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:pugixml-shared>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:spdlog>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:spdlog>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 else()
@@ -63,12 +60,6 @@ else()
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_SONAME_FILE:pugixml-shared>
             ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_SONAME_FILE_NAME:pugixml-shared>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:spdlog>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:spdlog>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_SONAME_FILE:spdlog>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_SONAME_FILE_NAME:spdlog>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 endif()
@@ -78,12 +69,25 @@ install(TARGETS _urdfx
     LIBRARY DESTINATION urdfx
     ARCHIVE DESTINATION urdfx
     RUNTIME DESTINATION urdfx
+    COMPONENT python
 )
 
-# Also install liburdfx.so and dependencies alongside the Python module
-install(TARGETS urdfx pugixml-shared spdlog
+# Also install liburdfx.so and pugixml alongside the Python module
+# spdlog is typically header-only or statically linked, so we don't install it
+install(TARGETS urdfx
     LIBRARY DESTINATION urdfx
     ARCHIVE DESTINATION urdfx
     RUNTIME DESTINATION urdfx
+    COMPONENT python
 )
+
+# Install pugixml if it's a shared library target
+if(TARGET pugixml-shared)
+    install(TARGETS pugixml-shared
+        LIBRARY DESTINATION urdfx
+        ARCHIVE DESTINATION urdfx
+        RUNTIME DESTINATION urdfx
+        COMPONENT python
+    )
+endif()
 

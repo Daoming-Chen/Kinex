@@ -23,18 +23,13 @@ from pathlib import Path
 from typing import List, Dict, Optional
 import numpy as np
 
-# Add current directory to path
+# Add current directory to path (benchmarks/)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-# Add benchmarks root to path for tools import
-benchmarks_root = os.path.abspath(os.path.join(current_dir, ".."))
-if benchmarks_root not in sys.path:
-    sys.path.insert(0, benchmarks_root)
-
 # Add Python bindings to path
-project_root = os.path.abspath(os.path.join(current_dir, "../.."))
+project_root = os.path.abspath(os.path.join(current_dir, ".."))
 python_bindings_path = os.path.join(project_root, "bindings/python")
 if python_bindings_path not in sys.path:
     sys.path.insert(0, python_bindings_path)
@@ -46,8 +41,8 @@ except ImportError:
     print(f"Tried paths: {python_bindings_path}")
     sys.exit(1)
 
-from tools.urdf_generator import MixedChainGenerator
-from tools.oracle import FKOracle, JointSampler
+from urdf_generator import MixedChainGenerator
+from oracle import FKOracle, JointSampler
 
 
 class BenchmarkRunner:
@@ -252,8 +247,8 @@ def main():
     args = parser.parse_args()
     
     # Setup paths
-    project_root = os.path.abspath(os.path.join(current_dir, "../../.."))
-    output_dir = Path(args.output) if os.path.isabs(args.output) else Path(project_root) / args.output
+    project_root = os.path.abspath(os.path.join(current_dir, ".."))
+    output_dir = Path(args.output) if os.path.isabs(args.output) else Path(current_dir) / "results"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     print("urdfx Tier B IK Benchmark Runner")

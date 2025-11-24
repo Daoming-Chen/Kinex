@@ -1,194 +1,230 @@
 # urdfx Benchmarks
 
-Comprehensive performance evaluation suite for urdfx.
+Comprehensive benchmarking suite for evaluating the performance of urdfx inverse kinematics solvers across diverse robot configurations.
 
-## Architecture
+## Overview
 
-The benchmark suite is organized into three main directories:
+This directory contains Python-based benchmarking tools for urdfx's IK solver performance. The benchmarks are organized into two tiers:
 
-```
-benchmarks/
-├── cpp/          # C++ benchmark implementations (Google Benchmark)
-├── python/       # Python benchmark implementations
-├── tools/        # Shared utilities (generators, oracles, visualizers)
-└── results/      # Benchmark output files and visualizations
-```
+- **Tier A**: Real-world robots (UR5e configurations, 6-10 DOF)
+- **Tier B**: Synthetic mixed-chain robots (8-20 DOF)
 
-### Directory Purposes
-
-#### `cpp/`
-Native C++ performance benchmarks measuring core library performance:
-- IK solver performance (various DOF configurations)
-- Jacobian computation performance
-- Forward kinematics performance
-
-Uses Google Benchmark framework for precise measurements.
-
-#### `python/`
-Python implementations of core library benchmarks:
-- Tier A: Real-world robots (UR5e variants, 6-10 DOF)
-- Tier B: Synthetic mixed-chain robots (8-20 DOF)
-
-These measure urdfx performance through the Python binding layer.
-
-#### `tools/`
-Shared infrastructure used by both C++ and Python benchmarks:
-- `MixedChainGenerator`: Generates synthetic URDF models
-- `FKOracle`: Forward kinematics validation
-- `JointSampler`: Joint configuration sampling
-- Visualization scripts for benchmark results
+![Python IK Benchmarks](results/python_ik_benchmarks.png)
 
 ## Quick Start
 
 ### Run All Benchmarks
 
 ```bash
-# From benchmarks/python/
-python run_all_benchmarks.py
+# Run both Tier A and Tier B benchmarks with visualization
+python run_benchmarks.py --all --visualize
 ```
 
-This runs:
-1. Python Tier A benchmarks (real-world robots)
-2. Python Tier B benchmarks (synthetic robots)
-3. C++ IK benchmarks
-4. C++ Jacobian benchmarks
-5. Generates visualizations
-
-### Run Python Benchmarks Only
+### Run Individual Tiers
 
 ```bash
-# Run both tiers
-python run_benchmarks.py --all
+# Tier A only (real-world robots)
+python run_benchmarks.py --tier-a
 
-# Tier A only
-python run_tier_a_benchmarks.py --samples 2000
-
-# Tier B only
-python run_tier_b_benchmarks.py --dof-min 10 --dof-max 15
+# Tier B only (synthetic robots)
+python run_benchmarks.py --tier-b
 ```
 
-### Run C++ Benchmarks
+### Custom Configurations
 
 ```bash
-# Build first
-cmake --build build --target ik_benchmarks
+# Custom sample count for Tier A
+python run_benchmarks.py --tier-a --samples 2000
 
-# Run
-./build/benchmarks/cpp/ik_benchmarks
-./build/benchmarks/cpp/jacobian_benchmarks
+# Custom DOF range for Tier B
+python run_benchmarks.py --tier-b --dof-min 10 --dof-max 15 --samples 500
+
+# Specify output directory
+python run_benchmarks.py --all --output results/custom
 ```
 
-Or use CMake targets:
+## Benchmark Components
+
+### Main Scripts
+
+#### `run_benchmarks.py`
+Unified entry point for running all benchmarks. Provides a consistent interface to execute both Tier A and Tier B benchmarks with optional visualization.
+
+**Key Features:**
+- Run all or selected benchmark tiers
+- Customizable parameters for each tier
+- Integrated visualization pipeline
+- Automatic result aggregation
+
+#### `run_tier_a_benchmarks.py`
+Benchmarks real-world robot configurations based on the UR5e manipulator.
+
+**Test Configurations:**
+- **UR5e** (6 DOF): Standard Universal Robots UR5e
+- **UR5e+X** (7 DOF): UR5e with 1 prismatic rail
+- **UR5e+XY** (8 DOF): UR5e with 2 prismatic rails
+- **UR5e+XYZ** (9 DOF): UR5e with 3 prismatic rails
+
+**Test Scenarios:**
+- `ColdStart_Zero`: Initialize from zero configuration
+- `ColdStart_Random`: Initialize from random configuration
+- `WarmStart`: Initialize from nearby configuration
+- `Trajectory`: Sequential solving along trajectory
+
+**Usage:**
 ```bash
-cmake --build build --target run_benchmarks
+python run_tier_a_benchmarks.py --samples 1000 --seed 42
 ```
 
-## When to Add Benchmarks Where
+#### `run_tier_b_benchmarks.py`
+Benchmarks synthetic robots with mixed revolute/prismatic joints.
 
-### Add to `cpp/` when:
-- Measuring raw C++ performance
-- Micro-benchmarking specific algorithms
-- Performance-critical code optimization
-- Need sub-microsecond precision
+**Features:**
+- Configurable DOF range (default: 8-20)
+- Mixed joint types (80% revolute, 20% prismatic)
+- Real-time URDF generation
+- Reproducible with seeds
 
-### Add to `python/` when:
-- Benchmarking complete workflows
-- Real-world performance scenarios
-- Python user-facing performance
-- Comparing different algorithms/configurations
-
-### Add to `tools/` when:
-- Creating reusable test infrastructure
-- Building dataset generators
-- Adding visualization tools
-- Writing validation utilities
-
-### Add to `bindings/python/benchmarks/` when:
-- Measuring Python binding overhead specifically
-- Comparing Python vs C++ performance
-- Testing data conversion performance
-
-## Using Shared Tools
-
-### Generate Synthetic Robot
-
-```python
-from tools.urdf_generator import MixedChainGenerator
-
-gen = MixedChainGenerator(dof=12, prismatic_prob=0.2, seed=42)
-urdf_string = gen.to_urdf_string()
-gen.save_urdf("robot_12dof.urdf")
-```
-
-### Validate with FK Oracle
-
-```python
-from tools.oracle import FKOracle, JointSampler
-import urdfx
-
-robot = urdfx.Robot.from_urdf_file("robot.urdf")
-oracle = FKOracle(robot)
-sampler = JointSampler(robot)
-
-# Generate test data
-q_samples = sampler.sample(1000)
-pos, rot = oracle.compute_pose(q_samples[0])
-```
-
-### Visualize Results
-
+**Usage:**
 ```bash
-# Python benchmarks
-python tools/visualize_benchmarks.py --results-dir results/
-
-# C++ benchmarks
-python tools/visualize_cpp_benchmarks.py --results-dir results/
+python run_tier_b_benchmarks.py --dof-min 8 --dof-max 20 --samples 500
 ```
 
-## Results
+### Supporting Modules
 
-Benchmark results are saved to `results/`:
-- `*_results.json`: Raw benchmark data
-- `benchmark_summary.md`: Python benchmark summary
-- `cpp_benchmark_summary.md`: C++ benchmark summary
-- `*.png`, `*.pdf`: Visualization charts
+#### `oracle.py`
+Forward kinematics oracle for generating ground-truth test cases.
 
-## Requirements
+**Components:**
+- `FKOracle`: Computes FK to generate target poses
+- `JointSampler`: Samples valid joint configurations within limits
+- `RestrictedJointSampler`: Samples within restricted range to avoid extreme windings
 
-### Python
-- urdfx Python bindings (built from project root)
-- NumPy
-- SciPy
-- Matplotlib (for visualizations)
+#### `urdf_generator.py`
+Generates synthetic URDF files for Tier B benchmarks.
 
-### C++
-- Google Benchmark (automatically fetched by CMake)
-- urdfx core library
+**Features:**
+- `MixedChainGenerator`: Creates serial chains with mixed joint types
+- Configurable link lengths and joint limits
+- Random DH parameters for realistic kinematic structures
+- Deterministic generation with seed control
 
-## Performance Targets
+#### `visualize_benchmarks.py`
+Generates publication-quality visualizations from benchmark results.
 
-### IK Solver (SQP)
-- 6-DOF: <100 µs per solve (cold start)
-- 10-DOF: <500 µs per solve (cold start)
-- 20-DOF: <2000 µs per solve (cold start)
-- Success rate: >95% for reachable poses
+**Capabilities:**
+- Parse Google Benchmark JSON format
+- Multi-robot comparison charts
+- Grouped bar charts by scenario
+- Success rate and iteration count analysis
+- Customizable output formats (PNG, PDF, SVG)
 
-### Jacobian
-- 6-DOF: <10 µs
-- 12-DOF: <30 µs
-- 20-DOF: <70 µs
+**Usage:**
+```bash
+python visualize_benchmarks.py --input results/*.json --output results/
+```
 
-### Python Binding Overhead
-- <10% overhead for computational operations
-- See `bindings/python/benchmarks/` for binding-specific tests
+## Results Structure
 
-## Contributing
+The `results/` directory contains:
 
-When adding benchmarks:
-1. Follow the architectural guidelines above
-2. Use consistent naming conventions
-3. Document expected performance targets
-4. Include visualization of results
-5. Test on multiple DOF configurations
+```
+results/
+├── benchmark_summary.md          # Human-readable summary
+├── python_ik_benchmarks.png      # Visualization of all benchmarks
+├── tier_b_benchmark_results.json # Tier B detailed results
+├── ur5e_results.json             # UR5e (6 DOF) results
+├── ur5e+x_results.json           # UR5e+X (7 DOF) results
+├── ur5e+xy_results.json          # UR5e+XY (8 DOF) results
+└── ur5e+xyz_results.json         # UR5e+XYZ (9 DOF) results
+```
 
-For detailed architectural decisions, see `openspec/changes/consolidate-benchmark-architecture/`.
+### Result Metrics
+
+Each benchmark tracks:
+- **Execution Time**: Mean solve time per iteration (microseconds)
+- **Iterations**: Average number of optimization iterations
+- **Success Rate**: Percentage of successfully converged solutions
+- **Position Error**: Mean position error for successful solves
+- **Orientation Error**: Mean orientation error (quaternion distance)
+
+## Key Findings
+
+Based on the latest benchmark results:
+
+### Tier A (Real-World Robots)
+
+| Robot | Best Scenario | Time (µs) | Iterations | Success Rate |
+|-------|---------------|-----------|------------|--------------|
+| UR5e (6 DOF) | Trajectory | 35.60 | 12.2 | 87.3% |
+| UR5e+X (7 DOF) | Trajectory | 12.14 | 4.2 | 97.0% |
+| UR5e+XY (8 DOF) | WarmStart | 6.40 | 3.1 | 100.0% |
+| UR5e+XYZ (9 DOF) | Trajectory | 4.83 | 2.6 | 100.0% |
+
+**Observations:**
+- Redundant DOF significantly improve convergence
+- Warm start initialization reduces solve time by ~50%
+- 7+ DOF configurations achieve >95% success rates
+- Python bindings show minimal overhead vs C++
+
+### Tier B (Synthetic Robots)
+
+- Tests scalability across 8-20 DOF range
+- Mixed joint types (revolute/prismatic) validate solver robustness
+- Validates performance on diverse kinematic structures
+
+## Dependencies
+
+Required Python packages:
+```bash
+pip install numpy scipy matplotlib
+```
+
+The benchmarks require the urdfx Python bindings to be built and installed. See `bindings/python/README.md` for build instructions.
+
+## Development
+
+### Adding New Benchmarks
+
+1. Define new test scenarios in the respective tier runner
+2. Update `run_benchmarks.py` if adding new tiers
+3. Ensure oracle and generator support new configurations
+4. Run with visualization to verify results
+
+### Customizing Visualizations
+
+Edit `visualize_benchmarks.py` to:
+- Change plot styles and colors
+- Add new metrics
+- Customize grouping and comparison logic
+
+## Troubleshooting
+
+### urdfx module not found
+```bash
+# Build and install Python bindings first
+cd bindings/python
+pip install -e .
+```
+
+### Visualization errors
+```bash
+# Install matplotlib if missing
+pip install matplotlib
+```
+
+### Low success rates
+- Increase `--max-iterations` (default: 100)
+- Relax `--tolerance` (default: 1e-6)
+- Check URDF file validity
+- Verify joint limits are reasonable
+
+## References
+
+- Main Project: [urdfx on GitHub](https://github.com/Daoming-Chen/urdfx)
+- Python Bindings: `bindings/python/README.md`
+- C++ Benchmarks: `benchmarks/cpp/README.md`
+
+## License
+
+Same as the parent urdfx project.

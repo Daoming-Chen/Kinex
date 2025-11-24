@@ -239,28 +239,104 @@ cmake --build build
 
 ## Benchmarking
 
-Run the comprehensive benchmark suite to measure IK and Jacobian performance:
+### Building and Running Benchmarks
+
+The comprehensive benchmark suite measures IK solver and Jacobian computation performance across various robot configurations.
+
+#### Step 1: Build C++ Core with Benchmarks
 
 ```bash
-# Build with benchmarks enabled
+# Configure with benchmarks enabled
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
+
+# Build the project (use -j for parallel compilation)
 cmake --build build --config Release -j
+```
 
-# Run all benchmarks (Python + C++)
-cd benchmarks/python
-python run_all_benchmarks.py
+#### Step 2: Build and Install Python Bindings
 
-# Or run C++ benchmarks only
+```bash
+# Navigate to Python bindings directory
+cd bindings/python
+
+# Build the wheel package
+python3 -m build --wheel
+
+# Install the wheel (adjust path to match your Python version)
+pip install --force-reinstall dist/urdfx-*.whl
+
+# Return to project root
+cd ../..
+```
+
+#### Step 3: Run All Benchmarks
+
+```bash
+# Run the master benchmark script (includes Python + C++ benchmarks and visualizations)
+cd benchmarks
+python3 python/run_all_benchmarks.py
+```
+
+This will:
+1. Run Python benchmarks (Tier A: real-world robots, Tier B: mixed-chain robots)
+2. Run C++ benchmarks (IK, Jacobian, mixed-chain)
+3. Generate visualization plots (PNG format)
+4. Create a unified summary report
+
+**Results are saved to:** `benchmarks/results/`
+
+#### Alternative: Run Individual Benchmarks
+
+**C++ Benchmarks Only:**
+```bash
+# IK benchmarks
 ./build/benchmarks/cpp/ik_benchmarks \
-    --benchmark_out=benchmarks/results/ik_benchmarks_$(date +%Y%m%d).json \
+    --benchmark_out=benchmarks/results/ik_benchmarks.json \
     --benchmark_out_format=json
 
+# Jacobian benchmarks
 ./build/benchmarks/cpp/jacobian_benchmarks \
-    --benchmark_out=benchmarks/results/jacobian_benchmarks_$(date +%Y%m%d).json \
+    --benchmark_out=benchmarks/results/jacobian_benchmarks.json \
+    --benchmark_out_format=json
+
+# Mixed-chain IK benchmarks (requires dataset generation)
+./build/benchmarks/cpp/mixed_ik_benchmarks \
+    --benchmark_out=benchmarks/results/mixed_ik_benchmarks.json \
     --benchmark_out_format=json
 ```
 
+**Python Benchmarks Only:**
+```bash
+cd benchmarks
+
+# Run Tier A (real-world robots: UR5e with constraints)
+python3 python/run_tier_a_benchmarks.py
+
+# Run Tier B (synthetic mixed-chain robots: 8-20 DOF)
+python3 python/run_tier_b_benchmarks.py
+
+# Or run both tiers together
+python3 python/run_benchmarks.py
+```
+
+#### Visualizing Results
+
+```bash
+# Generate plots from existing benchmark results
+cd benchmarks
+python3 tools/visualize_benchmarks.py --results-dir results
+```
+
+This creates:
+- `cpp_ik_benchmarks.png` - C++ IK performance visualization
+- `python_ik_benchmarks.png` - Python IK performance visualization
+- `benchmark_summary.md` - Comprehensive text summary
+
 For detailed benchmarking documentation, see [`benchmarks/README.md`](benchmarks/README.md).
+
+![Python IK Benchmarks](benchmarks/results/python_ik_benchmarks.png)
+
+*Python IK solver performance across Tier A (real-world robots) showing solve times, iteration counts, and success rates for different initialization strategies.*
 
 ### Benchmark Scenarios
 
