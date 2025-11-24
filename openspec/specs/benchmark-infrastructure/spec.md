@@ -1,7 +1,7 @@
 # benchmark-infrastructure Specification
 
 ## Purpose
-TBD - created by archiving change add-mixed-chain-benchmark-suite. Update Purpose after archive.
+Consolidate and standardize benchmark scenarios and metrics across C++ and Python implementations so results are comparable and reproducible. This document defines the canonical benchmark infrastructure, dataset generation, scenario semantics, metric naming/units, multi-robot support, and expected behavior for both native and binding-based benchmarks.
 ## Requirements
 ### Requirement: Benchmark Dataset Generation
 
@@ -57,7 +57,7 @@ The C++ benchmark suite SHALL support robots with arbitrary degrees of freedom (
 
 ### Requirement: Performance Metrics Collection
 
-The benchmark infrastructure SHALL collect comprehensive metrics for IK solver evaluation.
+The benchmark infrastructure SHALL collect comprehensive metrics for IK solver evaluation and SHALL ensure consistent naming and units across implementations (C++ and Python).
 
 #### Scenario: Success rate measurement
 
@@ -71,11 +71,13 @@ The benchmark infrastructure SHALL collect comprehensive metrics for IK solver e
 - **THEN** average, median, min, max iterations per solve are recorded
 - **AND** iteration count is tracked separately for converged and failed attempts
 
+
 #### Scenario: Execution time measurement
 
 - **WHEN** IK solve is executed
 - **THEN** wall-clock time is measured in microseconds
 - **AND** time excludes dataset loading and result validation
+- **AND** metric naming is unified: use `real_time` for native C++ Google Benchmark output and `avg_time_us` for Python JSON output; both are expressed in microseconds (us) and must be treated equivalently by post-processing/visualization tools
 
 #### Scenario: Position and rotation error tracking
 
@@ -83,27 +85,116 @@ The benchmark infrastructure SHALL collect comprehensive metrics for IK solver e
 - **THEN** position error (mm) is computed as: $1000 \times \|p_{achieved} - p_{target}\|_2$
 - **AND** rotation error (deg) is computed as: $\frac{180}{\pi} \times \text{angularDistance}(q_{achieved}, q_{target})$
 
-#### Scenario: Joint type sensitivity analysis
+#### Scenario: Joint type sensitivity analysis (REMOVED)
 
-- **WHEN** benchmarking mixed-joint robots
-- **THEN** errors are grouped by joint type (revolute vs prismatic)
-- **AND** average error per joint type is reported
+Joint type sensitivity analysis has been removed from the canonical scope of this benchmark spec. Mixed-chain / Tier-B Python benchmarks may continue to include joint-type analysis as a supplementary capability, but it is not part of the core alignment effort.
 
 ### Requirement: Cold Start vs Warm Start Comparison
 
-The benchmark infrastructure SHALL evaluate the impact of initial guess quality on solver performance.
+The benchmark infrastructure SHALL evaluate the impact of initial guess quality on solver performance and SHALL provide three explicitly-named scenarios with consistent semantics across C++ and Python:
 
-#### Scenario: Cold start benchmark
+1. ColdStart_Zero (C++) / cold_start_zero (Python)
+2. ColdStart_Random (C++) / cold_start_random (Python)
+3. Trajectory (C++) / trajectory (Python)
 
-- **WHEN** user runs `BM_IK_ColdStart`
-- **THEN** all IK solves use $q_{init} = 0$ or random initial guess
+#### Scenario: Cold start from zero
+
+- **WHEN** user runs `BM_IK_ColdStart_Zero` (C++) or `cold_start_zero` (Python)
+- **THEN** all IK solves use $q_{init} = 0$ (all joints at zero)
+- **AND** warm start is disabled in solver configuration
+
+#### Scenario: Cold start from random
+
+- **WHEN** user runs `BM_IK_ColdStart_Random` (C++) or `cold_start_random` (Python)
+- **THEN** all IK solves use random initial guesses sampled uniformly within joint limits
+- **AND** random guesses are independent of target configurations
 - **AND** warm start is disabled in solver configuration
 
 #### Scenario: Warm start benchmark
 
-- **WHEN** user runs `BM_IK_WarmStart`
+- **WHEN** user runs `BM_IK_WarmStart` (C++) or `warm_start` scenario (Python)
 - **THEN** IK solves reuse previous solution as initial guess
 - **AND** first solve is primed outside measured region
+@@
+### Requirement: Trajectory Tracking Benchmark
+
+The benchmark infrastructure SHALL evaluate IK solver performance on continuous trajectories and SHALL ensure the trajectory semantics match across languages (C++ and Python).
+
+#### Scenario: Generate trajectory dataset
+
+- **WHEN** a trajectory dataset is created
+- **THEN** 25 waypoints are sampled along a smooth path in joint space
+- **AND** waypoints are separated by small increments (max 0.08 rad per joint)
+- **AND** waypoints stay within joint limits (clamped if necessary)
+- **AND** same trajectory generation logic is used in C++ and Python
+
+#### Scenario: Trajectory following benchmark
+
+- **WHEN** user runs `BM_IK_Trajectory` (C++) or `trajectory` scenario (Python)
+- **THEN** IK is solved sequentially for each waypoint
+- **AND** first waypoint uses zero initialization (cold start)
+- **AND** subsequent waypoints use previous solution as initial guess (warm start)
+- **AND** metrics track cumulative error and convergence failure rate
+
+### Requirement: Multi-Robot Benchmark Support
+
+The benchmark infrastructure SHALL support running benchmarks across multiple robot configurations in a single test run and SHALL standardize naming conventions for results.
+
+#### Scenario: Test UR5e robot variants
+
+- **WHEN** benchmarks are executed
+- **THEN** tests run on all UR5e variants: ur5e (6 DOF), ur5e+x (7 DOF), ur5e+xy (8 DOF), ur5e+xyz (9 DOF)
+- **AND** each robot/scenario combination produces separate results
+- **AND** results are aggregated in unified output format
+
+#### Scenario: C++ parameterized benchmarks
+
+- **WHEN** C++ benchmarks are built
+- **THEN** Google Benchmark parameterized benchmarks are used
+- **AND** each robot/scenario combination is a separate benchmark instance
+- **AND** benchmark names follow pattern: `BM_IK_{Scenario}/{RobotName}`
+
+#### Scenario: Python robot iteration
+
+- **WHEN** Python benchmarks are run
+- **THEN** Tier A runner iterates over robot configurations
+- **AND** each robot produces a separate JSON output file
+- **AND** JSON files follow naming: `{robot_name}_results.json`
+
+### Requirement: Cross-Language Benchmark Consistency
+
+The benchmark infrastructure SHALL ensure C++ and Python implementations produce comparable results for validation and downstream visualization.
+
+#### Scenario: Identical test parameters
+
+- **WHEN** benchmarks are run in both C++ and Python
+- **THEN** both use random seed 42 for reproducibility
+- **AND** both use 1000 test samples per robot/scenario
+- **AND** both use same solver configuration (tolerance, max_iterations, etc.)
+
+#### Scenario: Scenario naming alignment
+
+- **WHEN** benchmark results are compared
+- **THEN** C++ scenario names are: `ColdStart_Zero`, `ColdStart_Random`, `Trajectory`
+- **AND** Python scenario keys are: `cold_start_zero`, `cold_start_random`, `trajectory`
+- **AND** mapping is documented for cross-language comparison
+
+#### Scenario: Metric units consistency
+
+- **WHEN** metrics are reported
+- **THEN** time is always in microseconds (µs)
+- **AND** position error is always in millimeters (mm)
+- **AND** rotation error is always in degrees (deg)
+- **AND** success rate is always in percentage (%)
+- **AND** iteration count is dimensionless
+
+#### Scenario: Expected differences documentation
+
+- **WHEN** comparing C++ and Python results
+- **THEN** documentation explains expected binding overhead (~5-15% time increase)
+- **AND** success rates should match within ±5%
+- **AND** iteration counts should be identical for converged cases
+- **AND** errors should match within floating point precision (±1e-6)
 
 #### Scenario: Initial guess quality impact
 
