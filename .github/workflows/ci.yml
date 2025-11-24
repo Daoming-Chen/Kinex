@@ -126,12 +126,12 @@ jobs:
           python -m pip install --find-links=dist urdfx
       
       - name: Run Python tests
-        shell: bash
+        shell: pwsh
         run: |
           # Run tests from a different directory to ensure we're testing the installed package
           # not the source directory
-          cd ${{ runner.temp }}
-          pytest ${{ github.workspace }}/bindings/python/tests -v
+          cd "${{ runner.temp }}"
+          pytest "${{ github.workspace }}/bindings/python/tests" -v
       
       - name: Upload wheel artifacts
         if: matrix.python-version == '3.11'
@@ -173,7 +173,7 @@ jobs:
       - name: Install Node.js dependencies
         run: |
           cd bindings/wasm
-          npm ci
+          npm install --verbose
       
       - name: Run Node.js tests
         run: |
