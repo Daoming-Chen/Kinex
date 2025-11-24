@@ -54,9 +54,14 @@ NB_MODULE(_urdfx, m) {
     nb::class_<Transform>(m, "Transform")
         .def(nb::init<>())
         .def(nb::init<const Eigen::Isometry3d&>())
-        .def_static("from_position_quaternion", &Transform::fromPositionQuaternion,
+        .def_static("from_position_quaternion", 
+            [](const Eigen::Vector3d& position, const Eigen::Vector4d& quat_xyzw) {
+                // Convert from numpy array [x, y, z, w] to Eigen::Quaterniond(w, x, y, z)
+                Eigen::Quaterniond quat(quat_xyzw(3), quat_xyzw(0), quat_xyzw(1), quat_xyzw(2));
+                return Transform::fromPositionQuaternion(position, quat);
+            },
             nb::arg("position"), nb::arg("quaternion"),
-            "Create transform from position and quaternion")
+            "Create transform from position and quaternion (x,y,z,w)")
         .def_static("from_position_rpy", &Transform::fromPositionRPY,
             nb::arg("position"), nb::arg("rpy"),
             "Create transform from position and RPY angles")
