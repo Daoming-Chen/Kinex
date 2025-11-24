@@ -22,19 +22,26 @@ set(KINEX_HEADERS
 add_library(kinex ${KINEX_SOURCES} ${KINEX_HEADERS})
 
 # Set library properties
-if(APPLE)
+set_target_properties(kinex PROPERTIES
+    PUBLIC_HEADER "${KINEX_HEADERS}"
+)
+
+# Only set version properties if not building Python bindings
+# This avoids issues with versioned shared libraries in Python wheels
+if(NOT BUILD_PYTHON_BINDINGS)
     set_target_properties(kinex PROPERTIES
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${KINEX_HEADERS}"
+    )
+endif()
+
+if(APPLE)
+    set_target_properties(kinex PROPERTIES
         INSTALL_RPATH "@loader_path"
         BUILD_RPATH "@loader_path"
     )
 else()
     set_target_properties(kinex PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${KINEX_HEADERS}"
         INSTALL_RPATH "$ORIGIN"
         BUILD_RPATH "$ORIGIN"
     )

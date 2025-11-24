@@ -22,6 +22,17 @@ nanobind_add_module(_kinex src/bindings.cpp)
 # Link to kinex library
 target_link_libraries(_kinex PRIVATE kinex)
 
+# Set RPATH for the extension module to find the shared library in the same directory
+if(UNIX AND NOT APPLE)
+    set_target_properties(_kinex PROPERTIES
+        INSTALL_RPATH "$ORIGIN"
+    )
+elseif(APPLE)
+    set_target_properties(_kinex PROPERTIES
+        INSTALL_RPATH "@loader_path"
+    )
+endif()
+
 # Set output properties
 set_target_properties(_kinex PROPERTIES
     OUTPUT_NAME "_kinex"
