@@ -48,10 +48,8 @@ jobs:
       - name: Cache CMake build
         uses: actions/cache@v4
         with:
-          path: |
-            build
-            third_party
-          key: ${{ runner.os }}-cmake-${{ matrix.build-type }}-${{ hashFiles('**/CMakeLists.txt') }}
+          path: build
+          key: ${{ runner.os }}-cmake-${{ matrix.build-type }}-${{ hashFiles('**/CMakeLists.txt', '.gitmodules') }}
           restore-keys: |
             ${{ runner.os }}-cmake-${{ matrix.build-type }}-
             ${{ runner.os }}-cmake-
