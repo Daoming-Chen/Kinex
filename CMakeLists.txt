@@ -89,7 +89,11 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
         else()
             # Use -march=x86-64 instead of native for better compatibility
             # Users can override with -DCMAKE_CXX_FLAGS="-march=native" for local builds
-            add_compile_options(-O3 -march=x86-64)
+            if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "amd64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
+                add_compile_options(-O3 -march=x86-64)
+            else()
+                add_compile_options(-O3)
+            endif()
         endif()
     endif()
 endif()

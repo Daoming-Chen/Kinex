@@ -32,7 +32,7 @@ add_test(NAME urdfx_tests COMMAND urdfx_tests)
 # On Windows, set PATH to include DLL directories for the test
 if(WIN32 AND BUILD_SHARED_LIBS)
     set_tests_properties(urdfx_tests PROPERTIES
-        ENVIRONMENT "PATH=$<TARGET_FILE_DIR:urdfx>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$ENV{PATH}"
+        ENVIRONMENT "PATH=$<TARGET_FILE_DIR:urdfx>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$<TARGET_FILE_DIR:gtest>;$<TARGET_FILE_DIR:gtest_main>;$ENV{PATH}"
     )
 endif()
 
@@ -65,5 +65,17 @@ if(WIN32 AND BUILD_SHARED_LIBS)
             $<TARGET_FILE:pugixml-shared>
             $<TARGET_FILE_DIR:urdfx_tests>
         COMMENT "Copying pugixml DLL to test directory"
+    )
+    add_custom_command(TARGET urdfx_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:gtest>
+            $<TARGET_FILE_DIR:urdfx_tests>
+        COMMENT "Copying gtest DLL to test directory"
+    )
+    add_custom_command(TARGET urdfx_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:gtest_main>
+            $<TARGET_FILE_DIR:urdfx_tests>
+        COMMENT "Copying gtest_main DLL to test directory"
     )
 endif()
