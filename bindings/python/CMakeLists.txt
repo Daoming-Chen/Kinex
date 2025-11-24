@@ -19,6 +19,10 @@ endif()
 # Create Python extension module
 nanobind_add_module(_kinex src/bindings.cpp)
 
+# Pass version information to the bindings
+# Use CMAKE_PROJECT_VERSION instead of PROJECT_VERSION since we're in a subdirectory
+target_compile_definitions(_kinex PRIVATE KINEX_VERSION="${CMAKE_PROJECT_VERSION}")
+
 # Link to kinex library
 target_link_libraries(_kinex PRIVATE kinex)
 
@@ -59,10 +63,17 @@ if(TARGET spdlog)
     )
 endif()
 
-if(TARGET pugixml)
-    install(TARGETS pugixml
+# pugixml-shared is the actual target when BUILD_SHARED_LIBS is ON
+# pugixml is just an INTERFACE library that aliases to pugixml-shared or pugixml-static
+if(TARGET pugixml-shared)
+    install(TARGETS pugixml-shared
         RUNTIME DESTINATION kinex
         LIBRARY DESTINATION kinex
+    )
+elseif(TARGET pugixml-static)
+    # Static libraries don't need runtime installation, they're linked into the executable
+    install(TARGETS pugixml-static
+        ARCHIVE DESTINATION kinex
     )
 endif()
 
