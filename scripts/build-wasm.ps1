@@ -64,6 +64,28 @@ Remove-Item $tempScript
 if ($LASTEXITCODE -eq 0) {
     Write-Host "WASM build completed successfully!" -ForegroundColor Green
     Write-Host "Output files are in: build-wasm\wasm\" -ForegroundColor Cyan
+    
+    # Update package.json version from CMakeLists.txt
+    Write-Host "Updating package.json version..." -ForegroundColor Green
+    $cmakePath = Join-Path (Split-Path $PSScriptRoot -Parent) "CMakeLists.txt"
+    $packageJsonPath = Join-Path (Split-Path $PSScriptRoot -Parent) "bindings\wasm\package.json"
+    
+    if ((Test-Path $cmakePath) -and (Test-Path $packageJsonPath)) {
+        $cmakeContent = Get-Content $cmakePath -Raw
+        if ($cmakeContent -match 'project\(kinex\s+VERSION\s+(\d+\.\d+\.\d+)') {
+            $version = $matches[1]
+            $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
+            $packageJson.version = $version
+            # Use proper JSON formatting
+            $jsonOutput = $packageJson | ConvertTo-Json -Depth 10
+            # Fix PowerShell's JSON formatting
+            $jsonOutput = $jsonOutput -replace '\\u003e', '>'
+            [System.IO.File]::WriteAllText($packageJsonPath, $jsonOutput, [System.Text.UTF8Encoding]::new($false))
+            Write-Host "Updated package.json to version $version" -ForegroundColor Green
+        } else {
+            Write-Warning "Could not extract version from CMakeLists.txt"
+        }
+    }
 } else {
     Write-Error "WASM build failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE

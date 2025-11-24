@@ -1,15 +1,29 @@
-{
-    "name": "@kinex/wasm-tests",
+﻿{
+    "name": "@kinex/wasm",
     "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "test": "npm run test:node && npm run test:browser",
-        "test:node": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./jest.config.cjs --testMatch \"**/tests/node/**/*.test.js\"",
-        "test:browser": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./jest.config.cjs --runTestsByPath ./tests/browser/module.browser.test.js"
+    "description": "WebAssembly bindings for kinex robotics kinematics library",
+    "main": "kinex.js",
+    "types": "kinex.d.ts",
+    "files": [
+        "kinex.js",
+        "kinex.wasm",
+        "kinex.d.ts"
+    ],
+    "keywords": [
+        "robotics",
+        "kinematics",
+        "wasm",
+        "webassembly",
+        "inverse-kinematics"
+    ],
+    "author": "Kinex Contributors",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Daoming-Chen/Kinex.git",
+        "directory": "bindings/wasm"
     },
-    "devDependencies": {
-        "@types/jest": "^29.5.11",
-        "jest": "^29.7.0",
-        "puppeteer": "^22.9.0"
+    "engines": {
+        "node": ">=14.0.0"
     }
 }
