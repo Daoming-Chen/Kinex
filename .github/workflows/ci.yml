@@ -63,12 +63,7 @@ jobs:
           cmake --build build --config ${{ matrix.build-type }} -j 4
       
       - name: Run C++ tests
-        shell: bash
         run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # On Windows, add the DLL directories to PATH
-            export PATH="$PWD/build/core/${{ matrix.build-type }}:$PWD/build/third_party/spdlog/${{ matrix.build-type }}:$PWD/build/third_party/pugixml/${{ matrix.build-type }}:$PATH"
-          fi
           ctest --test-dir build --build-config ${{ matrix.build-type }} --output-on-failure
       
       - name: Upload test logs on failure
