@@ -1,5 +1,5 @@
 # Dependencies.cmake
-# This module finds or builds all dependencies for urdfx
+# This module finds or builds all dependencies for kinex
 
 # Prefer using system-installed packages, fall back to submodules
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_SOURCE_DIR}/third_party)
@@ -94,6 +94,8 @@ if(BUILD_TESTING)
         message(STATUS "GoogleTest not found on system, using submodule")
         set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
         set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+        # Force GoogleTest to use the same runtime library as the main project
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/googletest EXCLUDE_FROM_ALL)
         # GoogleTest provides GTest::gtest and GTest::gtest_main
     endif()

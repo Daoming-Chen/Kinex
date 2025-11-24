@@ -1,6 +1,6 @@
 #pragma once
 
-#include "urdfx/export.h"
+#include "kinex/export.h"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <string>
@@ -9,12 +9,12 @@
 #include <optional>
 #include <unordered_map>
 
-namespace urdfx {
+namespace kinex {
 
 /**
  * @brief Wrapper around Eigen::Isometry3d for representing 3D transformations
  */
-class URDFX_API Transform {
+class KINEX_API Transform {
 public:
     Transform() : transform_(Eigen::Isometry3d::Identity()) {}
     explicit Transform(const Eigen::Isometry3d& t) : transform_(t) {}
@@ -147,7 +147,7 @@ struct Collision {
 /**
  * @brief Robot link with physical and geometric properties
  */
-class URDFX_API Link {
+class KINEX_API Link {
 public:
     explicit Link(const std::string& name) : name_(name) {}
     
@@ -202,7 +202,7 @@ struct JointDynamics {
 /**
  * @brief Robot joint connecting two links
  */
-class URDFX_API Joint {
+class KINEX_API Joint {
 public:
     Joint(const std::string& name, JointType type) 
         : name_(name), type_(type) {}
@@ -255,7 +255,7 @@ private:
 /**
  * @brief Complete robot model with links and joints
  */
-class URDFX_API Robot {
+class KINEX_API Robot {
 public:
     explicit Robot(const std::string& name) : name_(name) {}
     
@@ -307,4 +307,4 @@ private:
     void buildMaps() const;
 };
 
-} // namespace urdfx
+} // namespace kinex

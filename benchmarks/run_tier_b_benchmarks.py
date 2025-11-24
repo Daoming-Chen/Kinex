@@ -35,9 +35,9 @@ if python_bindings_path not in sys.path:
     sys.path.insert(0, python_bindings_path)
 
 try:
-    import urdfx
+    import kinex
 except ImportError:
-    print("Error: urdfx module not found. Please build Python bindings first.")
+    print("Error: kinex module not found. Please build Python bindings first.")
     print(f"Tried paths: {python_bindings_path}")
     sys.exit(1)
 
@@ -60,7 +60,7 @@ class BenchmarkRunner:
                      num_samples: int,
                      robot_seed: int = 42,
                      sample_seed: int = 42,
-                     solver_config: Optional[urdfx.SolverConfig] = None) -> Dict:
+                     solver_config: Optional[kinex.SolverConfig] = None) -> Dict:
         """Run IK benchmark for a specific DOF configuration."""
         
         self.log(f"\n{'='*70}")
@@ -76,7 +76,7 @@ class BenchmarkRunner:
         self.log(f"  Robot: {stats['num_revolute']} revolute, {stats['num_prismatic']} prismatic joints")
         
         # 2. Load robot
-        robot = urdfx.Robot.from_urdf_string(urdf_str)
+        robot = kinex.Robot.from_urdf_string(urdf_str)
         
         # 3. Setup oracle and sampler
         oracle = FKOracle(robot)
@@ -86,12 +86,12 @@ class BenchmarkRunner:
         self.log(f"  Samples: {num_samples}")
         
         # 4. Create IK solver
-        solver = urdfx.SQPIKSolver(robot, oracle.end_link)
+        solver = kinex.SQPIKSolver(robot, oracle.end_link)
         
         if solver_config:
             solver.set_solver_config(solver_config)
         else:
-            config = urdfx.SolverConfig()
+            config = kinex.SolverConfig()
             config.tolerance = 1e-6
             config.max_iterations = 500
             solver.set_solver_config(config)
@@ -131,10 +131,10 @@ class BenchmarkRunner:
         return results
     
     def _run_case_type(self,
-                      robot: urdfx.Robot,
+                      robot: kinex.Robot,
                       oracle: FKOracle,
                       sampler: JointSampler,
-                      solver: urdfx.SQPIKSolver,
+                      solver: kinex.SQPIKSolver,
                       q_samples: np.ndarray,
                       case_type: str,
                       dof: int) -> Dict:
@@ -158,7 +158,7 @@ class BenchmarkRunner:
             # Convert to Transform
             from scipy.spatial.transform import Rotation as R
             rpy = R.from_matrix(target_rot).as_euler('xyz', degrees=False)
-            target_transform = urdfx.Transform.from_position_rpy(target_pos, rpy)
+            target_transform = kinex.Transform.from_position_rpy(target_pos, rpy)
             
             # 2. Choose initial guess based on strategy
             if case_type == "cold_start_zero":
@@ -251,7 +251,7 @@ def main():
     output_dir = Path(args.output) if os.path.isabs(args.output) else Path(current_dir) / "results"
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print("urdfx Tier B IK Benchmark Runner")
+    print("kinex Tier B IK Benchmark Runner")
     print("=" * 70)
     print(f"DOF range: {args.dof_min}-{args.dof_max}")
     print(f"Samples per DOF: {args.samples}")
@@ -262,7 +262,7 @@ def main():
     print(f"Output directory: {output_dir}")
     
     # Configure solver
-    solver_config = urdfx.SolverConfig()
+    solver_config = kinex.SolverConfig()
     solver_config.max_iterations = args.max_iterations
     solver_config.tolerance = args.tolerance
     
@@ -291,7 +291,7 @@ def main():
         result['benchmark_time_s'] = elapsed
         all_results.append(result)
         
-        print(f"\n  âœ“ Completed in {elapsed:.2f}s")
+        print(f"\n  âœ?Completed in {elapsed:.2f}s")
     
     total_elapsed = time.time() - start_total
     
@@ -313,8 +313,8 @@ def main():
         }, f, indent=2)
     
     print("\n" + "=" * 70)
-    print(f"âœ“ All benchmarks completed in {total_elapsed:.2f}s")
-    print(f"âœ“ Results saved to: {results_file}")
+    print(f"âœ?All benchmarks completed in {total_elapsed:.2f}s")
+    print(f"âœ?Results saved to: {results_file}")
     print("=" * 70)
 
 

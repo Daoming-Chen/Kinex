@@ -51,7 +51,7 @@ The system SHALL allow dragging the end-effector to solve IK.
 #### Scenario: Drag end-effector to target
 **Given** the app is in IK mode  
 **When** the user drags the end-effector gizmo to a new position  
-**Then** IK is solved using the WASM urdfx module  
+**Then** IK is solved using the WASM kinex module  
 **And** the robot joints update to reach the target  
 **And** the solution updates in real-time (< 100ms)
 

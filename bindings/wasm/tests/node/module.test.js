@@ -1,8 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const modulePath = process.env.URDFX_WASM_BUNDLE;
-const wasmPath = process.env.URDFX_WASM_BINARY;
+const modulePath = process.env.KINEX_WASM_BUNDLE;
+const wasmPath = process.env.KINEX_WASM_BINARY;
 const hasArtifacts = Boolean(modulePath && wasmPath);
 
 const SIMPLE_URDF = `<?xml version="1.0"?>
@@ -37,13 +37,13 @@ function vectorToArray(vec) {
   return Array.from(vec);
 }
 
-describeIf('URDFX WASM module (Node)', () => {
+describeIf('kinex WASM module (Node)', () => {
   let module;
 
   beforeAll(async () => {
     const wasmStat = await fs.promises.stat(wasmPath);
     if (!wasmStat.isFile()) {
-      throw new Error('URDFX_WASM_BINARY must point to the generated urdfx.wasm file.');
+      throw new Error('KINEX_WASM_BINARY must point to the generated kinex.wasm file.');
     }
 
     const resolvedModulePath = path.resolve(modulePath);
@@ -112,8 +112,8 @@ describeIf('URDFX WASM module (Node)', () => {
   });
 });
 
-describeIf('URDFX WASM artifacts availability', () => {
-  test('requires URDFX_WASM_BUNDLE and URDFX_WASM_BINARY environment variables', () => {
+describeIf('kinex WASM artifacts availability', () => {
+  test('requires KINEX_WASM_BUNDLE and KINEX_WASM_BINARY environment variables', () => {
     expect(hasArtifacts).toBe(true);
   });
 });

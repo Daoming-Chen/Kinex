@@ -222,7 +222,7 @@ Both implementations output Google Benchmark JSON format:
 
 4. **Configure URDF paths**:
    - Extend CMake to pass all variant paths
-   - Use macro: `URDFX_UR5_VARIANT_PATHS`
+   - Use macro: `kinex_UR5_VARIANT_PATHS`
 
 ### Python Changes
 

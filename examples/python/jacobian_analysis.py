@@ -1,4 +1,4 @@
-import urdfx
+import kinex
 import numpy as np
 import os
 import sys
@@ -15,9 +15,9 @@ def main():
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
-    robot = urdfx.Robot.from_urdf_file(urdf_path)
-    jac_calc = urdfx.JacobianCalculator(robot, "wrist_3_link")
-    fk = urdfx.ForwardKinematics(robot, "wrist_3_link")
+    robot = kinex.Robot.from_urdf_file(urdf_path)
+    jac_calc = kinex.JacobianCalculator(robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(robot, "wrist_3_link")
     
     # Analyze a trajectory
     steps = 20

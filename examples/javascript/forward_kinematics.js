@@ -3,22 +3,22 @@ const path = require('path');
 
 // Path to the built WASM module
 // Try to find it in the build directory
-const BUILD_WASM_PATH = path.join(__dirname, '../../build-wasm/wasm/urdfx.js');
-const LOCAL_WASM_PATH = path.join(__dirname, './urdfx.js');
+const BUILD_WASM_PATH = path.join(__dirname, '../../build-wasm/wasm/kinex.js');
+const LOCAL_WASM_PATH = path.join(__dirname, './kinex.js');
 
-let createUrdfxModule;
+let createKinexModule;
 let wasmPath;
 
 if (fs.existsSync(BUILD_WASM_PATH)) {
     console.log(`Using WASM module from build directory: ${BUILD_WASM_PATH}`);
-    createUrdfxModule = require(BUILD_WASM_PATH);
+    createKinexModule = require(BUILD_WASM_PATH);
     wasmPath = path.dirname(BUILD_WASM_PATH);
 } else if (fs.existsSync(LOCAL_WASM_PATH)) {
     console.log(`Using local WASM module: ${LOCAL_WASM_PATH}`);
-    createUrdfxModule = require(LOCAL_WASM_PATH);
+    createKinexModule = require(LOCAL_WASM_PATH);
     wasmPath = __dirname;
 } else {
-    console.error('Could not find urdfx.js. Please build the WASM module first.');
+    console.error('Could not find kinex.js. Please build the WASM module first.');
     console.error('Expected at:', BUILD_WASM_PATH);
     // For development, we might want to continue if the user plans to put it there
     // but for running it will fail.
@@ -29,7 +29,7 @@ async function main() {
     try {
         // Initialize the module
         // We need to help it find the .wasm file if it's not in the current working directory
-        const urdfx = await createUrdfxModule({
+        const KINEX = await createKinexModule({
             locateFile: (path, prefix) => {
                 if (path.endsWith('.wasm')) {
                     return require('path').join(wasmPath, path);
@@ -37,7 +37,7 @@ async function main() {
                 return prefix + path;
             }
         });
-        console.log('urdfx module loaded successfully');
+        console.log('kinex module loaded successfully');
 
         // Load URDF
         const urdfPath = path.join(__dirname, '../../examples/models/ur5/ur5e.urdf');
@@ -48,7 +48,7 @@ async function main() {
         const urdfContent = fs.readFileSync(urdfPath, 'utf8');
 
         // Create Robot from URDF string
-        const robot = urdfx.Robot.fromURDFString(urdfContent);
+        const robot = kinex.Robot.fromURDFString(urdfContent);
         console.log(`Robot loaded: ${robot.getName()}`);
         console.log(`DOF: ${robot.getDOF()}`);
 
@@ -91,12 +91,12 @@ async function main() {
             }
         }
 
-        // 遍历可移动的 links，计算并输出其位姿
+        // 遍历可移动的 links，计算并输出其位�?
         console.log('\nLink Poses (movable links only):');
         for (const linkName of movableLinks) {
             try {
                 // 创建 FK solver: base -> 当前 link
-                const fk = new urdfx.ForwardKinematics(robot, linkName, baseLinkName);
+                const fk = new kinex.ForwardKinematics(robot, linkName, baseLinkName);
                 const chainDOF = fk.getNumJoints();
                 // 只传入这条运动链需要的关节角度
                 const chainJointAngles = jointAngles.slice(0, chainDOF);

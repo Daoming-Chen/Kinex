@@ -1,6 +1,6 @@
-# urdfx Python Bindings
+# kinex Python Bindings
 
-Python bindings for the urdfx robotics kinematics library.
+Python bindings for the kinex robotics kinematics library.
 
 ## Installation
 
@@ -19,20 +19,20 @@ pip install .
 ## Usage
 
 ```python
-import urdfx
+import kinex
 import numpy as np
 
 # Load robot
-robot = urdfx.Robot.from_urdf_file("ur5.urdf")
+robot = kinex.Robot.from_urdf_file("ur5.urdf")
 
 # Forward Kinematics
-fk = urdfx.ForwardKinematics(robot, "tool0")
+fk = kinex.ForwardKinematics(robot, "tool0")
 q = np.zeros(6)
 pose = fk.compute(q)
 print(f"Position: {pose.translation()}")
 
 # Inverse Kinematics
-solver = urdfx.SQPIKSolver(robot, "tool0")
+solver = kinex.SQPIKSolver(robot, "tool0")
 result = solver.solve(pose, np.zeros(6))
 if result.status.converged:
     print("IK Solution:", result.solution)

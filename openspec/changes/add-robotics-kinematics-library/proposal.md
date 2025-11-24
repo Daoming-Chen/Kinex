@@ -4,7 +4,7 @@
 Robotics applications require efficient kinematics computations for motion planning and control. There is currently no modern C++20 library that combines URDF parsing, forward kinematics, automatic differentiation-based Jacobian computation, and SQP-based inverse kinematics with cross-platform bindings (Python and WebAssembly).
 
 ## What Changes
-- Add C++20 core library for robotics kinematics (urdfx)
+- Add C++20 core library for robotics kinematics (kinex)
 - URDF parsing using pugixml
 - Forward kinematics using Eigen transformations
 - Jacobian computation using analytical geometric methods  

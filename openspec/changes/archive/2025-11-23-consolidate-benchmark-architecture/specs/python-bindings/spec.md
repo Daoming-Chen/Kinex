@@ -27,7 +27,7 @@ The Python bindings SHALL include benchmarks that measure the performance overhe
 - **AND** reports overhead breakdown:
   - Setup overhead (Robot/Solver instantiation)
   - Computation overhead (per iteration)
-  - Result conversion overhead (Transform â†’ NumPy)
+  - Result conversion overhead (Transform â†?NumPy)
 
 #### Scenario: Jacobian computation overhead measurement
 
@@ -40,9 +40,9 @@ The Python bindings SHALL include benchmarks that measure the performance overhe
 
 - **WHEN** overhead benchmark tests data conversion
 - **THEN** it measures time to convert:
-  - NumPy array â†’ Eigen::VectorXd (joint angles)
-  - Transform object â†’ NumPy position/quaternion
-  - Eigen::MatrixXd â†’ NumPy array (Jacobian)
+  - NumPy array â†?Eigen::VectorXd (joint angles)
+  - Transform object â†?NumPy position/quaternion
+  - Eigen::MatrixXd â†?NumPy array (Jacobian)
 - **AND** reports per-conversion overhead in microseconds
 
 #### Scenario: Overhead report generation

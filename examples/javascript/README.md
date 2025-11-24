@@ -1,8 +1,8 @@
-# JavaScript/WebAssembly Examples for urdfx
+# JavaScript/WebAssembly Examples for KINEX
 
 ## Overview
 
-JavaScript examples using the WebAssembly bindings for urdfx.
+JavaScript examples using the WebAssembly bindings for kinex.
 
 ## Examples
 
@@ -58,10 +58,10 @@ npx serve .
 ## Basic Usage
 
 ```javascript
-import urdfx from 'urdfx-wasm';
+import KINEX from 'kinex-wasm';
 
 // Initialize module
-const robot = await urdfx.parseURDF('robot.urdf');
+const robot = await kinex.parseURDF('robot.urdf');
 
 // Compute forward kinematics
 const jointAngles = [0, 1.57, -1.57, 0, 0, 0];
@@ -73,4 +73,4 @@ console.log('End effector orientation:', pose.orientation);
 
 ## Live Demo
 
-See `apps/visualization/` for a full-featured React application using urdfx-wasm.
+See `apps/visualization/` for a full-featured React application using kinex-wasm.

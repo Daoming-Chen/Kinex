@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(urdfx
+project(kinex
     VERSION 1.0.0
     DESCRIPTION "Modern C++20 robotics kinematics library"
     LANGUAGES CXX C
@@ -149,27 +149,27 @@ if(NOT EMSCRIPTEN)
     include(CMakePackageConfigHelpers)
 
     configure_package_config_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/urdfxConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/urdfxConfig.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/urdfx
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/kinexConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/kinexConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/kinex
     )
 
     write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/urdfxConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/kinexConfigVersion.cmake
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY SameMajorVersion
     )
 
     install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/urdfxConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/urdfxConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/urdfx
+        ${CMAKE_CURRENT_BINARY_DIR}/kinexConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/kinexConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/kinex
     )
 endif()
 
 # Print configuration summary
 message(STATUS "")
-message(STATUS "urdfx ${PROJECT_VERSION} configuration summary:")
+message(STATUS "kinex ${PROJECT_VERSION} configuration summary:")
 message(STATUS "  CMake version:       ${CMAKE_VERSION}")
 message(STATUS "  C++ compiler:        ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "  Build type:          ${CMAKE_BUILD_TYPE}")

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "urdfx/inverse_kinematics.h"
-#include "urdfx/kinematics.h"
-#include "urdfx/urdf_parser.h"
-#include "urdfx/logging.h"
+#include "kinex/inverse_kinematics.h"
+#include "kinex/kinematics.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/logging.h"
 #include <Eigen/Geometry>
 
 // Define M_PI for MSVC
@@ -14,7 +14,7 @@
 #include <future>
 #include <random>
 
-using namespace urdfx;
+using namespace kinex;
 
 namespace {
 

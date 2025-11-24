@@ -1,7 +1,7 @@
 {
-    "name": "urdfx-js-examples",
+    "name": "kinex-js-examples",
     "version": "1.0.0",
-    "description": "JavaScript examples for urdfx WASM bindings",
+    "description": "JavaScript examples for KINEX WASM bindings",
     "main": "forward_kinematics.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",

@@ -3,29 +3,29 @@
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     urdfx Library Core                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ URDF Parser  │→ │   Forward    │→ │   Jacobian   │     │
-│  │  (pugixml)   │  │  Kinematics  │  │Computation   │     │
-│  └──────────────┘  │   (Eigen)    │  │ (Analytical) │     │
-│                     └──────────────┘  └──────────────┘     │
-│                            ↓                  ↓             │
-│                     ┌──────────────────────────────┐       │
-│                     │   Inverse Kinematics         │       │
-│                     │   (DaQP + SQP)               │       │
-│                     └──────────────────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
-                ↓                              ↓
-    ┌──────────────────────┐      ┌──────────────────────┐
-    │  Python Bindings     │      │  WASM Bindings       │
-    │    (nanobind)        │      │   (Emscripten)       │
-    └──────────────────────┘      └──────────────────────┘
-                                              ↓
-                                  ┌──────────────────────┐
-                                  │  Visualization App   │
-                                  │     (Three.js)       │
-                                  └──────────────────────┘
+┌─────────────────────────────────────────────────────────────�?
+�?                    kinex Library Core                      �?
+�? ┌──────────────�? ┌──────────────�? ┌──────────────�?    �?
+�? �?URDF Parser  │→ �?  Forward    │→ �?  Jacobian   �?    �?
+�? �? (pugixml)   �? �? Kinematics  �? │Computation   �?    �?
+�? └──────────────�? �?  (Eigen)    �? �?(Analytical) �?    �?
+�?                    └──────────────�? └──────────────�?    �?
+�?                           �?                 �?            �?
+�?                    ┌──────────────────────────────�?      �?
+�?                    �?  Inverse Kinematics         �?      �?
+�?                    �?  (DaQP + SQP)               �?      �?
+�?                    └──────────────────────────────�?      �?
+└─────────────────────────────────────────────────────────────�?
+                �?                             �?
+    ┌──────────────────────�?     ┌──────────────────────�?
+    �? Python Bindings     �?     �? WASM Bindings       �?
+    �?   (nanobind)        �?     �?  (Emscripten)       �?
+    └──────────────────────�?     └──────────────────────�?
+                                              �?
+                                  ┌──────────────────────�?
+                                  �? Visualization App   �?
+                                  �?    (Three.js)       �?
+                                  └──────────────────────�?
 ```
 
 ## Component Design
@@ -104,7 +104,7 @@ Eigen::MatrixXd J = calculator.compute(q);
 - Use Sequential Quadratic Programming (SQP) approach
 - Formulate as optimization problem:
   - Minimize: ||FK(q) - target||²
-  - Subject to: q_min ≤ q ≤ q_max
+  - Subject to: q_min �?q �?q_max
 - Use DaQP for efficient QP solving
 - Support warm-starting for trajectory generation
 
@@ -113,10 +113,10 @@ Eigen::MatrixXd J = calculator.compute(q);
 1. Initialize q₀
 2. While not converged:
    a. Compute J = Jacobian(q)
-   b. Linearize: Δx ≈ J·Δq
+   b. Linearize: Δx �?J·Δq
    c. Solve QP: min ||J·Δq - (target - FK(q))||²
-               s.t. q_min ≤ q + Δq ≤ q_max
-   d. Update: q ← q + α·Δq (with line search)
+               s.t. q_min �?q + Δq �?q_max
+   d. Update: q �?q + α·Δq (with line search)
 ```
 
 ### 5. Build System
@@ -126,23 +126,23 @@ Eigen::MatrixXd J = calculator.compute(q);
 
 **CMake Structure**:
 ```
-urdfx/
+kinex/
 ├── CMakeLists.txt (root)
 ├── cmake/
-│   ├── Dependencies.cmake
-│   └── CompilerFlags.cmake
+�?  ├── Dependencies.cmake
+�?  └── CompilerFlags.cmake
 ├── src/
-│   └── CMakeLists.txt
+�?  └── CMakeLists.txt
 ├── python/
-│   └── CMakeLists.txt
+�?  └── CMakeLists.txt
 ├── wasm/
-│   └── CMakeLists.txt
+�?  └── CMakeLists.txt
 └── tests/
     └── CMakeLists.txt
 ```
 
 **CMake Features**:
-- Exported targets: `urdfx::urdfx`
+- Exported targets: `kinex::kinex`
 - Install support with CMake config files
 - Separate build options for Python/WASM bindings
 - C++20 standard enforcement
@@ -158,9 +158,9 @@ urdfx/
 
 **API Example**:
 ```python
-import urdfx
-robot = urdfx.Robot.from_urdf("ur5e.urdf")
-fk = urdfx.ForwardKinematics(robot)
+import kinex
+robot = kinex.Robot.from_urdf("ur5e.urdf")
+fk = kinex.ForwardKinematics(robot)
 pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
 ```
 
@@ -182,14 +182,14 @@ pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
 Three.js App
 ├── RobotRenderer (Three.js scene management)
 ├── URDFLoader (parse URDF, create meshes)
-├── IKController (UI → urdfx WASM → renderer)
+├── IKController (UI �?kinex WASM �?renderer)
 └── UI Components (sliders, target controls)
 ```
 
 **Technology Stack**:
 - Three.js for 3D rendering
 - React for UI components
-- urdfx WASM module for kinematics
+- kinex WASM module for kinematics
 - Vite for build system
 
 **Features**:
@@ -202,7 +202,7 @@ Three.js App
 
 **C++ Tests (GTest)**:
 - Unit tests for each component
-- Integration tests for FK → Jacobian → IK pipeline
+- Integration tests for FK �?Jacobian �?IK pipeline
 - Test fixtures using UR5e URDF
 - Performance benchmarks
 
@@ -223,22 +223,22 @@ Three.js App
 ### Typical IK Solving Flow:
 ```
 1. User provides URDF file
-   ↓
-2. URDFParser → Robot model
-   ↓
+   �?
+2. URDFParser �?Robot model
+   �?
 3. User specifies target pose
-   ↓
+   �?
 4. IKSolver initialization:
    - Build KinematicChain
    - Create ADFun tape for Jacobian
    - Configure DaQP solver
-   ↓
+   �?
 5. SQP iterations:
-   - Compute FK(q) → current pose
-   - Compute J(q) → Jacobian
-   - Solve QP → Δq
+   - Compute FK(q) �?current pose
+   - Compute J(q) �?Jacobian
+   - Solve QP �?Δq
    - Update q
-   ↓
+   �?
 6. Return solution q
 ```
 

@@ -2,10 +2,10 @@
 
 #include <emscripten/val.h>
 
-#include "urdfx/inverse_kinematics.h"
-#include "urdfx/kinematics.h"
-#include "urdfx/robot_model.h"
-#include "urdfx/urdf_parser.h"
+#include "kinex/inverse_kinematics.h"
+#include "kinex/kinematics.h"
+#include "kinex/robot_model.h"
+#include "kinex/urdf_parser.h"
 
 #include <Eigen/Dense>
 
@@ -123,7 +123,7 @@ struct IKResultData {
 class RobotHandle {
 public:
     static std::shared_ptr<RobotHandle> fromURDFString(const std::string& urdf_string, const std::string& base_dir = "") {
-        urdfx::URDFParser parser;
+        kinex::URDFParser parser;
         if (!base_dir.empty()) {
             parser.setBaseDirectory(base_dir);
         }
@@ -134,7 +134,7 @@ public:
         return std::shared_ptr<RobotHandle>(new RobotHandle(std::move(robot)));
     }
 
-    explicit RobotHandle(std::shared_ptr<urdfx::Robot> robot)
+    explicit RobotHandle(std::shared_ptr<kinex::Robot> robot)
         : robot_(std::move(robot)) {}
 
     void ensureAlive() const {
@@ -204,20 +204,20 @@ public:
         return robot_ == nullptr;
     }
 
-    std::shared_ptr<const urdfx::Robot> getRobot() const {
+    std::shared_ptr<const kinex::Robot> getRobot() const {
         ensureAlive();
         return robot_;
     }
 
 private:
-    std::shared_ptr<urdfx::Robot> robot_;
+    std::shared_ptr<kinex::Robot> robot_;
 };
 
 class ForwardKinematicsHandle {
 public:
     ForwardKinematicsHandle(std::shared_ptr<RobotHandle> robot, const std::string& end_link, const std::string& base_link = "")
         : robot_(std::move(robot))
-        , fk_(std::make_unique<urdfx::ForwardKinematics>(robot_->getRobot(), end_link, base_link)) {}
+        , fk_(std::make_unique<kinex::ForwardKinematics>(robot_->getRobot(), end_link, base_link)) {}
 
     PoseData compute(const std::vector<double>& joint_angles, bool check_bounds = false) const {
         ensureAlive();
@@ -271,7 +271,7 @@ private:
         return vec;
     }
 
-    static PoseData toPoseData(const urdfx::Transform& transform) {
+    static PoseData toPoseData(const kinex::Transform& transform) {
         PoseData data;
         const auto [position, quaternion] = transform.asPositionQuaternion();
         data.position = {position.x(), position.y(), position.z()};
@@ -294,35 +294,35 @@ private:
     }
 
     std::shared_ptr<RobotHandle> robot_;
-    std::unique_ptr<urdfx::ForwardKinematics> fk_;
+    std::unique_ptr<kinex::ForwardKinematics> fk_;
 };
 
 class JacobianCalculatorHandle {
 public:
     JacobianCalculatorHandle(std::shared_ptr<RobotHandle> robot, const std::string& end_link, const std::string& base_link = "")
         : robot_(std::move(robot))
-        , calculator_(std::make_unique<urdfx::JacobianCalculator>(robot_->getRobot(), end_link, base_link)) {}
+        , calculator_(std::make_unique<kinex::JacobianCalculator>(robot_->getRobot(), end_link, base_link)) {}
 
-    MatrixData compute(const std::vector<double>& joint_angles, urdfx::JacobianType type = urdfx::JacobianType::Analytic, const std::string& target_link = "") const {
+    MatrixData compute(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
         ensureAlive();
         auto q = toEigenVector(joint_angles);
         auto matrix = calculator_->compute(q, type, target_link);
         return toMatrixData(matrix);
     }
 
-    bool isSingular(const std::vector<double>& joint_angles, double threshold = 1e-6, urdfx::JacobianType type = urdfx::JacobianType::Analytic, const std::string& target_link = "") const {
+    bool isSingular(const std::vector<double>& joint_angles, double threshold = 1e-6, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
         ensureAlive();
         auto q = toEigenVector(joint_angles);
         return calculator_->isSingular(q, threshold, type, target_link);
     }
 
-    double getManipulability(const std::vector<double>& joint_angles, urdfx::JacobianType type = urdfx::JacobianType::Analytic, const std::string& target_link = "") const {
+    double getManipulability(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
         ensureAlive();
         auto q = toEigenVector(joint_angles);
         return calculator_->getManipulability(q, type, target_link);
     }
 
-    double getConditionNumber(const std::vector<double>& joint_angles, urdfx::JacobianType type = urdfx::JacobianType::Analytic, const std::string& target_link = "") const {
+    double getConditionNumber(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
         ensureAlive();
         auto q = toEigenVector(joint_angles);
         return calculator_->getConditionNumber(q, type, target_link);
@@ -370,14 +370,14 @@ private:
     }
 
     std::shared_ptr<RobotHandle> robot_;
-    std::unique_ptr<urdfx::JacobianCalculator> calculator_;
+    std::unique_ptr<kinex::JacobianCalculator> calculator_;
 };
 
 class SQPIKSolverHandle {
 public:
     SQPIKSolverHandle(std::shared_ptr<RobotHandle> robot, const std::string& end_link, const std::string& base_link = "")
         : robot_(std::move(robot))
-        , solver_(std::make_unique<urdfx::SQPIKSolver>(robot_->getRobot(), end_link, base_link)) {}
+        , solver_(std::make_unique<kinex::SQPIKSolver>(robot_->getRobot(), end_link, base_link)) {}
 
     void setConfig(const SolverConfigData& config) {
         ensureAlive();
@@ -409,7 +409,7 @@ public:
         ensureAlive();
         const auto q0 = toEigenVector(initial_guess);
         Eigen::VectorXd solution = q0;
-        const urdfx::Transform target = toTransform(target_pose);
+        const kinex::Transform target = toTransform(target_pose);
         auto status = solver_->solve(target, q0, solution);
 
         IKResultData result;
@@ -451,13 +451,13 @@ private:
         return vec;
     }
 
-    static urdfx::Transform toTransform(const PoseData& pose) {
+    static kinex::Transform toTransform(const PoseData& pose) {
         const Eigen::Vector3d position(pose.position[0], pose.position[1], pose.position[2]);
         const Eigen::Quaterniond quaternion(pose.quaternion[0], pose.quaternion[1], pose.quaternion[2], pose.quaternion[3]);
-        return urdfx::Transform::fromPositionQuaternion(position, quaternion);
+        return kinex::Transform::fromPositionQuaternion(position, quaternion);
     }
 
-    static SolverConfigData fromSolverConfig(const urdfx::SolverConfig& config) {
+    static SolverConfigData fromSolverConfig(const kinex::SolverConfig& config) {
         SolverConfigData data;
         data.max_iterations = config.max_iterations;
         data.tolerance = config.tolerance;
@@ -477,8 +477,8 @@ private:
         return data;
     }
 
-    static urdfx::SolverConfig toSolverConfig(const SolverConfigData& data) {
-        urdfx::SolverConfig config;
+    static kinex::SolverConfig toSolverConfig(const SolverConfigData& data) {
+        kinex::SolverConfig config;
         config.max_iterations = data.max_iterations;
         config.tolerance = data.tolerance;
         config.regularization = data.regularization;
@@ -498,27 +498,27 @@ private:
     }
 
     std::shared_ptr<RobotHandle> robot_;
-    std::unique_ptr<urdfx::SQPIKSolver> solver_;
+    std::unique_ptr<kinex::SQPIKSolver> solver_;
 };
 
 } // namespace
 
-val getBoxSize(const urdfx::Geometry& g) {
+val getBoxSize(const kinex::Geometry& g) {
     return val(std::array<double, 3>{g.box_size.x(), g.box_size.y(), g.box_size.z()});
 }
-void setBoxSize(urdfx::Geometry& g, val v) {
+void setBoxSize(kinex::Geometry& g, val v) {
     auto arr = toVectorDouble(v, 3, "box_size");
     g.box_size = Eigen::Vector3d(arr[0], arr[1], arr[2]);
 }
-val getMeshScale(const urdfx::Geometry& g) {
+val getMeshScale(const kinex::Geometry& g) {
     return val(std::array<double, 3>{g.mesh_scale.x(), g.mesh_scale.y(), g.mesh_scale.z()});
 }
-void setMeshScale(urdfx::Geometry& g, val v) {
+void setMeshScale(kinex::Geometry& g, val v) {
     auto arr = toVectorDouble(v, 3, "mesh_scale");
     g.mesh_scale = Eigen::Vector3d(arr[0], arr[1], arr[2]);
 }
 
-EMSCRIPTEN_BINDINGS(urdfx_wasm_bindings) {
+EMSCRIPTEN_BINDINGS(KINEX_wasm_bindings) {
     value_array<std::array<double, kMaxPosePositionSize>>("Vec3")
         .element(emscripten::index<0>())
         .element(emscripten::index<1>())
@@ -566,55 +566,55 @@ EMSCRIPTEN_BINDINGS(urdfx_wasm_bindings) {
         .field("solution", &IKResultData::solution)
         .field("error_history", &IKResultData::error_history);
 
-    value_object<urdfx::JointLimits>("JointLimits")
-        .field("lower", &urdfx::JointLimits::lower)
-        .field("upper", &urdfx::JointLimits::upper)
-        .field("effort", &urdfx::JointLimits::effort)
-        .field("velocity", &urdfx::JointLimits::velocity);
+    value_object<kinex::JointLimits>("JointLimits")
+        .field("lower", &kinex::JointLimits::lower)
+        .field("upper", &kinex::JointLimits::upper)
+        .field("effort", &kinex::JointLimits::effort)
+        .field("velocity", &kinex::JointLimits::velocity);
 
-    value_object<urdfx::JointDynamics>("JointDynamics")
-        .field("damping", &urdfx::JointDynamics::damping)
-        .field("friction", &urdfx::JointDynamics::friction);
+    value_object<kinex::JointDynamics>("JointDynamics")
+        .field("damping", &kinex::JointDynamics::damping)
+        .field("friction", &kinex::JointDynamics::friction);
 
-    value_object<urdfx::Geometry>("Geometry")
-        .field("type", &urdfx::Geometry::type)
+    value_object<kinex::Geometry>("Geometry")
+        .field("type", &kinex::Geometry::type)
         .field("box_size", 
-            std::function<val(const urdfx::Geometry&)>(getBoxSize), 
-            std::function<void(urdfx::Geometry&, val)>(setBoxSize))
-        .field("cylinder_radius", &urdfx::Geometry::cylinder_radius)
-        .field("cylinder_length", &urdfx::Geometry::cylinder_length)
-        .field("sphere_radius", &urdfx::Geometry::sphere_radius)
-        .field("mesh_filename", &urdfx::Geometry::mesh_filename)
+            std::function<val(const kinex::Geometry&)>(getBoxSize), 
+            std::function<void(kinex::Geometry&, val)>(setBoxSize))
+        .field("cylinder_radius", &kinex::Geometry::cylinder_radius)
+        .field("cylinder_length", &kinex::Geometry::cylinder_length)
+        .field("sphere_radius", &kinex::Geometry::sphere_radius)
+        .field("mesh_filename", &kinex::Geometry::mesh_filename)
         .field("mesh_scale", 
-            std::function<val(const urdfx::Geometry&)>(getMeshScale), 
-            std::function<void(urdfx::Geometry&, val)>(setMeshScale));
+            std::function<val(const kinex::Geometry&)>(getMeshScale), 
+            std::function<void(kinex::Geometry&, val)>(setMeshScale));
 
-    enum_<urdfx::JacobianType>("JacobianType")
-        .value("Analytic", urdfx::JacobianType::Analytic)
-        .value("Geometric", urdfx::JacobianType::Geometric);
+    enum_<kinex::JacobianType>("JacobianType")
+        .value("Analytic", kinex::JacobianType::Analytic)
+        .value("Geometric", kinex::JacobianType::Geometric);
 
-    enum_<urdfx::GeometryType>("GeometryType")
-        .value("Box", urdfx::GeometryType::Box)
-        .value("Cylinder", urdfx::GeometryType::Cylinder)
-        .value("Sphere", urdfx::GeometryType::Sphere)
-        .value("Mesh", urdfx::GeometryType::Mesh);
+    enum_<kinex::GeometryType>("GeometryType")
+        .value("Box", kinex::GeometryType::Box)
+        .value("Cylinder", kinex::GeometryType::Cylinder)
+        .value("Sphere", kinex::GeometryType::Sphere)
+        .value("Mesh", kinex::GeometryType::Mesh);
 
-    enum_<urdfx::JointType>("JointType")
-        .value("Fixed", urdfx::JointType::Fixed)
-        .value("Revolute", urdfx::JointType::Revolute)
-        .value("Continuous", urdfx::JointType::Continuous)
-        .value("Prismatic", urdfx::JointType::Prismatic)
-        .value("Floating", urdfx::JointType::Floating)
-        .value("Planar", urdfx::JointType::Planar);
+    enum_<kinex::JointType>("JointType")
+        .value("Fixed", kinex::JointType::Fixed)
+        .value("Revolute", kinex::JointType::Revolute)
+        .value("Continuous", kinex::JointType::Continuous)
+        .value("Prismatic", kinex::JointType::Prismatic)
+        .value("Floating", kinex::JointType::Floating)
+        .value("Planar", kinex::JointType::Planar);
 
-    class_<urdfx::Transform>("Transform")
+    class_<kinex::Transform>("Transform")
         .constructor<>()
         .class_function("fromPositionQuaternion", emscripten::optional_override([](const std::array<double, 3>& pos, const std::array<double, 4>& quat) {
-            return urdfx::Transform::fromPositionQuaternion(
+            return kinex::Transform::fromPositionQuaternion(
                 Eigen::Vector3d(pos[0], pos[1], pos[2]),
                 Eigen::Quaterniond(quat[0], quat[1], quat[2], quat[3]));
         }))
-        .function("asMatrix", emscripten::optional_override([](const urdfx::Transform& self) {
+        .function("asMatrix", emscripten::optional_override([](const kinex::Transform& self) {
             MatrixData md;
             md.rows = 4;
             md.cols = 4;
@@ -622,71 +622,71 @@ EMSCRIPTEN_BINDINGS(urdfx_wasm_bindings) {
             md.data.assign(m.data(), m.data() + 16);
             return md;
         }))
-        .function("asPose", emscripten::optional_override([](const urdfx::Transform& self) {
+        .function("asPose", emscripten::optional_override([](const kinex::Transform& self) {
             auto [pos, quat] = self.asPositionQuaternion();
             PoseData pd;
             pd.position = {pos.x(), pos.y(), pos.z()};
             pd.quaternion = {quat.w(), quat.x(), quat.y(), quat.z()};
             return pd;
         }))
-        .function("translation", emscripten::optional_override([](const urdfx::Transform& self) {
+        .function("translation", emscripten::optional_override([](const kinex::Transform& self) {
             Eigen::Vector3d t = self.translation();
             return std::array<double, 3>{t.x(), t.y(), t.z()};
         }));
 
-    class_<urdfx::Visual>("Visual")
-        .property("name", &urdfx::Visual::name)
-        .property("origin", &urdfx::Visual::origin)
-        .property("geometry", &urdfx::Visual::geometry)
-        .function("getColor", emscripten::optional_override([](const urdfx::Visual& v) { 
+    class_<kinex::Visual>("Visual")
+        .property("name", &kinex::Visual::name)
+        .property("origin", &kinex::Visual::origin)
+        .property("geometry", &kinex::Visual::geometry)
+        .function("getColor", emscripten::optional_override([](const kinex::Visual& v) { 
             if (v.color) return val(std::array<double, 4>{v.color->x(), v.color->y(), v.color->z(), v.color->w()});
             return val::null();
         }))
-        .function("getMaterialName", emscripten::optional_override([](const urdfx::Visual& v) {
+        .function("getMaterialName", emscripten::optional_override([](const kinex::Visual& v) {
             if (v.material_name) return val(*v.material_name);
             return val::null();
         }));
 
-    class_<urdfx::Collision>("Collision")
-        .property("name", &urdfx::Collision::name)
-        .property("origin", &urdfx::Collision::origin)
-        .property("geometry", &urdfx::Collision::geometry);
+    class_<kinex::Collision>("Collision")
+        .property("name", &kinex::Collision::name)
+        .property("origin", &kinex::Collision::origin)
+        .property("geometry", &kinex::Collision::geometry);
 
-    class_<urdfx::Inertial>("Inertial")
-        .property("origin", &urdfx::Inertial::origin)
-        .property("mass", &urdfx::Inertial::mass)
-        .function("getInertia", emscripten::optional_override([](const urdfx::Inertial& i) {
+    class_<kinex::Inertial>("Inertial")
+        .property("origin", &kinex::Inertial::origin)
+        .property("mass", &kinex::Inertial::mass)
+        .function("getInertia", emscripten::optional_override([](const kinex::Inertial& i) {
             MatrixData md; md.rows = 3; md.cols = 3;
             md.data.assign(i.inertia.data(), i.inertia.data() + 9);
             return md;
         }));
 
-    class_<urdfx::Link>("Link")
-        .smart_ptr<std::shared_ptr<urdfx::Link>>("Link")
-        .function("getName", &urdfx::Link::getName)
-        .function("getInertial", emscripten::optional_override([](const urdfx::Link& self) {
+    class_<kinex::Link>("Link")
+        .smart_ptr<std::shared_ptr<kinex::Link>>("Link")
+        .function("getName", &kinex::Link::getName)
+        .function("getInertial", emscripten::optional_override([](const kinex::Link& self) {
             if (self.getInertial()) return val(*self.getInertial());
             return val::null();
         }))
-        .function("getVisuals", &urdfx::Link::getVisuals)
-        .function("getCollisions", &urdfx::Link::getCollisions);
+        .function("getVisuals", &kinex::Link::getVisuals)
+        .function("getCollisions", &kinex::Link::getCollisions);
 
-    class_<urdfx::Joint>("Joint")
-        .smart_ptr<std::shared_ptr<urdfx::Joint>>("Joint")
-        .function("getName", &urdfx::Joint::getName)
-        .function("getType", &urdfx::Joint::getType)
-        .function("getParentLink", &urdfx::Joint::getParentLink)
-        .function("getChildLink", &urdfx::Joint::getChildLink)
-        .function("getOrigin", &urdfx::Joint::getOrigin)
-        .function("getAxis", emscripten::optional_override([](const urdfx::Joint& self) {
+    class_<kinex::Joint>("Joint")
+        .smart_ptr<std::shared_ptr<kinex::Joint>>("Joint")
+        .function("getName", &kinex::Joint::getName)
+        .function("getType", &kinex::Joint::getType)
+        .function("getParentLink", &kinex::Joint::getParentLink)
+        .function("getChildLink", &kinex::Joint::getChildLink)
+        .function("getOrigin", &kinex::Joint::getOrigin)
+        .function("getAxis", emscripten::optional_override([](const kinex::Joint& self) {
             Eigen::Vector3d a = self.getAxis();
             return std::array<double, 3>{a.x(), a.y(), a.z()};
         }))
-        .function("getLimits", emscripten::optional_override([](const urdfx::Joint& self) {
+        .function("getLimits", emscripten::optional_override([](const kinex::Joint& self) {
             if (self.getLimits()) return val(*self.getLimits());
             return val::null();
         }))
-        .function("getDynamics", emscripten::optional_override([](const urdfx::Joint& self) {
+        .function("getDynamics", emscripten::optional_override([](const kinex::Joint& self) {
             if (self.getDynamics()) return val(*self.getDynamics());
             return val::null();
         }));
@@ -753,26 +753,26 @@ EMSCRIPTEN_BINDINGS(urdfx_wasm_bindings) {
         .constructor<std::shared_ptr<RobotHandle>, std::string, std::string>()
         .function("compute", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
             const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<urdfx::JacobianType>(maybe_type, urdfx::JacobianType::Analytic);
+            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
             const auto target_link = toStringOrDefault(maybe_target_link, std::string());
             return self.compute(angles, type, target_link);
         }))
         .function("isSingular", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_threshold, val maybe_type, val maybe_target_link) {
             const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
             const double threshold = toDoubleOrDefault(maybe_threshold, 1e-6);
-            const auto type = toEnumOrDefault<urdfx::JacobianType>(maybe_type, urdfx::JacobianType::Analytic);
+            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
             const auto target_link = toStringOrDefault(maybe_target_link, std::string());
             return self.isSingular(angles, threshold, type, target_link);
         }))
         .function("getManipulability", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
             const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<urdfx::JacobianType>(maybe_type, urdfx::JacobianType::Analytic);
+            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
             const auto target_link = toStringOrDefault(maybe_target_link, std::string());
             return self.getManipulability(angles, type, target_link);
         }))
         .function("getConditionNumber", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
             const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<urdfx::JacobianType>(maybe_type, urdfx::JacobianType::Analytic);
+            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
             const auto target_link = toStringOrDefault(maybe_target_link, std::string());
             return self.getConditionNumber(angles, type, target_link);
         }))
@@ -797,8 +797,8 @@ EMSCRIPTEN_BINDINGS(urdfx_wasm_bindings) {
 
     register_vector<double>("VectorDouble");
     register_vector<std::string>("VectorString");
-    register_vector<urdfx::Visual>("VectorVisual");
-    register_vector<urdfx::Collision>("VectorCollision");
-    register_vector<std::shared_ptr<urdfx::Link>>("VectorLink");
-    register_vector<std::shared_ptr<urdfx::Joint>>("VectorJoint");
+    register_vector<kinex::Visual>("VectorVisual");
+    register_vector<kinex::Collision>("VectorCollision");
+    register_vector<std::shared_ptr<kinex::Link>>("VectorLink");
+    register_vector<std::shared_ptr<kinex::Joint>>("VectorJoint");
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "urdfx/export.h"
+#include "kinex/export.h"
 #include "robot_model.h"
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
-namespace urdfx {
+namespace kinex {
 
 /**
  * @brief Represents a kinematic chain from base to end-effector
@@ -21,7 +21,7 @@ namespace urdfx {
  * transformations from a base link to an end-effector link. This class
  * pre-computes static transformations for efficiency.
  */
-class URDFX_API KinematicChain {
+class KINEX_API KinematicChain {
 public:
     /**
      * @brief Construct a kinematic chain
@@ -99,7 +99,7 @@ private:
  * Given joint angles, computes the pose of the end-effector or any
  * intermediate link in the kinematic chain.
  */
-class URDFX_API ForwardKinematics {
+class KINEX_API ForwardKinematics {
 public:
     /**
      * @brief Construct a forward kinematics solver
@@ -179,7 +179,7 @@ enum class JacobianType {
 /**
  * @brief Analytical Jacobian computation and metrics
  */
-class URDFX_API JacobianCalculator {
+class KINEX_API JacobianCalculator {
 public:
     JacobianCalculator(
         std::shared_ptr<const Robot> robot,
@@ -260,4 +260,4 @@ private:
     mutable std::unordered_map<std::string, JointFrameCache> frame_cache_;
 };
 
-} // namespace urdfx
+} // namespace kinex

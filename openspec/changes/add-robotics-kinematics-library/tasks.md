@@ -22,7 +22,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 
 ### 3. Setup Logging Infrastructure with spdlog
 - [x] Add spdlog submodule to third_party/spdlog (if not already added)
-- [x] Create include/urdfx/logging.h header with logging macros
+- [x] Create include/kinex/logging.h header with logging macros
 - [x] Configure spdlog logger with appropriate sinks (console, file)
 - [x] Set default log level (INFO) and allow runtime configuration
 - [x] Create logging utility functions (setLogLevel, setLogFile)
@@ -99,16 +99,16 @@ This document outlines the implementation tasks in dependency order. Each task s
 
 ### 12. Implement Forward Kinematics
 - [x] Create ForwardKinematics class
-- [x] Implement compute(joint_angles) â†’ Transform
+- [x] Implement compute(joint_angles) â†?Transform
 - [x] Use Eigen for matrix operations
 - [x] Support computing to intermediate links
 - [x] Implement bounds checking (optional)
 - [x] Optimize for repeated calls (pre-allocate matrices)
 
 ### 13. Implement Pose Representations
-- [x] Implement asMatrix() â†’ Eigen::Matrix4d
-- [x] Implement asPositionQuaternion() â†’ (Vector3d, Quaterniond)
-- [x] Implement asPositionEuler() â†’ (Vector3d, Vector3d)
+- [x] Implement asMatrix() â†?Eigen::Matrix4d
+- [x] Implement asPositionQuaternion() â†?(Vector3d, Quaterniond)
+- [x] Implement asPositionEuler() â†?(Vector3d, Vector3d)
 - [x] Ensure quaternion normalization
 
 ### 14. Write Forward Kinematics Tests
@@ -134,7 +134,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 16. Implement Jacobian Calculator
 - [x] Create JacobianCalculator class
 - [x] ~~Create CppAD tape during initialization~~ Cache kinematic chain structure
-- [x] Implement compute(joint_angles) â†’ Eigen::MatrixXd
+- [x] Implement compute(joint_angles) â†?Eigen::MatrixXd
 - [x] Support geometric (body) Jacobian
 - [x] Support analytic (spatial) Jacobian
 - [x] Implement conversion between Jacobian types
@@ -205,7 +205,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [x] Create python/CMakeLists.txt
 - [x] Configure nanobind with find_package or submodule
 - [x] Define Python extension module target
-- [x] Link against core urdfx library
+- [x] Link against core kinex library
 
 ### 25. Implement Python Bindings
 - [x] Create python/src/bindings.cpp
@@ -218,7 +218,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [x] Use snake_case naming for Python API
 
 ### 26. Create Python Package Structure
-- [x] Create python/urdfx/__init__.py
+- [x] Create python/kinex/__init__.py
 - [x] Create setup.py with nanobind integration
 - [x] Generate type stubs (.pyi files) for IDE support
 - [x] Add pyproject.toml for modern Python packaging
@@ -259,7 +259,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [x] Implement explicit memory management (delete methods)
 
 ### 31. Create TypeScript Definitions
-- [x] Create wasm/urdfx.d.ts with type declarations
+- [x] Create wasm/kinex.d.ts with type declarations
 - [x] Define interfaces for Robot, ForwardKinematics, etc.
 - [x] Document method signatures and return types
 
@@ -291,8 +291,8 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Install Three.js and @react-three/fiber
 - [ ] Install dependencies (e.g., @react-three/drei for helpers)
 
-### 35. Integrate urdfx WASM Module
-- [ ] Copy built urdfx.js and urdfx.wasm to visualization/public/
+### 35. Integrate kinex WASM Module
+- [ ] Copy built kinex.js and kinex.wasm to visualization/public/
 - [ ] Create WASM loader utility
 - [ ] Test module loading in React app
 - [ ] Handle loading states and errors
@@ -320,7 +320,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Display current joint angle values
 
 ### 39. Implement Forward Kinematics Mode
-- [ ] Integrate urdfx WASM FK computation
+- [ ] Integrate kinex WASM FK computation
 - [ ] Compute and display end-effector pose
 - [ ] Render coordinate frame at end-effector
 - [ ] Display position and orientation in UI
@@ -328,7 +328,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 40. Implement Inverse Kinematics Mode
 - [ ] Add IK mode toggle in UI
 - [ ] Implement end-effector gizmo (TransformControls)
-- [ ] Call urdfx WASM IK solver on gizmo drag
+- [ ] Call kinex WASM IK solver on gizmo drag
 - [ ] Update joint angles based on IK solution
 - [ ] Handle unreachable poses with visual feedback
 - [ ] Display IK solver status
@@ -436,7 +436,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 ## Phase 11: Final Integration and Validation
 
 ### 57. End-to-End Testing
-- [ ] Test complete pipeline: URDF â†’ FK â†’ Jacobian â†’ IK
+- [ ] Test complete pipeline: URDF â†?FK â†?Jacobian â†?IK
 - [ ] Test Python integration with real robot model
 - [ ] Test WASM integration in visualization app
 - [ ] Test installation from source

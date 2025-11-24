@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh - Setup script for urdfx development environment
+# setup.sh - Setup script for kinex development environment
 # This script installs required system dependencies and Emscripten SDK
 # Usage: ./scripts/setup.sh
 
@@ -169,7 +169,7 @@ install_emsdk() {
 
 # Main installation flow
 main() {
-    echo_info "Starting urdfx development environment setup..."
+    echo_info "Starting kinex development environment setup..."
     echo ""
     
     # Check and install CMake

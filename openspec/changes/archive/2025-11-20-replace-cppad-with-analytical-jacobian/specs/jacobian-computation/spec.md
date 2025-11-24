@@ -172,7 +172,7 @@ The new analytical implementation SHALL maintain 100% API compatibility with the
 **And** the results SHALL be numerically equivalent (within 1e-6 tolerance)
 
 #### Scenario: Python Bindings Unchanged
-**Given** Python code using `urdfx.JacobianCalculator(robot, "tool0")`  
+**Given** Python code using `kinex.JacobianCalculator(robot, "tool0")`  
 **When** the analytical implementation is deployed  
 **Then** the Python API SHALL remain identical  
 **And** existing Python scripts SHALL work without modification

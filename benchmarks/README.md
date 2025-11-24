@@ -1,10 +1,10 @@
-# urdfx Benchmarks
+# kinex Benchmarks
 
-Comprehensive benchmarking suite for evaluating the performance of urdfx inverse kinematics solvers across diverse robot configurations.
+Comprehensive benchmarking suite for evaluating the performance of kinex inverse kinematics solvers across diverse robot configurations.
 
 ## Overview
 
-This directory contains Python-based benchmarking tools for urdfx's IK solver performance. The benchmarks are organized into two tiers:
+This directory contains Python-based benchmarking tools for kinex's IK solver performance. The benchmarks are organized into two tiers:
 
 - **Tier A**: Real-world robots (UR5e configurations, 6-10 DOF)
 - **Tier B**: Synthetic mixed-chain robots (8-20 DOF)
@@ -180,7 +180,7 @@ Required Python packages:
 pip install numpy scipy matplotlib
 ```
 
-The benchmarks require the urdfx Python bindings to be built and installed. See `bindings/python/README.md` for build instructions.
+The benchmarks require the kinex Python bindings to be built and installed. See `bindings/python/README.md` for build instructions.
 
 ## Development
 
@@ -200,7 +200,7 @@ Edit `visualize_benchmarks.py` to:
 
 ## Troubleshooting
 
-### urdfx module not found
+### kinex module not found
 ```bash
 # Build and install Python bindings first
 cd bindings/python
@@ -221,10 +221,10 @@ pip install matplotlib
 
 ## References
 
-- Main Project: [urdfx on GitHub](https://github.com/Daoming-Chen/urdfx)
+- Main Project: [kinex on GitHub](https://github.com/Daoming-Chen/kinex)
 - Python Bindings: `bindings/python/README.md`
 - C++ Benchmarks: `benchmarks/cpp/README.md`
 
 ## License
 
-Same as the parent urdfx project.
+Same as the parent kinex project.

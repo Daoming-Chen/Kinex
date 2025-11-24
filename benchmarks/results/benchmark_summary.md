@@ -1,4 +1,4 @@
-# urdfx Python Benchmark Summary
+# kinex Python Benchmark Summary
 
 ### UR5E (6 DOF)
 

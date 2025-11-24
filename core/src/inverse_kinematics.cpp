@@ -1,5 +1,5 @@
-#include "urdfx/inverse_kinematics.h"
-#include "urdfx/logging.h"
+#include "kinex/inverse_kinematics.h"
+#include "kinex/logging.h"
 #include "api.h"
 #include "constants.h"
 #include <Eigen/Cholesky>
@@ -12,7 +12,7 @@
 #include <sstream>
 #include <iomanip>
 
-namespace urdfx {
+namespace kinex {
 
 class DaQPSolver {
 public:
@@ -269,7 +269,7 @@ SolverStatus SQPIKSolver::solve(
     constexpr double stagnation_threshold = 1e-6;
     constexpr size_t stagnation_detect_iters = 10;
     
-    URDFX_LOG_DEBUG("[IK] Starting solve: DOF={}, max_iter={}, tolerance={}", dof, config_.max_iterations, config_.tolerance);
+    KINEX_LOG_DEBUG("[IK] Starting solve: DOF={}, max_iter={}, tolerance={}", dof, config_.max_iterations, config_.tolerance);
 
     for (size_t iter = 0; iter < config_.max_iterations; ++iter) {
         Transform current_pose = fk_.compute(current);
@@ -281,7 +281,7 @@ SolverStatus SQPIKSolver::solve(
         if (error_norm < config_.tolerance) {
             status.converged = true;
             status.final_error_norm = error_norm;
-            URDFX_LOG_DEBUG("[IK] Converged at iteration {}: error={:.6e}", iter, error_norm);
+            KINEX_LOG_DEBUG("[IK] Converged at iteration {}: error={:.6e}", iter, error_norm);
             break;
         }
 
@@ -312,7 +312,7 @@ SolverStatus SQPIKSolver::solve(
                     oss << std::fixed << std::setprecision(3) << current[i];
                 }
                 oss << "]";
-                URDFX_LOG_WARN("{}", oss.str());
+                KINEX_LOG_WARN("{}", oss.str());
             }
         } else {
             stagnation_counter = 0;
@@ -429,13 +429,13 @@ SolverStatus SQPIKSolver::solve(
             oss << std::scientific << std::setprecision(2) << status.error_history[i];
         }
         oss << "]";
-        URDFX_LOG_WARN("{}", oss.str());
+        KINEX_LOG_WARN("{}", oss.str());
     } else {
         status.message = "IK converged";
-        URDFX_LOG_DEBUG("[IK] Success: iterations={}, final_error={:.6e}", status.iterations, status.final_error_norm);
+        KINEX_LOG_DEBUG("[IK] Success: iterations={}, final_error={:.6e}", status.iterations, status.final_error_norm);
     }
 
     return status;
 }
 
-} // namespace urdfx
+} // namespace kinex

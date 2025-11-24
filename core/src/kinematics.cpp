@@ -1,5 +1,5 @@
-#include "urdfx/kinematics.h"
-#include "urdfx/logging.h"
+#include "kinex/kinematics.h"
+#include "kinex/logging.h"
 #include <stdexcept>
 #include <algorithm>
 #include <unordered_set>
@@ -11,7 +11,7 @@
 #include <mutex>
 #include <iostream>
 
-namespace urdfx {
+namespace kinex {
 
 // ============================================================================
 // KinematicChain Implementation
@@ -37,9 +37,9 @@ KinematicChain::KinematicChain(
         throw std::invalid_argument("Base link '" + base_link_ + "' not found in robot");
     }
     
-    URDFX_LOG_INFO("Building kinematic chain from '{}' to '{}'", base_link_, end_link_);
+    KINEX_LOG_INFO("Building kinematic chain from '{}' to '{}'", base_link_, end_link_);
     buildChain();
-    URDFX_LOG_INFO("Kinematic chain built with {} actuated joints", joints_.size());
+    KINEX_LOG_INFO("Kinematic chain built with {} actuated joints", joints_.size());
 }
 
 void KinematicChain::buildChain() {
@@ -79,7 +79,7 @@ void KinematicChain::buildChain() {
         static_transforms_.push_back(joint->getOrigin());
     }
     
-    URDFX_LOG_DEBUG("Chain has {} total joints, {} actuated", 
+    KINEX_LOG_DEBUG("Chain has {} total joints, {} actuated", 
                     path_joints.size(), joints_.size());
 }
 
@@ -115,7 +115,7 @@ ForwardKinematics::ForwardKinematics(
     : robot_(robot)
     , chain_(robot, end_link, base_link)
 {
-    URDFX_LOG_INFO("ForwardKinematics initialized for chain with {} DOF",
+    KINEX_LOG_INFO("ForwardKinematics initialized for chain with {} DOF",
                    chain_.getNumJoints());
 }
 
@@ -172,7 +172,7 @@ Transform ForwardKinematics::compute(
                 break;
             case JointType::Floating:
             case JointType::Planar:
-                URDFX_LOG_WARN("Joint type not fully supported: {}", 
+                KINEX_LOG_WARN("Joint type not fully supported: {}", 
                                static_cast<int>(joint->getType()));
                 break;
         }
@@ -562,4 +562,4 @@ Eigen::MatrixXd JacobianCalculator::convertJacobian(
     throw std::invalid_argument("Unsupported Jacobian conversion requested");
 }
 
-} // namespace urdfx
+} // namespace kinex

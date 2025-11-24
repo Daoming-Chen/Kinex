@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This tutorial covers the basic usage of urdfx for C++ developers.
+This tutorial covers the basic usage of kinex for C++ developers.
 
 ## Prerequisites
 
@@ -21,9 +21,9 @@ This tutorial covers the basic usage of urdfx for C++ developers.
 ## 1. Parsing URDF Files
 
 ```cpp
-#include <urdfx/urdf_parser.h>
+#include <kinex/urdf_parser.h>
 
-auto robot = urdfx::parseURDF("path/to/robot.urdf");
+auto robot = kinex::parseURDF("path/to/robot.urdf");
 std::cout << "Robot name: " << robot.getName() << std::endl;
 std::cout << "Number of joints: " << robot.getJoints().size() << std::endl;
 ```
@@ -31,9 +31,9 @@ std::cout << "Number of joints: " << robot.getJoints().size() << std::endl;
 ## 2. Forward Kinematics
 
 ```cpp
-#include <urdfx/kinematics.h>
+#include <kinex/kinematics.h>
 
-urdfx::ForwardKinematics fk(robot, "base_link", "end_effector");
+kinex::ForwardKinematics fk(robot, "base_link", "end_effector");
 
 Eigen::VectorXd q(6);
 q << 0, M_PI/4, -M_PI/4, 0, M_PI/2, 0;
@@ -45,9 +45,9 @@ std::cout << "Position: " << pose.translation().transpose() << std::endl;
 ## 3. Inverse Kinematics
 
 ```cpp
-#include <urdfx/inverse_kinematics.h>
+#include <kinex/inverse_kinematics.h>
 
-urdfx::InverseKinematics ik(robot, "base_link", "end_effector");
+kinex::InverseKinematics ik(robot, "base_link", "end_effector");
 
 Eigen::Isometry3d target_pose = Eigen::Isometry3d::Identity();
 target_pose.translation() << 0.5, 0.0, 0.5;

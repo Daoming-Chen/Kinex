@@ -58,7 +58,7 @@ Track these steps as TODOs and complete them one by one.
 
 ### Stage 3: Archiving Changes
 After deployment, create separate PR to:
-- Move `changes/[name]/` → `changes/archive/YYYY-MM-DD-[name]/`
+- Move `changes/[name]/` �?`changes/archive/YYYY-MM-DD-[name]/`
 - Update `specs/` if capabilities changed
 - Use `openspec archive <change-id> --skip-specs --yes` for tooling-only changes (always pass the change ID explicitly)
 - Run `openspec validate --strict` to confirm the archived change passes checks
@@ -76,7 +76,7 @@ After deployment, create separate PR to:
 - Always check if capability already exists
 - Prefer modifying existing specs over creating duplicates
 - Use `openspec show [spec]` to review current state
-- If request is ambiguous, ask 1–2 clarifying questions before scaffolding
+- If request is ambiguous, ask 1�? clarifying questions before scaffolding
 
 ### Search Guidance
 - Enumerate specs: `openspec spec list --long` (or `--json` for scripts)
@@ -126,18 +126,18 @@ openspec validate [change] --strict
 openspec/
 ├── project.md              # Project conventions
 ├── specs/                  # Current truth - what IS built
-│   └── [capability]/       # Single focused capability
-│       ├── spec.md         # Requirements and scenarios
-│       └── design.md       # Technical patterns
+�?  └── [capability]/       # Single focused capability
+�?      ├── spec.md         # Requirements and scenarios
+�?      └── design.md       # Technical patterns
 ├── changes/                # Proposals - what SHOULD change
-│   ├── [change-name]/
-│   │   ├── proposal.md     # Why, what, impact
-│   │   ├── tasks.md        # Implementation checklist
-│   │   ├── design.md       # Technical decisions (optional; see criteria)
-│   │   └── specs/          # Delta changes
-│   │       └── [capability]/
-│   │           └── spec.md # ADDED/MODIFIED/REMOVED
-│   └── archive/            # Completed changes
+�?  ├── [change-name]/
+�?  �?  ├── proposal.md     # Why, what, impact
+�?  �?  ├── tasks.md        # Implementation checklist
+�?  �?  ├── design.md       # Technical decisions (optional; see criteria)
+�?  �?  └── specs/          # Delta changes
+�?  �?      └── [capability]/
+�?  �?          └── spec.md # ADDED/MODIFIED/REMOVED
+�?  └── archive/            # Completed changes
 ```
 
 ## Creating Change Proposals
@@ -146,12 +146,12 @@ openspec/
 
 ```
 New request?
-├─ Bug fix restoring spec behavior? → Fix directly
-├─ Typo/format/comment? → Fix directly  
-├─ New feature/capability? → Create proposal
-├─ Breaking change? → Create proposal
-├─ Architecture change? → Create proposal
-└─ Unclear? → Create proposal (safer)
+├─ Bug fix restoring spec behavior? �?Fix directly
+├─ Typo/format/comment? �?Fix directly  
+├─ New feature/capability? �?Create proposal
+├─ Breaking change? �?Create proposal
+├─ Architecture change? �?Create proposal
+└─ Unclear? �?Create proposal (safer)
 ```
 
 ### Proposal Structure
@@ -225,7 +225,7 @@ Minimal `design.md` skeleton:
 - Alternatives considered: [Options + rationale]
 
 ## Risks / Trade-offs
-- [Risk] → Mitigation
+- [Risk] �?Mitigation
 
 ## Migration Plan
 [Steps, rollback]
@@ -247,9 +247,9 @@ Minimal `design.md` skeleton:
 
 **WRONG** (don't use bullets or bold):
 ```markdown
-- **Scenario: User login**  ❌
-**Scenario**: User login     ❌
-### Scenario: User login      ❌
+- **Scenario: User login**  �?
+**Scenario**: User login     �?
+### Scenario: User login      �?
 ```
 
 Every requirement MUST have at least one scenario.
@@ -354,7 +354,7 @@ openspec/changes/add-2fa-notify/
 ├── tasks.md
 └── specs/
     ├── auth/
-    │   └── spec.md   # ADDED: Two-Factor Authentication
+    �?  └── spec.md   # ADDED: Two-Factor Authentication
     └── notifications/
         └── spec.md   # ADDED: OTP email notification
 ```

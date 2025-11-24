@@ -1,12 +1,12 @@
 # Spec: CI/CD Pipeline
 
 ## Overview
-Automated continuous integration and deployment workflows using GitHub Actions to build, test, and publish urdfx packages across multiple platforms.
+Automated continuous integration and deployment workflows using GitHub Actions to build, test, and publish kinex packages across multiple platforms.
 
 ## ADDED Requirements
 
 ### Requirement: Multi-Platform Build Support
-The CI/CD pipeline MUST build the urdfx library on Linux, macOS, and Windows platforms.
+The CI/CD pipeline MUST build the kinex library on Linux, macOS, and Windows platforms.
 
 #### Scenario: Building C++ core library on all platforms
 **Given** a push or pull request to the repository  
@@ -63,7 +63,7 @@ Packages MUST be published to PyPI and npm only when all tests pass and only on 
 **When** the publish job executes  
 **Then** all Python wheels must be uploaded to PyPI using twine  
 **And** the upload must use the `PYPI_API_TOKEN` secret  
-**And** the published package must be installable via `pip install urdfx`
+**And** the published package must be installable via `pip install kinex`
 
 #### Scenario: Publishing JavaScript package to npm on release
 **Given** a version tag (e.g., `v0.1.0`) has been pushed  
@@ -72,7 +72,7 @@ Packages MUST be published to PyPI and npm only when all tests pass and only on 
 **When** the publish job executes  
 **Then** the package must be published to npm registry  
 **And** the publish must use the `NPM_TOKEN` secret  
-**And** the published package must be installable via `npm install @urdfx/wasm`
+**And** the published package must be installable via `npm install @kinex/wasm`
 
 #### Scenario: Skipping publish on pull requests
 **Given** a pull request is created or updated  

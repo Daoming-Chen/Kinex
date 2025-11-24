@@ -190,7 +190,7 @@ The Python bindings SHALL provide complete type hints for all public APIs.
 
 #### Scenario: mypy validation
 
-- **WHEN** user runs mypy on code using urdfx
+- **WHEN** user runs mypy on code using kinex
 - **THEN** mypy validates types correctly without errors
 
 ### Requirement: Documentation Strings
@@ -199,7 +199,7 @@ The Python bindings SHALL provide comprehensive docstrings for all classes and m
 
 #### Scenario: Access help
 
-- **WHEN** user calls `help(urdfx.ForwardKinematics)`
+- **WHEN** user calls `help(kinex.ForwardKinematics)`
 - **THEN** detailed documentation is displayed
 
 #### Scenario: Parameter documentation
@@ -224,7 +224,7 @@ The Python bindings SHALL integrate with standard Python build tools.
 #### Scenario: Install from source
 
 - **WHEN** user runs `pip install .` in bindings/python directory
-- **THEN** the urdfx package is built and installed
+- **THEN** the kinex package is built and installed
 
 #### Scenario: Development mode installation
 
@@ -303,7 +303,7 @@ The Python bindings SHALL include benchmarks that measure the performance overhe
 - **AND** reports overhead breakdown:
   - Setup overhead (Robot/Solver instantiation)
   - Computation overhead (per iteration)
-  - Result conversion overhead (Transform â†’ NumPy)
+  - Result conversion overhead (Transform â†?NumPy)
 
 #### Scenario: Jacobian computation overhead measurement
 
@@ -316,9 +316,9 @@ The Python bindings SHALL include benchmarks that measure the performance overhe
 
 - **WHEN** overhead benchmark tests data conversion
 - **THEN** it measures time to convert:
-  - NumPy array â†’ Eigen::VectorXd (joint angles)
-  - Transform object â†’ NumPy position/quaternion
-  - Eigen::MatrixXd â†’ NumPy array (Jacobian)
+  - NumPy array â†?Eigen::VectorXd (joint angles)
+  - Transform object â†?NumPy position/quaternion
+  - Eigen::MatrixXd â†?NumPy array (Jacobian)
 - **AND** reports per-conversion overhead in microseconds
 
 #### Scenario: Overhead report generation

@@ -2,8 +2,8 @@ const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const modulePath = process.env.URDFX_WASM_BUNDLE;
-const wasmPath = process.env.URDFX_WASM_BINARY;
+const modulePath = process.env.KINEX_WASM_BUNDLE;
+const wasmPath = process.env.KINEX_WASM_BINARY;
 const hasArtifacts = Boolean(modulePath && wasmPath);
 
 const SIMPLE_URDF = `<?xml version="1.0"?>
@@ -21,7 +21,7 @@ const SIMPLE_URDF = `<?xml version="1.0"?>
 
 const describeIf = hasArtifacts ? describe : describe.skip;
 
-describeIf('URDFX WASM module (Browser)', () => {
+describeIf('kinex WASM module (Browser)', () => {
   let puppeteer;
   let browser;
   let server;
@@ -35,7 +35,7 @@ describeIf('URDFX WASM module (Browser)', () => {
 
     server = http.createServer((req, res) => {
       const { url } = req;
-      if (url === '/urdfx.js') {
+      if (url === '/kinex.js') {
         res.writeHead(200, {
           'Content-Type': 'application/javascript',
           'Cache-Control': 'no-store',
@@ -44,7 +44,7 @@ describeIf('URDFX WASM module (Browser)', () => {
         return;
       }
 
-      if (url === '/urdfx.wasm') {
+      if (url === '/kinex.wasm') {
         res.writeHead(200, {
           'Content-Type': 'application/wasm',
           'Cache-Control': 'no-store',
@@ -62,8 +62,8 @@ describeIf('URDFX WASM module (Browser)', () => {
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>urdfx wasm browser test</title>
-<script src="/urdfx.js"></script>
+<title>kinex wasm browser test</title>
+<script src="/kinex.js"></script>
 </head>
 <body>
 <script>
@@ -89,10 +89,10 @@ function vectorToArray(vec) {
   return Array.from(vec);
 }
 window.runUrdfxSmokeTest = async function runUrdfxSmokeTest() {
-  const module = await createUrdfxModule({
+  const module = await createKinexModule({
     locateFile(file) {
       if (file.endsWith('.wasm')) {
-        return '/urdfx.wasm';
+        return '/kinex.wasm';
       }
       return file;
     },
@@ -184,8 +184,8 @@ window.runUrdfxSmokeTest = async function runUrdfxSmokeTest() {
   });
 });
 
-describeIf('URDFX WASM artifacts availability (browser)', () => {
-  test('requires URDFX_WASM_BUNDLE and URDFX_WASM_BINARY environment variables', () => {
+describeIf('kinex WASM artifacts availability (browser)', () => {
+  test('requires KINEX_WASM_BUNDLE and KINEX_WASM_BINARY environment variables', () => {
     expect(hasArtifacts).toBe(true);
   });
 });

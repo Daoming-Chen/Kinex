@@ -1,5 +1,5 @@
-#include "urdfx/urdf_parser.h"
-#include "urdfx/logging.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/logging.h"
 #include <pugixml.hpp>
 #include <fstream>
 #include <sstream>
@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace urdfx {
+namespace kinex {
 
 // Helper functions for parsing XML attributes
 namespace {
@@ -245,7 +245,7 @@ public:
             throw URDFParseException("Robot missing 'name' attribute");
         }
         
-        URDFX_INFO("Parsing robot '{}'", robot_name);
+        KINEX_INFO("Parsing robot '{}'", robot_name);
         auto robot = std::make_shared<Robot>(robot_name);
         
         // Parse all links
@@ -266,7 +266,7 @@ public:
             throw URDFParseException("Robot validation failed");
         }
         
-        URDFX_INFO("Successfully parsed robot '{}' with {} links and {} joints",
+        KINEX_INFO("Successfully parsed robot '{}' with {} links and {} joints",
                    robot_name, robot->getLinks().size(), robot->getJoints().size());
         
         return robot;
@@ -279,7 +279,7 @@ private:
             throw URDFParseException("Link missing 'name' attribute");
         }
         
-        URDFX_DEBUG("Parsing link '{}'", link_name);
+        KINEX_DEBUG("Parsing link '{}'", link_name);
         auto link = std::make_shared<Link>(link_name);
         
         // Parse inertial (optional)
@@ -324,7 +324,7 @@ private:
             throw URDFParseException("Joint '" + joint_name + "' missing 'type' attribute");
         }
         
-        URDFX_DEBUG("Parsing joint '{}' of type '{}'", joint_name, type_str);
+        KINEX_DEBUG("Parsing joint '{}' of type '{}'", joint_name, type_str);
         
         JointType joint_type = parseJointType(type_str);
         auto joint = std::make_shared<Joint>(joint_name, joint_type);
@@ -375,7 +375,7 @@ private:
             limits.velocity = getDoubleAttribute(limit_node, "velocity");
             joint->setLimits(limits);
         } else if (joint_type == JointType::Revolute || joint_type == JointType::Prismatic) {
-            URDFX_WARN("Joint '{}' of type '{}' missing <limit> element", joint_name, type_str);
+            KINEX_WARN("Joint '{}' of type '{}' missing <limit> element", joint_name, type_str);
         }
         
         // Parse dynamics (optional)
@@ -400,7 +400,7 @@ private:
         for (const auto& link : robot->getLinks()) {
             if (child_links.find(link->getName()) == child_links.end()) {
                 robot->setRootLink(link->getName());
-                URDFX_INFO("Root link determined: '{}'", link->getName());
+                KINEX_INFO("Root link determined: '{}'", link->getName());
                 return;
             }
         }
@@ -408,7 +408,7 @@ private:
         // If no root found, use first link as fallback
         if (!robot->getLinks().empty()) {
             robot->setRootLink(robot->getLinks()[0]->getName());
-            URDFX_WARN("Could not determine root link, using first link: '{}'", 
+            KINEX_WARN("Could not determine root link, using first link: '{}'", 
                       robot->getRootLink());
         }
     }
@@ -418,7 +418,7 @@ URDFParser::URDFParser() = default;
 URDFParser::~URDFParser() = default;
 
 std::shared_ptr<Robot> URDFParser::parseFile(const std::string& filepath) {
-    URDFX_INFO("Parsing URDF file: {}", filepath);
+    KINEX_INFO("Parsing URDF file: {}", filepath);
     
     // Read file content
     std::ifstream file(filepath);
@@ -440,7 +440,7 @@ std::shared_ptr<Robot> URDFParser::parseFile(const std::string& filepath) {
 }
 
 std::shared_ptr<Robot> URDFParser::parseString(const std::string& urdf_string) {
-    URDFX_INFO("Parsing URDF from string ({} bytes)", urdf_string.size());
+    KINEX_INFO("Parsing URDF from string ({} bytes)", urdf_string.size());
     return parseDocument(urdf_string, "<string>");
 }
 
@@ -458,4 +458,4 @@ std::shared_ptr<Robot> URDFParser::parseDocument(const std::string& content, con
     }
 }
 
-} // namespace urdfx
+} // namespace kinex

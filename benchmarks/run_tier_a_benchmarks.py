@@ -24,9 +24,9 @@ if python_bindings_path not in sys.path:
     sys.path.insert(0, python_bindings_path)
 
 try:
-    import urdfx
+    import kinex
 except ImportError as e:
-    print(f"Error: urdfx module not found. Please build Python bindings first.")
+    print(f"Error: kinex module not found. Please build Python bindings first.")
     print(f"Error details: {e}")
     print(f"Tried path: {python_bindings_path}")
     sys.exit(1)
@@ -68,7 +68,7 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     
     # Load robot
     print(f"Loading robot from {urdf_path}...")
-    robot = urdfx.Robot.from_urdf_file(urdf_path)
+    robot = kinex.Robot.from_urdf_file(urdf_path)
     dof = robot.dof
     print(f"  DOF: {dof}")
     print(f"  Test samples: {num_samples}")
@@ -82,10 +82,10 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     
     # Create IK solver
     print("Creating IK solver...")
-    solver = urdfx.SQPIKSolver(robot, end_link)
+    solver = kinex.SQPIKSolver(robot, end_link)
     
     # Configure solver (aligned with C++ benchmarks)
-    config = urdfx.SolverConfig()
+    config = kinex.SolverConfig()
     config.tolerance = 5e-4
     config.max_iterations = 64
     config.enable_warm_start = True
@@ -155,7 +155,7 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
             
             # Convert to Transform
             rpy = R.from_matrix(target_rot).as_euler('xyz', degrees=False)
-            target_transform = urdfx.Transform.from_position_rpy(target_pos, rpy)
+            target_transform = kinex.Transform.from_position_rpy(target_pos, rpy)
             
             # 2. Choose initial guess based on strategy
             if case_type == "cold_start_zero":

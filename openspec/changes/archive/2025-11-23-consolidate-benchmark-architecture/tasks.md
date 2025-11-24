@@ -33,7 +33,7 @@
   - [x] Add FK computation overhead test (Python vs C++)
   - [x] Add IK solving overhead test
   - [x] Add Jacobian computation overhead test
-  - [x] Add data conversion overhead tests (NumPy â†” Eigen)
+  - [x] Add data conversion overhead tests (NumPy â†?Eigen)
 
 - [x] 2.2 Create comparison reporting
   - [x] Add script to compare Python vs C++ benchmark results

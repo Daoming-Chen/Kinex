@@ -1,4 +1,4 @@
-import urdfx
+import kinex
 import numpy as np
 import os
 import sys
@@ -19,11 +19,11 @@ def main():
 
     # Load robot
     print(f"Loading robot from {urdf_path}...")
-    robot = urdfx.Robot.from_urdf_file(urdf_path)
+    robot = kinex.Robot.from_urdf_file(urdf_path)
     print(f"Loaded robot: {robot.get_name()} with {robot.dof} DOF")
 
     # Create FK solver (use wrist_3_link as end effector)
-    fk = urdfx.ForwardKinematics(robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(robot, "wrist_3_link")
 
     # Compute FK for home position
     q_home = np.zeros(robot.dof)

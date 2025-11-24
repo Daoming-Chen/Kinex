@@ -13,7 +13,7 @@ The benchmark infrastructure SHALL provide tools to generate ground-truth datase
 
 #### Scenario: FK oracle validation
 
-- **WHEN** a dataset is generated using urdfx Python bindings as FK oracle
+- **WHEN** a dataset is generated using kinex Python bindings as FK oracle
 - **THEN** FK results match C++ implementation (position error < 1e-6 m, rotation error < 1e-6 rad)
 
 #### Scenario: Generate initial guess variations

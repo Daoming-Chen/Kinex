@@ -52,13 +52,13 @@ The generator SHALL produce physically plausible robots with bounded geometric p
 
 ### Requirement: URDF Output Format
 
-The generator SHALL produce valid URDF files compatible with urdfx parser.
+The generator SHALL produce valid URDF files compatible with kinex parser.
 
 #### Scenario: URDF structure validation
 
 - **WHEN** a URDF is generated
 - **THEN** it contains a root link and N joints
-- **AND** it passes urdfx `URDFParser.parseString()` without errors
+- **AND** it passes kinex `URDFParser.parseString()` without errors
 - **AND** joint names are unique (e.g., `joint_0`, `joint_1`, ...)
 - **AND** link names are unique (e.g., `link_0`, `link_1`, ...)
 
@@ -88,7 +88,7 @@ The generator SHALL provide a convenient Python API for benchmark automation.
 
 - **WHEN** user calls `generator.save_urdf("output/robot.urdf")`
 - **THEN** a URDF file is written to the specified path
-- **AND** the file is valid and can be parsed by urdfx
+- **AND** the file is valid and can be parsed by kinex
 
 #### Scenario: Generate URDF as string
 
@@ -106,11 +106,11 @@ The generator SHALL provide a convenient Python API for benchmark automation.
 
 The generator SHALL provide validation tools to ensure generated robots are suitable for benchmarking.
 
-#### Scenario: Validate generated URDF with urdfx
+#### Scenario: Validate generated URDF with kinex
 
 - **WHEN** a robot is generated
 - **THEN** the generator can call `validate()` method
-- **AND** it returns True if urdfx can parse and create a `Robot` object
+- **AND** it returns True if kinex can parse and create a `Robot` object
 - **AND** it returns False with error messages if parsing fails
 
 #### Scenario: Visualize generated robot (optional)

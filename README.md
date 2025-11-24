@@ -1,4 +1,4 @@
-# urdfx
+# kinex
 
 A modern C++20 robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving capabilities with Python and WebAssembly bindings.
 
@@ -17,23 +17,23 @@ A modern C++20 robotics kinematics library providing URDF parsing, forward kinem
 ### C++ Example
 
 ```cpp
-#include <urdfx/urdf_parser.h>
-#include <urdfx/kinematics.h>
-#include <urdfx/inverse_kinematics.h>
+#include <kinex/urdf_parser.h>
+#include <kinex/kinematics.h>
+#include <kinex/inverse_kinematics.h>
 
 // Parse URDF file
-urdfx::URDFParser parser;
+kinex::URDFParser parser;
 auto robot = parser.parseFile("ur5e.urdf");
 
 // Compute forward kinematics
-urdfx::ForwardKinematics fk(robot, "tool0");
+kinex::ForwardKinematics fk(robot, "tool0");
 Eigen::VectorXd joint_angles(6);
 joint_angles << 0.0, -1.57, 0.0, 0.0, 0.0, 0.0;
 auto pose = fk.compute(joint_angles);
 
 // Solve inverse kinematics
-urdfx::SQPIKSolver ik_solver(robot, "tool0");
-urdfx::Transform target_pose = /* ... set target pose ... */;
+kinex::SQPIKSolver ik_solver(robot, "tool0");
+kinex::Transform target_pose = /* ... set target pose ... */;
 Eigen::VectorXd initial_guess = Eigen::VectorXd::Zero(6);
 Eigen::VectorXd solution;
 auto status = ik_solver.solve(target_pose, initial_guess, solution);
@@ -44,19 +44,19 @@ auto status = ik_solver.solve(target_pose, initial_guess, solution);
 **Note**: Python bindings are currently under active development. Core functionality is working with ongoing improvements. See `bindings/python/README.md` for latest updates.
 
 ```python
-import urdfx
+import kinex
 import numpy as np
 
 # Load robot from URDF
-robot = urdfx.Robot.from_urdf("ur5e.urdf")
+robot = kinex.Robot.from_urdf("ur5e.urdf")
 
 # Compute forward kinematics
-fk = urdfx.ForwardKinematics(robot, "tool0")
+fk = kinex.ForwardKinematics(robot, "tool0")
 joint_angles = np.array([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
 pose = fk.compute(joint_angles)
 
 # Solve inverse kinematics
-ik = urdfx.SQPIKSolver(robot, "tool0")
+ik = kinex.SQPIKSolver(robot, "tool0")
 target_pose = {...}  # Pose dictionary
 initial_guess = np.zeros(6)
 solution = ik.solve(target_pose, initial_guess)
@@ -66,31 +66,31 @@ solution = ik.solve(target_pose, initial_guess)
 
 ```bash
 # Install from npm
-npm install urdfx
+npm install kinex
 ```
 
 ```javascript
-import createUrdfxModule from 'urdfx';
+import createkinexModule from 'kinex';
 
 // Initialize WASM module
-const urdfx = await createUrdfxModule();
+const kinex = await createkinexModule();
 
 // Load robot from URDF string
-const urdfXml = `<?xml version="1.0"?>
+const kinexml = `<?xml version="1.0"?>
 <robot name="my_robot">
   <!-- Your URDF content -->
 </robot>`;
 
-const robot = urdfx.Robot.fromURDFString(urdfXml);
+const robot = kinex.Robot.fromURDFString(kinexml);
 
 // Compute forward kinematics
-const fk = new urdfx.ForwardKinematics(robot, "tool0");
+const fk = new kinex.ForwardKinematics(robot, "tool0");
 const pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
 console.log('Position:', pose.position);
 console.log('Quaternion:', pose.quaternion);
 
 // Solve inverse kinematics
-const ik = new urdfx.SQPIKSolver(robot, "tool0");
+const ik = new kinex.SQPIKSolver(robot, "tool0");
 const targetPose = {
   position: [0.5, 0.0, 0.5],
   quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
@@ -109,13 +109,13 @@ robot.dispose();
 
 ### npm Package (WebAssembly)
 
-The easiest way to use urdfx in JavaScript/TypeScript projects:
+The easiest way to use kinex in JavaScript/TypeScript projects:
 
 ```bash
-npm install urdfx
+npm install kinex
 ```
 
-Available on npm: https://www.npmjs.com/package/urdfx
+Available on npm: https://www.npmjs.com/package/kinex
 
 ### Building from Source
 
@@ -145,8 +145,8 @@ Available on npm: https://www.npmjs.com/package/urdfx
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/Daoming-Chen/urdfx.git
-cd urdfx
+git clone --recursive https://github.com/Daoming-Chen/kinex.git
+cd kinex
 
 # Run setup script to check dependencies
 ./scripts/setup.sh
@@ -165,8 +165,8 @@ sudo cmake --install .
 
 ```powershell
 # Clone with submodules
-git clone --recursive https://github.com/Daoming-Chen/urdfx.git
-cd urdfx
+git clone --recursive https://github.com/Daoming-Chen/kinex.git
+cd kinex
 
 # Run Windows setup script (checks/install dependencies: CMake, Python, Node.js, Emscripten, Visual Studio)
 ./scripts/setup.ps1
@@ -176,7 +176,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release -j
 
 # Install (run as Administrator)
-cmake --install build --prefix "C:\Program Files\urdfx"
+cmake --install build --prefix "C:\Program Files\kinex"
 ```
 
 **Windows Build Notes & Troubleshooting:**
@@ -263,7 +263,7 @@ cd bindings/python
 python3 -m build --wheel
 
 # Install the wheel (adjust path to match your Python version)
-pip install --force-reinstall dist/urdfx-*.whl
+pip install --force-reinstall dist/kinex-*.whl
 
 # Return to project root
 cd ../..
@@ -366,29 +366,29 @@ Benchmark results are saved to `benchmarks/results/` for historical comparison a
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     urdfx Library Core                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ URDF Parser  │→ │   Forward    │→ │   Jacobian   │     │
-│  │  (pugixml)   │  │  Kinematics  │  │ Computation  │     │
-│  └──────────────┘  │   (Eigen)    │  │ (Analytical) │     │
-│                     └──────────────┘  └──────────────┘     │
-│                            ↓                  ↓             │
-│                     ┌──────────────────────────────┐       │
-│                     │   Inverse Kinematics         │       │
-│                     │   (DaQP + SQP)               │       │
-│                     └──────────────────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
-                ↓                              ↓
-    ┌──────────────────────┐      ┌──────────────────────┐
-    │  Python Bindings     │      │  WASM Bindings       │
-    │    (nanobind)        │      │   (Emscripten)       │
-    └──────────────────────┘      └──────────────────────┘
-                                              ↓
-                                  ┌──────────────────────┐
-                                  │  Visualization App   │
-                                  │     (Three.js)       │
-                                  └──────────────────────┘
+┌─────────────────────────────────────────────────────────────�?
+�?                    kinex Library Core                      �?
+�? ┌──────────────�? ┌──────────────�? ┌──────────────�?    �?
+�? �?URDF Parser  │→ �?  Forward    │→ �?  Jacobian   �?    �?
+�? �? (pugixml)   �? �? Kinematics  �? �?Computation  �?    �?
+�? └──────────────�? �?  (Eigen)    �? �?(Analytical) �?    �?
+�?                    └──────────────�? └──────────────�?    �?
+�?                           �?                 �?            �?
+�?                    ┌──────────────────────────────�?      �?
+�?                    �?  Inverse Kinematics         �?      �?
+�?                    �?  (DaQP + SQP)               �?      �?
+�?                    └──────────────────────────────�?      �?
+└─────────────────────────────────────────────────────────────�?
+                �?                             �?
+    ┌──────────────────────�?     ┌──────────────────────�?
+    �? Python Bindings     �?     �? WASM Bindings       �?
+    �?   (nanobind)        �?     �?  (Emscripten)       �?
+    └──────────────────────�?     └──────────────────────�?
+                                              �?
+                                  ┌──────────────────────�?
+                                  �? Visualization App   �?
+                                  �?    (Three.js)       �?
+                                  └──────────────────────�?
 ```
 
 ## Key Algorithms
@@ -409,8 +409,8 @@ Sequential Quadratic Programming approach:
 1. Compute current pose: `FK(q)`
 2. Compute Jacobian: `J(q)`
 3. Solve QP: minimize `||J·Δq - (target - FK(q))||²`
-4. Apply joint limits: `q_min ≤ q + Δq ≤ q_max`
-5. Update: `q ← q + α·Δq` (with line search)
+4. Apply joint limits: `q_min �?q + Δq �?q_max`
+5. Update: `q �?q + α·Δq` (with line search)
 6. Repeat until convergence
 
 ## Performance
@@ -466,20 +466,20 @@ We follow conventional commits and require:
 
 ## Citation
 
-If you use urdfx in your research, please cite:
+If you use kinex in your research, please cite:
 ```
 [Citation information to be added]
 ```
 
 ## Roadmap
 
-- ✅ URDF parsing
-- ✅ Forward kinematics
-- ✅ Analytical Jacobian computation (5-10x faster than AD)
-- ✅ Inverse kinematics with SQP solver
-- ✅ WebAssembly bindings
-- ✅ Google Benchmark performance suite
-- ✅ Three.js visualization examples
+- �?URDF parsing
+- �?Forward kinematics
+- �?Analytical Jacobian computation (5-10x faster than AD)
+- �?Inverse kinematics with SQP solver
+- �?WebAssembly bindings
+- �?Google Benchmark performance suite
+- �?Three.js visualization examples
 - 🚧 Python bindings (nanobind-based)
 - 🚧 Full-featured visualization web app
 - 🚧 Collision detection integration (FCL)
@@ -490,7 +490,7 @@ If you use urdfx in your research, please cite:
 ## Support
 
 For questions, issues, or contributions:
-- GitHub Issues: https://github.com/Daoming-Chen/urdfx/issues
+- GitHub Issues: https://github.com/Daoming-Chen/kinex/issues
 - Documentation: [To be added]
 
 ## Acknowledgments

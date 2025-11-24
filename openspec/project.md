@@ -1,7 +1,7 @@
 # Project Context
 
 ## Purpose
-urdfx is a modern C++20 robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving capabilities. The library offers Python and WebAssembly bindings for cross-platform usage, along with a Three.js-based visualization web application.
+kinex is a modern C++20 robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving capabilities. The library offers Python and WebAssembly bindings for cross-platform usage, along with a Three.js-based visualization web application.
 
 **Core Goals**:
 - Fast and accurate kinematics computations for robot manipulators
@@ -53,8 +53,8 @@ urdfx is a modern C++20 robotics kinematics library providing URDF parsing, forw
 
 ### File Organization
 ```
-urdfx/
-├── include/urdfx/          # Public C++ headers
+kinex/
+├── include/kinex/          # Public C++ headers
 ├── src/                    # C++ implementation
 ├── python/                 # nanobind bindings
 ├── wasm/                   # Emscripten bindings
@@ -161,4 +161,4 @@ urdfx/
    - Windows: `ctest --test-dir build --build-config Release --output-on-failure`
 6. Install: 
    - Linux/macOS: `cmake --install build --prefix /usr/local`
-   - Windows: `cmake --install build --prefix "C:\Program Files\urdfx"` (run as Administrator)
+   - Windows: `cmake --install build --prefix "C:\Program Files\kinex"` (run as Administrator)

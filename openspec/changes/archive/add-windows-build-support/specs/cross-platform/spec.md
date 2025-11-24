@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Windows Platform Support
-The cross platform SHALL support building urdfx on Windows 10 (version 1809+) and Windows 11 with MSVC compiler version 19.29 or later (Visual Studio 2019 16.11+).
+The cross platform SHALL support building kinex on Windows 10 (version 1809+) and Windows 11 with MSVC compiler version 19.29 or later (Visual Studio 2019 16.11+).
 
 #### Scenario: Windows developer builds library successfully
 - **WHEN** a developer runs the Windows setup script on a clean Windows installation
@@ -78,10 +78,10 @@ The CMake build system SHALL apply appropriate MSVC-specific compiler flags and 
 
 #### Scenario: Shared library export macros
 - **WHEN** building shared libraries on Windows
-- **THEN** the build system SHALL define URDFX_BUILD during library compilation
-- **AND** SHALL define URDFX_SHARED for consumers when using shared libraries
-- **AND** headers SHALL use __declspec(dllexport) when URDFX_BUILD is defined
-- **AND** headers SHALL use __declspec(dllimport) when URDFX_BUILD is not defined but URDFX_SHARED is
+- **THEN** the build system SHALL define kinex_BUILD during library compilation
+- **AND** SHALL define kinex_SHARED for consumers when using shared libraries
+- **AND** headers SHALL use __declspec(dllexport) when kinex_BUILD is defined
+- **AND** headers SHALL use __declspec(dllimport) when kinex_BUILD is not defined but kinex_SHARED is
 
 #### Scenario: Path handling
 - **WHEN** CMake scripts reference file paths
@@ -96,7 +96,7 @@ All third-party dependencies (Eigen, pugixml, CppAD, DaQP, spdlog, GoogleTest) S
 - **WHEN** Eigen is built from submodule
 - **THEN** it SHALL configure and compile without errors on Windows
 - **AND** SHALL provide Eigen3::Eigen target correctly
-- **AND** SHALL work with both static and shared urdfx library builds
+- **AND** SHALL work with both static and shared kinex library builds
 
 #### Scenario: pugixml builds on Windows
 - **WHEN** pugixml is built from submodule

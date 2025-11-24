@@ -1,24 +1,24 @@
 # Benchmark Architecture
 
-This document describes the organization and purpose of benchmarks in the urdfx project.
+This document describes the organization and purpose of benchmarks in the kinex project.
 
 ## Directory Structure
 
 ```
 benchmarks/
 ├── cpp/                    # Native C++ performance benchmarks
-│   ├── ik_benchmarks.cpp
-│   ├── jacobian_benchmarks.cpp
-│   └── mixed_ik_benchmarks.cpp
+�?  ├── ik_benchmarks.cpp
+�?  ├── jacobian_benchmarks.cpp
+�?  └── mixed_ik_benchmarks.cpp
 ├── python/                 # Python benchmark runners (core performance)
-│   ├── run_all_benchmarks.py
-│   ├── run_tier_a_benchmarks.py
-│   └── run_tier_b_benchmarks.py
+�?  ├── run_all_benchmarks.py
+�?  ├── run_tier_a_benchmarks.py
+�?  └── run_tier_b_benchmarks.py
 ├── tools/                  # Shared benchmark utilities
-│   ├── __init__.py
-│   ├── urdf_generator.py   # MixedChainGenerator
-│   ├── oracle.py           # FKOracle, JointSampler
-│   └── visualize.py        # Chart generation
+�?  ├── __init__.py
+�?  ├── urdf_generator.py   # MixedChainGenerator
+�?  ├── oracle.py           # FKOracle, JointSampler
+�?  └── visualize.py        # Chart generation
 └── results/                # Benchmark outputs (JSON, plots, reports)
 
 bindings/python/benchmarks/  # Binding overhead tests only
@@ -50,9 +50,9 @@ bindings/python/benchmarks/  # Binding overhead tests only
 **What they test**:
 - Tier A: Real-world robots (UR5e variants)
 - Tier B: Synthetic mixed-joint robots
-- End-to-end workflows (dataset generation → solving → reporting)
+- End-to-end workflows (dataset generation �?solving �?reporting)
 
-**Framework**: Custom Python harness using `urdfx` Python bindings
+**Framework**: Custom Python harness using `kinex` Python bindings
 
 **When to add here**: When measuring real-world performance through Python API
 
@@ -64,7 +64,7 @@ bindings/python/benchmarks/  # Binding overhead tests only
 
 **What they test**:
 - FK/IK/Jacobian computation time (Python vs C++)
-- Data conversion costs (NumPy ↔ Eigen)
+- Data conversion costs (NumPy �?Eigen)
 - Binding setup overhead
 
 **Target**: <10% overhead for computational operations
@@ -91,16 +91,16 @@ from benchmarks.tools import MixedChainGenerator, FKOracle, JointSampler
 
 ```
 What are you measuring?
-│
+�?
 ├─ "How fast is the core C++ algorithm?"
-│  └─ benchmarks/cpp/
-│
+�? └─ benchmarks/cpp/
+�?
 ├─ "How well does it work for real robots via Python?"
-│  └─ benchmarks/python/
-│
+�? └─ benchmarks/python/
+�?
 ├─ "What's the Python binding overhead?"
-│  └─ bindings/python/benchmarks/
-│
+�? └─ bindings/python/benchmarks/
+�?
 └─ "I'm creating a shared utility (generator, oracle, etc.)"
    └─ benchmarks/tools/
 ```
@@ -135,7 +135,7 @@ python test_binding_overhead.py
 2. Add executable in `benchmarks/cpp/CMakeLists.txt`:
    ```cmake
    add_executable(my_benchmark my_benchmark.cpp)
-   target_link_libraries(my_benchmark PRIVATE urdfx benchmark::benchmark_main)
+   target_link_libraries(my_benchmark PRIVATE kinex benchmark::benchmark_main)
    ```
 3. Use Google Benchmark macros: `BENCHMARK(MyFunction)`
 

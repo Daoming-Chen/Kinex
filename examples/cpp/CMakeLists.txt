@@ -1,13 +1,13 @@
-# Examples for urdfx library
+# Examples for kinex library
 
-# Forward Kinematics Example
+# Forward kinematics example
 add_executable(forward_kinematics_example
     forward_kinematics_example.cpp
 )
 
 target_link_libraries(forward_kinematics_example
     PRIVATE
-        urdfx
+        kinex
 )
 
 target_include_directories(forward_kinematics_example

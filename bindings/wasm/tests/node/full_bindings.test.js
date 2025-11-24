@@ -1,8 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const modulePath = process.env.URDFX_WASM_BUNDLE;
-const wasmPath = process.env.URDFX_WASM_BINARY;
+const modulePath = process.env.KINEX_WASM_BUNDLE;
+const wasmPath = process.env.KINEX_WASM_BINARY;
 const hasArtifacts = Boolean(modulePath && wasmPath);
 
 const TEST_URDF = `<?xml version="1.0"?>
@@ -65,13 +65,13 @@ function vectorToArray(vec) {
   return Array.from(vec);
 }
 
-describeIf('URDFX WASM Full Bindings (Node)', () => {
+describeIf('kinex WASM Full Bindings (Node)', () => {
   let module;
 
   beforeAll(async () => {
     const wasmStat = await fs.promises.stat(wasmPath);
     if (!wasmStat.isFile()) {
-      throw new Error('URDFX_WASM_BINARY must point to the generated urdfx.wasm file.');
+      throw new Error('KINEX_WASM_BINARY must point to the generated kinex.wasm file.');
     }
 
     const resolvedModulePath = path.resolve(modulePath);

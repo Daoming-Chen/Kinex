@@ -7,7 +7,7 @@ from xml.dom import minidom
 class MixedChainGenerator:
     """
     Generates synthetic serial kinematic chains with mixed joint types (revolute/prismatic).
-    Outputs URDF format compatible with urdfx.
+    Outputs URDF format compatible with kinex.
     """
 
     def __init__(

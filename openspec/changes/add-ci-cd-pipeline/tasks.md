@@ -171,15 +171,15 @@ The implementation follows the design specification and handles all requirements
 - Writing CI and Release workflows (Phases 2-3) can be drafted in parallel
 
 **Must be sequential:**
-- Phase 1 â†’ Phase 2 (need secrets configured)
-- Phase 2 â†’ Phase 3 (reuse patterns from CI)
-- Phase 3 â†’ Phase 4 (need workflows to test)
-- Phase 4 â†’ Phase 5 (need working workflows to document)
+- Phase 1 â†?Phase 2 (need secrets configured)
+- Phase 2 â†?Phase 3 (reuse patterns from CI)
+- Phase 3 â†?Phase 4 (need workflows to test)
+- Phase 4 â†?Phase 5 (need working workflows to document)
 
 ## Rollback Plan
 
 If workflows cause issues:
-1. Workflows can be disabled in GitHub Settings â†’ Actions
+1. Workflows can be disabled in GitHub Settings â†?Actions
 2. Individual jobs can be commented out
 3. Publishing can be gated by adding manual approval step
 4. Revert to manual build/publish process while debugging

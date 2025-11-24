@@ -1,4 +1,4 @@
-# Build WASM for urdfx
+# Build WASM for kinex
 # This script sets up the Visual Studio environment and Emscripten, then builds WASM
 
 $ErrorActionPreference = "Stop"
