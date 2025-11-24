@@ -4,7 +4,6 @@
 
 #include "urdfx/inverse_kinematics.h"
 #include "urdfx/kinematics.h"
-#include "urdfx/analytical_jacobian.h"
 #include "urdfx/robot_model.h"
 #include "urdfx/urdf_parser.h"
 

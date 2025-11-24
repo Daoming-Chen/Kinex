@@ -133,12 +133,10 @@ jobs:
       - name: Run Python tests
         shell: bash
         run: |
-          cd bindings/python
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # On Windows, ensure DLLs are accessible
-            export PATH="$PWD/urdfx:$PATH"
-          fi
-          pytest tests -v
+          # Run tests from a different directory to ensure we're testing the installed package
+          # not the source directory
+          cd ${{ runner.temp }}
+          pytest ${{ github.workspace }}/bindings/python/tests -v
       
       - name: Upload wheel artifacts
         if: matrix.python-version == '3.11'

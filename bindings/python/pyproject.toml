@@ -37,7 +37,8 @@ cmake.args = [
     "-DBUILD_BENCHMARKS=OFF",
     "-DBUILD_WASM=OFF"
 ]
-install.components = ["python"]
+# Temporarily remove component filter to debug installation issue
+# install.components = ["python"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
