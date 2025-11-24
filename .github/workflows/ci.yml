@@ -1,0 +1,204 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+jobs:
+  cpp-build-test:
+    name: C++ Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        build-type: [Release]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+      
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+      
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build
+            third_party
+          key: ${{ runner.os }}-cmake-${{ matrix.build-type }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-cmake-${{ matrix.build-type }}-
+            ${{ runner.os }}-cmake-
+      
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DBUILD_TESTING=ON -DBUILD_PYTHON_BINDINGS=OFF -DBUILD_WASM=OFF
+      
+      - name: Build C++
+        run: |
+          cmake --build build --config ${{ matrix.build-type }} -j 4
+      
+      - name: Run C++ tests
+        run: |
+          ctest --test-dir build --build-config ${{ matrix.build-type }} --output-on-failure
+      
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-test-logs-${{ matrix.os }}
+          path: build/Testing/Temporary/LastTest.log
+          retention-days: 7
+
+  python-build-test:
+    name: Python Build & Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+      
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+      
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install scikit-build-core nanobind pytest numpy
+      
+      - name: Build Python wheel
+        run: |
+          cd bindings/python
+          python -m pip wheel . -w dist --no-deps
+      
+      - name: Install Python wheel
+        run: |
+          cd bindings/python
+          python -m pip install --find-links=dist urdfx
+      
+      - name: Run Python tests
+        run: |
+          cd bindings/python
+          pytest tests -v
+      
+      - name: Upload wheel artifacts
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheel-${{ matrix.os }}
+          path: bindings/python/dist/*.whl
+          retention-days: 7
+
+  wasm-build-test:
+    name: WASM Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: bindings/wasm/package-lock.json
+      
+      - name: Install Emscripten SDK
+        run: |
+          cd third_party
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+      
+      - name: Build WASM
+        run: |
+          source third_party/emsdk/emsdk_env.sh
+          emcmake cmake -B build-wasm -DBUILD_WASM=ON -DBUILD_TESTING=OFF -DBUILD_PYTHON_BINDINGS=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-wasm -j 4
+      
+      - name: Install Node.js dependencies
+        run: |
+          cd bindings/wasm
+          npm ci
+      
+      - name: Run Node.js tests
+        run: |
+          cd bindings/wasm
+          npm run test:node
+      
+      - name: Install browser testing dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+      
+      - name: Run browser tests
+        run: |
+          cd bindings/wasm
+          npm run test:browser
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+      
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-artifacts
+          path: |
+            build-wasm/**/*.wasm
+            build-wasm/**/*.js
+          retention-days: 7
