@@ -9,6 +9,8 @@ jobs:
   build-wheels:
     name: Build Python Wheels (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +63,8 @@ jobs:
   build-wasm:
     name: Build WASM Package
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout repository
@@ -121,6 +125,8 @@ jobs:
     name: Test All Artifacts
     needs: [build-wheels, build-wasm]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout repository
@@ -185,6 +191,8 @@ jobs:
     name: Publish to npm
     needs: [test-artifacts]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Download WASM package
