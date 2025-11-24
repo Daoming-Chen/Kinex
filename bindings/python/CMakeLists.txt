@@ -6,16 +6,21 @@ project(kinex_python)
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(nanobind CONFIG REQUIRED)
 
+# Disable pedantic warnings for nanobind to avoid issues with zero-size arrays
+# This must be done before nanobind_add_module to affect the nanobind-static target
+if(NOT MSVC)
+    add_compile_options(-Wno-pedantic)
+    # Also disable zero-length-array warning for Clang
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_compile_options(-Wno-zero-length-array)
+    endif()
+endif()
+
 # Create Python extension module
 nanobind_add_module(_kinex src/bindings.cpp)
 
 # Link to kinex library
 target_link_libraries(_kinex PRIVATE kinex)
-
-# Disable pedantic warnings for nanobind to avoid issues with zero-size arrays
-if(NOT MSVC)
-    target_compile_options(_kinex PRIVATE -Wno-pedantic)
-endif()
 
 # Set output properties
 set_target_properties(_kinex PROPERTIES
