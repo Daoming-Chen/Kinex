@@ -38,24 +38,23 @@ jobs:
         run: python -m pip install --upgrade pip scikit-build-core nanobind numpy pytest build
 
       - name: Build wheel
-        run: python -m build --wheel ./bindings/python
+        run: python -m build --wheel
+        working-directory: ./bindings/python
 
       - name: Install wheel
         run: |
-          python -m pip install dist/*.whl
-        working-directory: ./bindings/python
+          python -m pip install bindings/python/dist/*.whl
 
       - name: Run tests
         # Need to set URDFX_MODELS_DIR because we're not in source tree structure when installed
         env:
           URDFX_MODELS_DIR: ${{ github.workspace }}/examples/models/ur5
         run: |
-          python -m pytest tests
-        working-directory: ./bindings/python
+          python -m pytest bindings/python/tests -v
 
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
-          name: wheels
+          name: wheels-${{ matrix.os }}
           path: bindings/python/dist/*.whl
 
