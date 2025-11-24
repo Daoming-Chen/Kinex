@@ -29,7 +29,6 @@ dependencies = [
 [tool.scikit-build]
 cmake.source-dir = "../.."
 build-dir = "build"
-wheel.install-dir = "urdfx"
 cmake.args = [
     "-DBUILD_PYTHON_BINDINGS=ON",
     "-DBUILD_TESTING=OFF", 
@@ -42,6 +41,5 @@ cmake.args = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = "-v"
 
