@@ -63,7 +63,12 @@ jobs:
           cmake --build build --config ${{ matrix.build-type }} -j 4
       
       - name: Run C++ tests
+        shell: bash
         run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # On Windows, add the DLL directories to PATH
+            export PATH="$PWD/build/core/${{ matrix.build-type }}:$PWD/build/third_party/spdlog/${{ matrix.build-type }}:$PWD/build/third_party/pugixml/${{ matrix.build-type }}:$PATH"
+          fi
           ctest --test-dir build --build-config ${{ matrix.build-type }} --output-on-failure
       
       - name: Upload test logs on failure
@@ -81,7 +86,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
     
     steps:
       - name: Checkout repository
@@ -126,8 +131,13 @@ jobs:
           python -m pip install --find-links=dist urdfx
       
       - name: Run Python tests
+        shell: bash
         run: |
           cd bindings/python
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # On Windows, ensure DLLs are accessible
+            export PATH="$PWD/urdfx:$PATH"
+          fi
           pytest tests -v
       
       - name: Upload wheel artifacts
@@ -152,8 +162,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: bindings/wasm/package-lock.json
       
       - name: Install Emscripten SDK
         run: |

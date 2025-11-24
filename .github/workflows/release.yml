@@ -36,8 +36,8 @@ jobs:
           cd bindings/python
           python -m cibuildwheel --output-dir wheelhouse
         env:
-          # Build for Python 3.8-3.12
-          CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
+          # Build for Python 3.10-3.12
+          CIBW_BUILD: cp310-* cp311-* cp312-*
           # Skip 32-bit builds and musllinux
           CIBW_SKIP: '*-win32 *-manylinux_i686 *-musllinux_*'
           # Use manylinux2014 for Linux

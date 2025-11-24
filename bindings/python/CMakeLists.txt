@@ -43,6 +43,9 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
             ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:pugixml-shared>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:spdlog>
+            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:spdlog>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 else()
@@ -84,6 +87,16 @@ install(TARGETS urdfx
 # Install pugixml if it's a shared library target
 if(TARGET pugixml-shared)
     install(TARGETS pugixml-shared
+        LIBRARY DESTINATION urdfx
+        ARCHIVE DESTINATION urdfx
+        RUNTIME DESTINATION urdfx
+        COMPONENT python
+    )
+endif()
+
+# Install spdlog if it's a shared library target
+if(TARGET spdlog AND BUILD_SHARED_LIBS)
+    install(TARGETS spdlog
         LIBRARY DESTINATION urdfx
         ARCHIVE DESTINATION urdfx
         RUNTIME DESTINATION urdfx
