@@ -12,26 +12,25 @@ except ImportError:
 def main():
     # Path to URDF
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    urdf_path = os.path.join(script_dir, "../models/ur5/ur5.urdf")
+    urdf_path = os.path.join(script_dir, "../models/ur5/ur5e.urdf")
     
     if not os.path.exists(urdf_path):
-        urdf_path = "examples/models/ur5/ur5.urdf"
+        urdf_path = "examples/models/ur5/ur5e.urdf"
         
     if not os.path.exists(urdf_path):
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
     robot = urdfx.Robot.from_urdf_file(urdf_path)
-    ik = urdfx.SQPIKSolver(robot, "tool0")
+    ik = urdfx.SQPIKSolver(robot, "wrist_3_link")
     
     # Generate a simple line trajectory
     start_pos = np.array([0.4, -0.4, 0.2])
     end_pos = np.array([0.4, 0.4, 0.5])
     steps = 50
     
-    # Fixed orientation (pointing down)
-    # Z-down orientation quaternion roughly
-    orientation = np.array([0, 1, 0, 0]) # x,y,z,w -> 180 deg around X
+    # Use a reference orientation (pointing down, roughly)
+    roll, pitch, yaw = np.pi, 0.0, 0.0  # Pointing down
     
     traj_q = []
     current_q = np.zeros(6) # Initial guess
@@ -43,7 +42,8 @@ def main():
         alpha = i / (steps - 1)
         pos = start_pos * (1 - alpha) + end_pos * alpha
         
-        target_pose = urdfx.Transform.from_position_quaternion(pos, orientation)
+        # Create target pose with desired position and orientation
+        target_pose = urdfx.Transform.from_position_rpy(pos, np.array([roll, pitch, yaw]))
         
         # Use previous solution as guess (warm start)
         result = ik.solve(target_pose, current_q)

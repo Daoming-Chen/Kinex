@@ -1,4 +1,5 @@
 #include "urdfx/inverse_kinematics.h"
+#include "urdfx/logging.h"
 #include "api.h"
 #include "constants.h"
 #include <Eigen/Cholesky>
@@ -8,6 +9,8 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 
 namespace urdfx {
 
@@ -261,6 +264,13 @@ SolverStatus SQPIKSolver::solve(
 
     status.error_history.reserve(config_.max_iterations);
 
+    size_t stagnation_counter = 0;
+    double prev_error_norm = std::numeric_limits<double>::max();
+    constexpr double stagnation_threshold = 1e-6;
+    constexpr size_t stagnation_detect_iters = 10;
+    
+    URDFX_LOG_DEBUG("[IK] Starting solve: DOF={}, max_iter={}, tolerance={}", dof, config_.max_iterations, config_.tolerance);
+
     for (size_t iter = 0; iter < config_.max_iterations; ++iter) {
         Transform current_pose = fk_.compute(current);
         weighted_error = weightError(buildTaskError(current_pose, target_pose));
@@ -271,14 +281,62 @@ SolverStatus SQPIKSolver::solve(
         if (error_norm < config_.tolerance) {
             status.converged = true;
             status.final_error_norm = error_norm;
+            URDFX_LOG_DEBUG("[IK] Converged at iteration {}: error={:.6e}", iter, error_norm);
             break;
         }
+
+        // Stagnation detection (for diagnosis only, no perturbation)
+        if (std::abs(prev_error_norm - error_norm) < stagnation_threshold) {
+            stagnation_counter++;
+            
+            // Log stagnation when detected
+            if (stagnation_counter == stagnation_detect_iters) {
+                Eigen::MatrixXd full_jacobian = jacobian_.compute(current, JacobianType::Analytic);
+                Eigen::JacobiSVD<Eigen::MatrixXd> svd(full_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+                const auto& singular_values = svd.singularValues();
+                double cond_number = singular_values(0) / singular_values(singular_values.size()-1);
+                
+                std::ostringstream oss;
+                oss << "[IK] Stagnation detected at iter " << iter << ":\n";
+                oss << "  Error: " << std::scientific << std::setprecision(4) << error_norm << "\n";
+                oss << "  Jacobian condition number: " << std::fixed << std::setprecision(2) << cond_number << "\n";
+                oss << "  Singular values: [";
+                for (int i = 0; i < singular_values.size(); ++i) {
+                    if (i > 0) oss << ", ";
+                    oss << std::scientific << std::setprecision(2) << singular_values(i);
+                }
+                oss << "]\n";
+                oss << "  Joint config: [";
+                for (size_t i = 0; i < dof; ++i) {
+                    if (i > 0) oss << ", ";
+                    oss << std::fixed << std::setprecision(3) << current[i];
+                }
+                oss << "]";
+                URDFX_LOG_WARN("{}", oss.str());
+            }
+        } else {
+            stagnation_counter = 0;
+        }
+        prev_error_norm = error_norm;
 
         Eigen::MatrixXd full_jacobian = jacobian_.compute(current, JacobianType::Analytic);
         weighted_jac = weightJacobian(full_jacobian);
 
         Eigen::MatrixXd H = weighted_jac.transpose() * weighted_jac;
-        H.diagonal().array() += config_.regularization;
+        
+        double damping = config_.regularization;
+        if (config_.enable_adaptive_damping) {
+            // Calculate manipulability measure w = sqrt(det(J*J^T))
+            Eigen::MatrixXd JJT = full_jacobian * full_jacobian.transpose();
+            double w = std::sqrt(std::abs(JJT.determinant()));
+            
+            if (w < config_.damping_threshold) {
+                double factor = (1.0 - w / config_.damping_threshold);
+                damping += config_.max_damping * factor * factor;
+            }
+        }
+
+        H.diagonal().array() += damping;
         Eigen::VectorXd g = -weighted_jac.transpose() * weighted_error;
 
         Eigen::VectorXd lower_delta = lower_bounds - current;
@@ -333,10 +391,48 @@ SolverStatus SQPIKSolver::solve(
 
     if (!status.converged) {
         Transform final_pose = fk_.compute(current);
-        status.final_error_norm = weightError(buildTaskError(final_pose, target_pose)).norm();
+        Eigen::VectorXd final_task_error = buildTaskError(final_pose, target_pose);
+        status.final_error_norm = weightError(final_task_error).norm();
         status.message = "Maximum iterations reached";
+        
+        // Log detailed failure information
+        // Compute Jacobian condition number for failure analysis
+        Eigen::MatrixXd final_jacobian = jacobian_.compute(current, JacobianType::Analytic);
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(final_jacobian, Eigen::ComputeThinU | Eigen::ComputeThinV);
+        const auto& singular_values = svd.singularValues();
+        double cond_number = singular_values(0) / singular_values(singular_values.size()-1);
+        
+        std::ostringstream oss;
+        oss << "[IK] FAILED after " << status.iterations << " iterations:\n";
+        oss << "  Final error norm: " << std::scientific << std::setprecision(4) << status.final_error_norm << "\n";
+        oss << "  Position error: [" << final_task_error[0] << ", " << final_task_error[1] << ", " << final_task_error[2] << "]\n";
+        oss << "  Orientation error: [" << final_task_error[3] << ", " << final_task_error[4] << ", " << final_task_error[5] << "]\n";
+        oss << "  Position error norm: " << final_task_error.head<3>().norm() << "\n";
+        oss << "  Orientation error norm: " << final_task_error.tail<3>().norm() << "\n";
+        oss << "  Jacobian condition number: " << std::fixed << std::setprecision(2) << cond_number << "\n";
+        oss << "  Singular values: [";
+        for (int i = 0; i < singular_values.size(); ++i) {
+            if (i > 0) oss << ", ";
+            oss << std::scientific << std::setprecision(2) << singular_values(i);
+        }
+        oss << "]\n";
+        oss << "  Final joint config: [";
+        for (size_t i = 0; i < dof; ++i) {
+            if (i > 0) oss << ", ";
+            oss << std::fixed << std::setprecision(3) << current[i];
+        }
+        oss << "]\n";
+        oss << "  Error history (last 10): [";
+        size_t start_idx = status.error_history.size() > 10 ? status.error_history.size() - 10 : 0;
+        for (size_t i = start_idx; i < status.error_history.size(); ++i) {
+            if (i > start_idx) oss << ", ";
+            oss << std::scientific << std::setprecision(2) << status.error_history[i];
+        }
+        oss << "]";
+        URDFX_LOG_WARN("{}", oss.str());
     } else {
         status.message = "IK converged";
+        URDFX_LOG_DEBUG("[IK] Success: iterations={}, final_error={:.6e}", status.iterations, status.final_error_norm);
     }
 
     return status;

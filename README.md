@@ -41,10 +41,9 @@ auto status = ik_solver.solve(target_pose, initial_guess, solution);
 
 ### Python Example
 
-**Note**: Python bindings are currently under development. See `bindings/python/README.md` for status updates.
+**Note**: Python bindings are currently under active development. Core functionality is working with ongoing improvements. See `bindings/python/README.md` for latest updates.
 
 ```python
-# Coming soon - API subject to change
 import urdfx
 import numpy as np
 
@@ -202,12 +201,11 @@ For more details, see `openspec/changes/add-windows-build-support/`.
 
 ### Building Python Bindings
 
-**Note**: Python bindings are under development. See `bindings/python/README.md` for updates.
+**Note**: Python bindings are functional but under active development. See `bindings/python/README.md` for latest status.
 
 ```bash
-# Not yet available
-# cd bindings/python
-# pip install .
+cd bindings/python
+pip install .
 ```
 
 ### Building WebAssembly
@@ -241,23 +239,104 @@ cmake --build build
 
 ## Benchmarking
 
-Run the Google Benchmark-based suite to measure IK and Jacobian performance:
+### Building and Running Benchmarks
+
+The comprehensive benchmark suite measures IK solver and Jacobian computation performance across various robot configurations.
+
+#### Step 1: Build C++ Core with Benchmarks
 
 ```bash
-# Build with benchmarks enabled
+# Configure with benchmarks enabled
 cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
-cmake --build build --config Release -j
 
-# Run IK benchmarks
-./build/benchmarks/ik_benchmarks \
-    --benchmark_out=benchmarks/results/ik_benchmarks_$(date +%Y%m%d).json \
+# Build the project (use -j for parallel compilation)
+cmake --build build --config Release -j
+```
+
+#### Step 2: Build and Install Python Bindings
+
+```bash
+# Navigate to Python bindings directory
+cd bindings/python
+
+# Build the wheel package
+python3 -m build --wheel
+
+# Install the wheel (adjust path to match your Python version)
+pip install --force-reinstall dist/urdfx-*.whl
+
+# Return to project root
+cd ../..
+```
+
+#### Step 3: Run All Benchmarks
+
+```bash
+# Run the master benchmark script (includes Python + C++ benchmarks and visualizations)
+cd benchmarks
+python3 python/run_all_benchmarks.py
+```
+
+This will:
+1. Run Python benchmarks (Tier A: real-world robots, Tier B: mixed-chain robots)
+2. Run C++ benchmarks (IK, Jacobian, mixed-chain)
+3. Generate visualization plots (PNG format)
+4. Create a unified summary report
+
+**Results are saved to:** `benchmarks/results/`
+
+#### Alternative: Run Individual Benchmarks
+
+**C++ Benchmarks Only:**
+```bash
+# IK benchmarks
+./build/benchmarks/cpp/ik_benchmarks \
+    --benchmark_out=benchmarks/results/ik_benchmarks.json \
     --benchmark_out_format=json
 
-# Run Jacobian benchmarks
-./build/benchmarks/jacobian_benchmarks \
-    --benchmark_out=benchmarks/results/jacobian_benchmarks_$(date +%Y%m%d).json \
+# Jacobian benchmarks
+./build/benchmarks/cpp/jacobian_benchmarks \
+    --benchmark_out=benchmarks/results/jacobian_benchmarks.json \
+    --benchmark_out_format=json
+
+# Mixed-chain IK benchmarks (requires dataset generation)
+./build/benchmarks/cpp/mixed_ik_benchmarks \
+    --benchmark_out=benchmarks/results/mixed_ik_benchmarks.json \
     --benchmark_out_format=json
 ```
+
+**Python Benchmarks Only:**
+```bash
+cd benchmarks
+
+# Run Tier A (real-world robots: UR5e with constraints)
+python3 python/run_tier_a_benchmarks.py
+
+# Run Tier B (synthetic mixed-chain robots: 8-20 DOF)
+python3 python/run_tier_b_benchmarks.py
+
+# Or run both tiers together
+python3 python/run_benchmarks.py
+```
+
+#### Visualizing Results
+
+```bash
+# Generate plots from existing benchmark results
+cd benchmarks
+python3 tools/visualize_benchmarks.py --results-dir results
+```
+
+This creates:
+- `cpp_ik_benchmarks.png` - C++ IK performance visualization
+- `python_ik_benchmarks.png` - Python IK performance visualization
+- `benchmark_summary.md` - Comprehensive text summary
+
+For detailed benchmarking documentation, see [`benchmarks/README.md`](benchmarks/README.md).
+
+![Python IK Benchmarks](benchmarks/results/python_ik_benchmarks.png)
+
+*Python IK solver performance across Tier A (real-world robots) showing solve times, iteration counts, and success rates for different initialization strategies.*
 
 ### Benchmark Scenarios
 
@@ -277,6 +356,12 @@ cmake --build build --config Release -j
 - `avg_rotation_error_deg`: Average rotation error in degrees for converged solutions
 
 Benchmark results are saved to `benchmarks/results/` for historical comparison and analysis.
+
+### Benchmark Results
+
+![Tier A Benchmark Results](benchmarks/results/tier_a_visualization.png)
+
+*Benchmark results for UR5e robot showing IK solver performance across different scenarios (ColdStart, WarmStart, Trajectory) with position and rotation constraints.*
 
 ## Architecture
 
@@ -413,3 +498,13 @@ For questions, issues, or contributions:
 - Eigen for fast linear algebra
 - DaQP for efficient QP solving
 - The robotics community for URDF standardization
+- The LoIK paper for insights on differential inverse kinematics:
+  ```bibtex
+  @inproceedings{wingoLoIK2024,
+    title = {{Linear-time Differential Inverse Kinematics: an Augmented Lagrangian Perspective}},
+    author = {Wingo, Bruce and Sathya, Ajay and Caron, Stéphane and Hutchinson, Seth and Carpentier, Justin},
+    year = {2024},
+    booktitle={Robotics: Science and Systems},
+    note = {https://inria.hal.science/hal-04607809v1}
+  }
+  ```
