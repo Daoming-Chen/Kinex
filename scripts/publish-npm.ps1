@@ -17,12 +17,12 @@ function Write-Step {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "�?$Message" -ForegroundColor Green
+    Write-Host "�?$Message" -ForegroundColor Green
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    Write-Host "�?$Message" -ForegroundColor Red
+    Write-Host "�?$Message" -ForegroundColor Red
 }
 
 # Get script directory and project root
@@ -32,7 +32,7 @@ $WasmDir = Join-Path $ProjectRoot "bindings\wasm"
 $DistDir = Join-Path $WasmDir "dist"
 
 Write-Host "╔════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "�?  kinex npm Publisher for Windows     �? -ForegroundColor Cyan
+Write-Host "�?  kinex npm Publisher for Windows     �? -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════╝" -ForegroundColor Cyan
 
 # Step 1: Check npm login status
@@ -164,6 +164,27 @@ Write-Step "Preparing package.json..."
 
 $PackageJsonPath = Join-Path $DistDir "package.json"
 
+# Extract version from CMakeLists.txt
+$CMakeListsPath = Join-Path $ProjectRoot "CMakeLists.txt"
+$CMakeContent = Get-Content $CMakeListsPath -Raw
+$ExtractedVersion = ""
+
+if ($CMakeContent -match 'project\(kinex\s+VERSION\s+(\d+\.\d+\.\d+)') {
+    $ExtractedVersion = $matches[1]
+    Write-Host "Extracted version from CMakeLists.txt: $ExtractedVersion" -ForegroundColor Yellow
+} else {
+    Write-Error-Custom "Could not extract version from CMakeLists.txt"
+    exit 1
+}
+
+# Override version parameter with CMake version if not explicitly specified
+if (-not $Version) {
+    $Version = $ExtractedVersion
+    Write-Host "Using version from CMakeLists.txt: $Version" -ForegroundColor Yellow
+} else {
+    Write-Host "Using explicitly specified version: $Version (overriding CMakeLists.txt version: $ExtractedVersion)" -ForegroundColor Yellow
+}
+
 # Read existing package.json or create new
 if (Test-Path $PackageJsonPath) {
     $PackageJson = Get-Content $PackageJsonPath -Raw | ConvertFrom-Json
@@ -193,11 +214,9 @@ if (Test-Path $PackageJsonPath) {
     }
 }
 
-# Update version if specified
-if ($Version) {
-    Write-Host "Updating version to: $Version" -ForegroundColor Yellow
-    $PackageJson.version = $Version
-}
+# Always update version from parameter (which is now from CMakeLists.txt by default)
+Write-Host "Setting package version to: $Version" -ForegroundColor Yellow
+$PackageJson.version = $Version
 
 # Save package.json
 $PackageJson | ConvertTo-Json -Depth 10 | Out-File -FilePath $PackageJsonPath -Encoding utf8
@@ -277,7 +296,7 @@ if ($DryRun) {
         }
         
         Write-Host "`n╔════════════════════════════════════════╗" -ForegroundColor Green
-        Write-Host "�?  Successfully published to npm! 🎉   �? -ForegroundColor Green
+        Write-Host "�?  Successfully published to npm! 🎉   �? -ForegroundColor Green
         Write-Host "╚════════════════════════════════════════╝" -ForegroundColor Green
         Write-Host "`nPackage: kinex@$($PackageJson.version)" -ForegroundColor Green
         Write-Host "URL: https://www.npmjs.com/package/kinex" -ForegroundColor Cyan
