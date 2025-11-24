@@ -46,6 +46,10 @@ jobs:
           CIBW_ARCHS_MACOS: universal2
           # Build AMD64 on Windows
           CIBW_ARCHS_WINDOWS: AMD64
+          # Repair wheels to bundle dependencies
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
           # Run tests to validate wheels (tests are included in source)
           CIBW_TEST_REQUIRES: pytest numpy
           CIBW_TEST_COMMAND: python -c "import kinex; print('kinex imported successfully')"
