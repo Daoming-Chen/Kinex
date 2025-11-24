@@ -22,13 +22,23 @@ set(URDFX_HEADERS
 add_library(urdfx ${URDFX_SOURCES} ${URDFX_HEADERS})
 
 # Set library properties
-set_target_properties(urdfx PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-    PUBLIC_HEADER "${URDFX_HEADERS}"
-    INSTALL_RPATH "$ORIGIN"
-    BUILD_RPATH "$ORIGIN"
-)
+if(APPLE)
+    set_target_properties(urdfx PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        PUBLIC_HEADER "${URDFX_HEADERS}"
+        INSTALL_RPATH "@loader_path"
+        BUILD_RPATH "@loader_path"
+    )
+else()
+    set_target_properties(urdfx PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        PUBLIC_HEADER "${URDFX_HEADERS}"
+        INSTALL_RPATH "$ORIGIN"
+        BUILD_RPATH "$ORIGIN"
+    )
+endif()
 
 # Include directories
 target_include_directories(urdfx

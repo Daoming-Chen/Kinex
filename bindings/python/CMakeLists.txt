@@ -26,11 +26,19 @@ set_target_properties(_urdfx PROPERTIES PREFIX "")
 
 # Set RPATH to find liburdfx.so in the same directory
 # $ORIGIN means the directory containing the binary
-set_target_properties(_urdfx PROPERTIES
-    INSTALL_RPATH "$ORIGIN"
-    BUILD_RPATH "$ORIGIN"
-    BUILD_WITH_INSTALL_RPATH FALSE
-)
+if(APPLE)
+    set_target_properties(_urdfx PROPERTIES
+        INSTALL_RPATH "@loader_path"
+        BUILD_RPATH "@loader_path"
+        BUILD_WITH_INSTALL_RPATH FALSE
+    )
+else()
+    set_target_properties(_urdfx PROPERTIES
+        INSTALL_RPATH "$ORIGIN"
+        BUILD_RPATH "$ORIGIN"
+        BUILD_WITH_INSTALL_RPATH FALSE
+    )
+endif()
 
 # For editable/development installs, copy all needed .so/.dll files to the Python package directory
 # so the extension module can find them without needing to set LD_LIBRARY_PATH

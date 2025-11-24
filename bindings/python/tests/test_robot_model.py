@@ -9,14 +9,14 @@ def test_robot_creation():
     assert len(robot.get_joints()) == 0
 
 def test_urdf_parsing(ur5_robot):
-    assert ur5_robot.get_name() == "ur5"
+    assert ur5_robot.get_name() == "converted_robot"
     assert len(ur5_robot.get_links()) > 0
     assert len(ur5_robot.get_joints()) > 0
     
     # Check for specific links
     link_names = [l.get_name() for l in ur5_robot.get_links()]
-    assert "base_link" in link_names
-    assert "tool0" in link_names
+    assert "base" in link_names
+    assert "wrist_3_link" in link_names
     
     # Check DOF
     assert ur5_robot.dof == 6

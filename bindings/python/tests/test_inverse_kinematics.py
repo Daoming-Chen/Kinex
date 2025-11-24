@@ -3,10 +3,10 @@ import urdfx
 import numpy as np
 
 def test_ik_solve(ur5_robot):
-    solver = urdfx.SQPIKSolver(ur5_robot, "tool0")
+    solver = urdfx.SQPIKSolver(ur5_robot, "wrist_3_link")
     
     # Target: Forward kinematics of a known good config
-    fk = urdfx.ForwardKinematics(ur5_robot, "tool0")
+    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
     target_q = np.array([0.1, -1.5, 1.5, -1.5, 1.5, 0.0])
     target_pose = fk.compute(target_q)
     
@@ -24,7 +24,7 @@ def test_ik_solve(ur5_robot):
     assert np.allclose(pose_sol.rotation(), target_pose.rotation(), atol=1e-3)
 
 def test_solver_config(ur5_robot):
-    solver = urdfx.SQPIKSolver(ur5_robot, "tool0")
+    solver = urdfx.SQPIKSolver(ur5_robot, "wrist_3_link")
     config = solver.get_solver_config()
     config.max_iterations = 100
     solver.set_solver_config(config)
