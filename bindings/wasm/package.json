@@ -9,6 +9,13 @@
         "kinex.wasm",
         "kinex.d.ts"
     ],
+    "scripts": {
+        "test": "jest",
+        "test:node": "jest --testPathPattern=tests/node"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0"
+    },
     "keywords": [
         "robotics",
         "kinematics",
