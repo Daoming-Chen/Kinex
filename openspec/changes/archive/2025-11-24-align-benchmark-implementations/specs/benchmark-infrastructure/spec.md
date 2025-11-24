@@ -173,7 +173,7 @@ The benchmark infrastructure SHALL implement identical test scenarios in both C+
 
 ## REMOVED Requirements
 
-### Requirement: Joint type sensitivity analysis (REMOVED)
+#### Scenario: Joint type sensitivity analysis
 
 **Rationale**: This requirement is specific to mixed-chain robots (Tier B) and not applicable to the standard UR5e benchmarks being aligned. Tier B benchmarks in Python can retain this analysis, but it's not part of the core alignment.
 
