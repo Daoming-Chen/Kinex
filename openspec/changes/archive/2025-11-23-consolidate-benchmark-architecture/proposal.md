@@ -15,10 +15,10 @@ The root `benchmarks/` directory should be the single source of truth for perfor
 
 **Structural reorganization:**
 - Move core benchmark infrastructure from `bindings/python/benchmarks/` to `benchmarks/`
-  - `urdf_generator.py` (MixedChainGenerator) â†’ `benchmarks/tools/`
-  - `oracle.py` (FKOracle, JointSampler) â†’ `benchmarks/tools/`
-  - Dataset visualization scripts â†’ `benchmarks/tools/`
-  - Master runners and Tier A/B benchmarks â†’ `benchmarks/python/`
+  - `urdf_generator.py` (MixedChainGenerator) â†?`benchmarks/tools/`
+  - `oracle.py` (FKOracle, JointSampler) â†?`benchmarks/tools/`
+  - Dataset visualization scripts â†?`benchmarks/tools/`
+  - Master runners and Tier A/B benchmarks â†?`benchmarks/python/`
 - Create `benchmarks/python/` for Python implementations of core benchmarks (measures Python binding performance)
 - Create `benchmarks/cpp/` and move existing C++ benchmarks there for consistency
 - Create `benchmarks/tools/` for shared utilities (generators, visualizers, oracles)
@@ -26,7 +26,7 @@ The root `benchmarks/` directory should be the single source of truth for perfor
 
 **New binding overhead benchmarks:**
 - Simple FK/IK/Jacobian timing comparisons (Python vs C++)
-- Data conversion overhead measurements (NumPy â†” Eigen)
+- Data conversion overhead measurements (NumPy â†?Eigen)
 - GIL impact analysis for threaded scenarios
 
 **Documentation updates:**
@@ -52,5 +52,5 @@ None - this is purely internal reorganization with no API changes. Script invoca
 
 **Migration guide needed:**
 - Update developer documentation with new benchmark locations
-- Provide script path mappings (old â†’ new)
+- Provide script path mappings (old â†?new)
 - Update CI/CD pipelines

@@ -6,6 +6,6 @@ include(CMakeFindDependencyMacro)
 find_dependency(Eigen3 3.4)
 find_dependency(spdlog)
 
-include("${CMAKE_CURRENT_LIST_DIR}/urdfxTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/kinexTargets.cmake")
 
-check_required_components(urdfx)
+check_required_components(kinex)

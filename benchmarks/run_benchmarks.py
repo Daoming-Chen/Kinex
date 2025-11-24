@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified Benchmark Runner for urdfx IK Solvers.
+Unified Benchmark Runner for kinex IK Solvers.
 
 This script provides a unified interface to run benchmarks on both:
 - Tier A: Real-world robots (UR5e and variants, 6-10 DOF)
@@ -57,10 +57,10 @@ def run_tier_a_benchmarks(args_dict):
     elapsed = time.time() - start_time
     
     if result.returncode != 0:
-        print(f"\nâœ— Tier A benchmarks failed with exit code {result.returncode}")
+        print(f"\nâœ?Tier A benchmarks failed with exit code {result.returncode}")
         return False
     
-    print(f"\nâœ“ Tier A benchmarks completed in {elapsed:.2f}s")
+    print(f"\nâœ?Tier A benchmarks completed in {elapsed:.2f}s")
     return True
 
 
@@ -95,16 +95,16 @@ def run_tier_b_benchmarks(args_dict):
     elapsed = time.time() - start_time
     
     if result.returncode != 0:
-        print(f"\nâœ— Tier B benchmarks failed with exit code {result.returncode}")
+        print(f"\nâœ?Tier B benchmarks failed with exit code {result.returncode}")
         return False
     
-    print(f"\nâœ“ Tier B benchmarks completed in {elapsed:.2f}s")
+    print(f"\nâœ?Tier B benchmarks completed in {elapsed:.2f}s")
     return True
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Unified Benchmark Runner for urdfx IK Solvers",
+        description="Unified Benchmark Runner for kinex IK Solvers",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
@@ -179,7 +179,7 @@ def main():
     
     # Print header
     print("\n" + "="*70)
-    print("urdfx Unified Benchmark Runner")
+    print("kinex Unified Benchmark Runner")
     print("="*70)
     print(f"Running: {'Tier A' if run_a else ''} {'+ Tier B' if run_a and run_b else 'Tier B' if run_b else ''}")
     print(f"Output directory: {args_dict['output']}")
@@ -202,9 +202,9 @@ def main():
     # Final summary
     print("\n" + "="*70)
     if success:
-        print("âœ“ ALL BENCHMARKS COMPLETED SUCCESSFULLY")
+        print("âœ?ALL BENCHMARKS COMPLETED SUCCESSFULLY")
     else:
-        print("âœ— SOME BENCHMARKS FAILED")
+        print("âœ?SOME BENCHMARKS FAILED")
     print(f"Total time: {overall_elapsed:.2f}s")
     print("="*70)
     
@@ -222,9 +222,9 @@ def main():
         viz_result = subprocess.run(viz_cmd, cwd=current_dir)
         
         if viz_result.returncode == 0:
-            print("\nâœ“ Visualizations generated successfully")
+            print("\nâœ?Visualizations generated successfully")
         else:
-            print("\nâœ— Visualization generation failed")
+            print("\nâœ?Visualization generation failed")
     
     return 0 if success else 1
 

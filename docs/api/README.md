@@ -15,7 +15,7 @@ The generated HTML documentation will be in `docs/api/cpp/html/`.
 
 `Doxyfile` will be added in a future update. It will extract documentation from:
 
-- `core/include/urdfx/*.h` - Public API headers
+- `core/include/kinex/*.h` - Public API headers
 - `core/src/*.cpp` - Implementation files (for internal docs)
 
 ## Planned Documentation Sections

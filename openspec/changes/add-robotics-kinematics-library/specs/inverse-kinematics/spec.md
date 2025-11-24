@@ -43,7 +43,7 @@ The system SHALL support providing different initial guesses to find alternative
 **Given** a UR5e robot and a target pose with multiple IK solutions  
 **When** the user solves IK with different initial guesses (elbow-up and elbow-down)  
 **Then** the solver converges to different valid solutions  
-**And** both solutions satisfy FK(q) â‰ˆ target
+**And** both solutions satisfy FK(q) â‰?target
 
 ### Requirement: System SHALL configure solver parameters
 The system SHALL allow configuration of solver parameters for different use cases.
@@ -97,13 +97,13 @@ The system SHALL allow solving IK for position or orientation independently.
 #### Scenario: Solve IK for position only
 **Given** a target position without orientation constraint  
 **When** the user calls `ikSolver.solvePosition(targetPosition)`  
-**Then** the solver finds q such that FK(q).position â‰ˆ targetPosition  
+**Then** the solver finds q such that FK(q).position â‰?targetPosition  
 **And** the orientation is free (not constrained)
 
 #### Scenario: Solve IK for orientation only
 **Given** a target orientation without position constraint  
 **When** the user calls `ikSolver.solveOrientation(targetOrientation)`  
-**Then** the solver finds q such that FK(q).orientation â‰ˆ targetOrientation  
+**Then** the solver finds q such that FK(q).orientation â‰?targetOrientation  
 **And** the position is free (not constrained)
 
 ### Requirement: System SHALL optimize for smoothness in trajectory IK

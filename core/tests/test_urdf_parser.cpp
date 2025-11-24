@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "urdfx/urdf_parser.h"
-#include "urdfx/robot_model.h"
-#include "urdfx/logging.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/robot_model.h"
+#include "kinex/logging.h"
 #include <fstream>
 #include <filesystem>
 
@@ -10,7 +10,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-using namespace urdfx;
+using namespace kinex;
 
 class URDFParserTest : public ::testing::Test {
 protected:

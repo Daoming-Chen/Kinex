@@ -16,7 +16,7 @@ The benchmark infrastructure SHALL provide tools to generate ground-truth datase
 
 #### Scenario: FK oracle validation
 
-- **WHEN** a dataset is generated using urdfx Python bindings as FK oracle
+- **WHEN** a dataset is generated using kinex Python bindings as FK oracle
 - **THEN** FK results match C++ implementation (position error < 1e-6 m, rotation error < 1e-6 rad)
 
 #### Scenario: Generate initial guess variations
@@ -363,9 +363,9 @@ The benchmark infrastructure SHALL provide clear documentation of organization a
 
 - **WHEN** developer wants to add a new benchmark
 - **THEN** documentation provides decision criteria:
-  - "Measuring core algorithm performance?" â†’ `benchmarks/cpp/` or `benchmarks/python/`
-  - "Measuring binding overhead?" â†’ `bindings/python/benchmarks/`
-  - "Creating test infrastructure?" â†’ `benchmarks/tools/`
+  - "Measuring core algorithm performance?" â†?`benchmarks/cpp/` or `benchmarks/python/`
+  - "Measuring binding overhead?" â†?`bindings/python/benchmarks/`
+  - "Creating test infrastructure?" â†?`benchmarks/tools/`
 - **AND** includes examples for each category
 
 #### Scenario: Import pattern documentation
@@ -390,7 +390,7 @@ The benchmark tools SHALL be organized as a Python package accessible to all ben
 
 - **WHEN** benchmark script needs FK oracle or joint sampler
 - **THEN** it imports: `from benchmarks.tools import FKOracle, JointSampler`
-- **AND** utilities work with urdfx Robot objects
+- **AND** utilities work with kinex Robot objects
 
 #### Scenario: Visualization import
 

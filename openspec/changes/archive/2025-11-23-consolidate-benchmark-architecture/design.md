@@ -1,6 +1,6 @@
 ## Context
 
-The urdfx project currently has an architecturally inconsistent benchmark organization where core benchmarking infrastructure (URDF generation, dataset creation, visualization) is located in `bindings/python/benchmarks/`, alongside the Python bindings. This creates confusion about:
+The kinex project currently has an architecturally inconsistent benchmark organization where core benchmarking infrastructure (URDF generation, dataset creation, visualization) is located in `bindings/python/benchmarks/`, alongside the Python bindings. This creates confusion about:
 
 1. **What is binding-specific vs project-wide**: Core tools are co-located with binding code
 2. **Where to find benchmarks**: Natural first check is root `benchmarks/`, but key tools are elsewhere
@@ -50,7 +50,7 @@ Additionally, there's duplication between Python and C++ benchmarks for the same
 **Rationale:**
 `bindings/python/benchmarks/` should only contain tests that directly measure the overhead of the binding layer itself:
 - FK/IK/Jacobian computation time (Python vs C++ comparison)
-- Data conversion overhead (NumPy array â†” Eigen::VectorXd)
+- Data conversion overhead (NumPy array â†?Eigen::VectorXd)
 - GIL impact in multi-threaded scenarios
 
 **Why:** The purpose of binding benchmarks is to answer "how much slower is the Python API compared to C++?" not "how fast is our IK solver?" (that's what core benchmarks answer).

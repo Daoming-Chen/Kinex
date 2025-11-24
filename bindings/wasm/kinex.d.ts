@@ -1,11 +1,11 @@
 /*
- * Type definitions for the urdfx WebAssembly module.
+ * Type definitions for the kinex WebAssembly module.
  *
- * The module is generated with Emscripten using MODULARIZE=1 and EXPORT_NAME=createUrdfxModule.
+ * The module is generated with Emscripten using MODULARIZE=1 and EXPORT_NAME=createKinexModule.
  * Use the default export factory to instantiate the module:
  *
- * import createUrdfxModule from './urdfx.js';
- * const module = await createUrdfxModule();
+ * import createKinexModule from './kinex.js';
+ * const module = await createKinexModule();
  */
 
 export type NumericArray = ArrayLike<number>;
@@ -204,7 +204,7 @@ export class SQPIKSolver {
     dispose(): void;
 }
 
-export interface UrdfxModule {
+export interface KinexModule {
     Robot: typeof Robot;
     ForwardKinematics: typeof ForwardKinematics;
     JacobianCalculator: typeof JacobianCalculator;
@@ -244,8 +244,8 @@ export interface ModuleFactoryOptions {
     printErr?(text: string): void;
 }
 
-export type UrdfxModuleFactory = (options?: ModuleFactoryOptions) => Promise<UrdfxModule>;
+export type KinexModuleFactory = (options?: ModuleFactoryOptions) => Promise<KinexModule>;
 
-declare const createUrdfxModule: UrdfxModuleFactory;
+declare const createKinexModule: KinexModuleFactory;
 
-export default createUrdfxModule;
+export default createKinexModule;

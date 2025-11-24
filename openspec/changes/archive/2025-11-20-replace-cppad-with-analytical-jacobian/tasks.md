@@ -3,7 +3,7 @@
 ## Phase 1: Core Implementation (Days 1-3)
 
 ### 1.1 Create Analytical Jacobian Calculator Class
-- [ ] Create `core/include/urdfx/analytical_jacobian.h`
+- [ ] Create `core/include/kinex/analytical_jacobian.h`
   - Define `AnalyticalJacobianCalculator` class
   - Match API surface of existing `JacobianCalculator`
   - Add `JointFrameCache` struct for workspace
@@ -30,7 +30,7 @@
 ### 1.3 Implement Public API Methods
 - [x] Implement `compute(joint_angles, type, target_link)`
   - Call core geometric method
-  - Apply Jacobian type conversion (Analytic â†” Geometric)
+  - Apply Jacobian type conversion (Analytic â†?Geometric)
   - Support target_link parameter (use chain cache)
 - [x] Implement `isSingular(joint_angles, threshold, type, target_link)`
   - Reuse existing SVD-based logic
@@ -135,8 +135,8 @@
   - Remove CppAD-specific code from `core/src/kinematics.cpp`
   - Remove `ADForwardKinematics` helper class
   - Remove tape caching and mutex logic
-- [ ] Rename `AnalyticalJacobianCalculator` â†’ `JacobianCalculator`
-  - Update header: `analytical_jacobian.h` â†’ part of `kinematics.h`
+- [ ] Rename `AnalyticalJacobianCalculator` â†?`JacobianCalculator`
+  - Update header: `analytical_jacobian.h` â†?part of `kinematics.h`
   - Update source file
   - Update all includes in test and example files
 - [x] Remove CppAD headers
@@ -230,13 +230,13 @@
 ### P0 (Must Have)
 - [ ] Analytical Jacobian accuracy within 1e-6 of CppAD reference
 - [ ] All existing unit tests pass without modification
-- [ ] IK benchmark shows â‰¥2x speedup on native builds
+- [ ] IK benchmark shows â‰?x speedup on native builds
 - [ ] CppAD dependency fully removed from repository
 
 ### P1 (Should Have)
 - [ ] Jacobian computation <5Âµs for 7-DOF arm
 - [ ] Full IK solve <80Âµs in median case
-- [ ] WASM build shows measurable improvement (â‰¥30% faster)
+- [ ] WASM build shows measurable improvement (â‰?0% faster)
 - [ ] Documentation updated with performance numbers
 
 ### P2 (Nice to Have)
@@ -248,7 +248,7 @@
 
 If critical issues are discovered:
 1. Revert commits in Phase 4 (keep both implementations)
-2. Add CMake flag: `URDFX_USE_ANALYTICAL_JACOBIAN` (default: OFF)
+2. Add CMake flag: `kinex_USE_ANALYTICAL_JACOBIAN` (default: OFF)
 3. Restore CppAD submodule temporarily
 4. Investigate root cause before re-attempting migration
 

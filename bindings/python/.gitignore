@@ -5,10 +5,10 @@ dist/
 __pycache__/
 
 # Compiled module
-urdfx/*.so
-urdfx/*.so.*
-urdfx/*.pyd
-urdfx/*.dylib
+kinex/*.so
+kinex/*.so.*
+kinex/*.pyd
+kinex/*.dylib
 
 # Test artifacts
 .pytest_cache/

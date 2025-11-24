@@ -7,26 +7,26 @@
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/unique_ptr.h>
 
-#include "urdfx/robot_model.h"
-#include "urdfx/kinematics.h"
-#include "urdfx/urdf_parser.h"
-#include "urdfx/inverse_kinematics.h"
+#include "kinex/robot_model.h"
+#include "kinex/kinematics.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/inverse_kinematics.h"
 
 namespace nb = nanobind;
-using namespace urdfx;
+using namespace kinex;
 
 struct IKResult {
     SolverStatus status;
     Eigen::VectorXd solution;
 };
 
-#ifndef URDFX_VERSION
-#define URDFX_VERSION "0.0.0-dev"
+#ifndef KINEX_VERSION
+#define KINEX_VERSION "0.0.0-dev"
 #endif
 
-NB_MODULE(_urdfx, m) {
-    m.doc() = "Python bindings for urdfx robotics library";
-    m.attr("__version__") = URDFX_VERSION;
+NB_MODULE(_kinex, m) {
+    m.doc() = "Python bindings for kinex robotics library";
+    m.attr("__version__") = KINEX_VERSION;
 
     // 2.4 Enums
     nb::enum_<JointType>(m, "JointType")

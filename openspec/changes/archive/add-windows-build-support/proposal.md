@@ -1,7 +1,7 @@
 # Change: Add Windows Build Support
 
 ## Why
-The urdfx project currently only provides a Bash setup script (`setup.sh`) that targets Linux and macOS platforms, making it difficult for Windows developers to build and contribute to the project. Windows is a common development platform, especially for robotics simulation and visualization work, and MSVC is the standard compiler for the Windows ecosystem.
+The kinex project currently only provides a Bash setup script (`setup.sh`) that targets Linux and macOS platforms, making it difficult for Windows developers to build and contribute to the project. Windows is a common development platform, especially for robotics simulation and visualization work, and MSVC is the standard compiler for the Windows ecosystem.
 
 ## What Changes
 - Create a PowerShell setup script (`setup.ps1`) that mirrors the functionality of `setup.sh` for Windows environments
@@ -21,7 +21,7 @@ The urdfx project currently only provides a Bash setup script (`setup.sh`) that 
   - Potentially source files if platform-specific issues are found during compilation
 - **Breaking changes**: None - this is purely additive for Windows support
 - **Benefits**: 
-  - Enables Windows developers to build and use urdfx natively
+  - Enables Windows developers to build and use kinex natively
   - Increases contributor base
   - Improves cross-platform compatibility testing
   - Makes the project accessible to robotics researchers using Windows

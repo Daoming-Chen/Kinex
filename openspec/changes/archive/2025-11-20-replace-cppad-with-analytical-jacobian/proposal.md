@@ -85,8 +85,8 @@ J_i = [  z_i  ]  // Linear velocity along axis
 ## Benefits
 
 ### Performance
-- **Primary**: 5-10x faster Jacobian computation (50µs → 5µs target)
-- **Secondary**: 2-3x faster overall IK solve (200µs → 50-80µs target)
+- **Primary**: 5-10x faster Jacobian computation (50µs �?5µs target)
+- **Secondary**: 2-3x faster overall IK solve (200µs �?50-80µs target)
 - **Tertiary**: Reduced memory footprint (no tape storage)
 
 ### Maintainability
@@ -137,16 +137,16 @@ J_i = [  z_i  ]  // Linear velocity along axis
 ## Success Criteria
 
 ### Must Have (P0)
-1. ✅ Analytical Jacobian accuracy within 1e-6 of CppAD reference
-2. ✅ All existing unit tests pass without modification
-3. ✅ IK benchmark shows ≥2x speedup on native builds
-4. ✅ CppAD dependency fully removed from repository
+1. �?Analytical Jacobian accuracy within 1e-6 of CppAD reference
+2. �?All existing unit tests pass without modification
+3. �?IK benchmark shows �?x speedup on native builds
+4. �?CppAD dependency fully removed from repository
 
 ### Should Have (P1)
-1. ✅ Jacobian computation <5µs for 7-DOF arm
-2. ✅ Full IK solve <80µs in median case  
-3. ✅ WASM build shows measurable improvement (≥30% faster)
-4. ✅ Documentation updated with performance numbers
+1. �?Jacobian computation <5µs for 7-DOF arm
+2. �?Full IK solve <80µs in median case  
+3. �?WASM build shows measurable improvement (�?0% faster)
+4. �?Documentation updated with performance numbers
 
 ### Nice to Have (P2)
 1. 🎯 Python bindings benchmark shows improvement

@@ -189,7 +189,7 @@ The Python bindings SHALL provide complete type hints for all public APIs.
 
 #### Scenario: mypy validation
 
-- **WHEN** user runs mypy on code using urdfx
+- **WHEN** user runs mypy on code using kinex
 - **THEN** mypy validates types correctly without errors
 
 ### Requirement: Documentation Strings
@@ -198,7 +198,7 @@ The Python bindings SHALL provide comprehensive docstrings for all classes and m
 
 #### Scenario: Access help
 
-- **WHEN** user calls `help(urdfx.ForwardKinematics)`
+- **WHEN** user calls `help(kinex.ForwardKinematics)`
 - **THEN** detailed documentation is displayed
 
 #### Scenario: Parameter documentation
@@ -223,7 +223,7 @@ The Python bindings SHALL integrate with standard Python build tools.
 #### Scenario: Install from source
 
 - **WHEN** user runs `pip install .` in bindings/python directory
-- **THEN** the urdfx package is built and installed
+- **THEN** the kinex package is built and installed
 
 #### Scenario: Development mode installation
 

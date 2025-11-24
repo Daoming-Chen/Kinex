@@ -12,7 +12,7 @@ add_executable(urdfx_tests ${TEST_SOURCES})
 # Link against core library and GoogleTest
 target_link_libraries(urdfx_tests
     PRIVATE
-        urdfx
+        kinex
         GTest::gtest
         GTest::gtest_main
 )
@@ -32,7 +32,7 @@ add_test(NAME urdfx_tests COMMAND urdfx_tests)
 # On Windows, set PATH to include DLL directories for the test
 if(WIN32 AND BUILD_SHARED_LIBS)
     set_tests_properties(urdfx_tests PROPERTIES
-        ENVIRONMENT "PATH=$<TARGET_FILE_DIR:urdfx>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$<TARGET_FILE_DIR:gtest>;$<TARGET_FILE_DIR:gtest_main>;$ENV{PATH}"
+        ENVIRONMENT "PATH=$<TARGET_FILE_DIR:kinex>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$<TARGET_FILE_DIR:gtest>;$<TARGET_FILE_DIR:gtest_main>;$ENV{PATH}"
     )
 endif()
 
@@ -49,9 +49,9 @@ file(COPY ${PROJECT_SOURCE_DIR}/examples/models/ur5
 if(WIN32 AND BUILD_SHARED_LIBS)
     add_custom_command(TARGET urdfx_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:urdfx>
+            $<TARGET_FILE:kinex>
             $<TARGET_FILE_DIR:urdfx_tests>
-        COMMENT "Copying urdfx DLL to test directory"
+        COMMENT "Copying kinex DLL to test directory"
     )
     # Copy spdlog and pugixml DLLs if they exist
     add_custom_command(TARGET urdfx_tests POST_BUILD

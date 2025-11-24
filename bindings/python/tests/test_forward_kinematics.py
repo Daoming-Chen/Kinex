@@ -1,14 +1,14 @@
 import pytest
-import urdfx
+import kinex
 import numpy as np
 
 def test_fk_creation(ur5_robot):
-    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(ur5_robot, "wrist_3_link")
     assert fk.num_joints == 6
     assert fk.get_num_joints() == 6
 
 def test_fk_compute(ur5_robot):
-    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(ur5_robot, "wrist_3_link")
     
     # Zero configuration
     q = np.zeros(6)
@@ -16,12 +16,12 @@ def test_fk_compute(ur5_robot):
     
     # Expected pose for UR5 at zero config (upright)
     # This depends on the specific model, but we check it returns a Transform
-    assert isinstance(pose, urdfx.Transform)
+    assert isinstance(pose, kinex.Transform)
     assert pose.as_matrix().shape == (4, 4)
 
 def test_fk_compute_to_link(ur5_robot):
-    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(ur5_robot, "wrist_3_link")
     q = np.zeros(6)
     pose = fk.compute_to_link(q, "forearm_link")
-    assert isinstance(pose, urdfx.Transform)
+    assert isinstance(pose, kinex.Transform)
 

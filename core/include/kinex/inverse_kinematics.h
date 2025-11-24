@@ -1,14 +1,14 @@
 #pragma once
 
-#include "urdfx/export.h"
-#include "urdfx/kinematics.h"
+#include "kinex/export.h"
+#include "kinex/kinematics.h"
 #include <Eigen/Dense>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-namespace urdfx {
+namespace kinex {
 
 class DaQPSolver;
 
@@ -45,7 +45,7 @@ struct SolverStatus {
     std::vector<double> error_history;
 };
 
-class URDFX_API IKSolver {
+class KINEX_API IKSolver {
 public:
     IKSolver(
         std::shared_ptr<const Robot> robot,
@@ -81,7 +81,7 @@ protected:
     std::optional<Eigen::VectorXd> warm_start_;
 };
 
-class URDFX_API SQPIKSolver final : public IKSolver {
+class KINEX_API SQPIKSolver final : public IKSolver {
 public:
     SQPIKSolver(
         std::shared_ptr<const Robot> robot,
@@ -114,4 +114,4 @@ private:
     void clampToJointLimits(Eigen::VectorXd& joints) const;
 };
 
-} // namespace urdfx
+} // namespace kinex

@@ -1,4 +1,4 @@
-import urdfx
+import kinex
 import numpy as np
 import os
 import sys
@@ -21,8 +21,8 @@ def main():
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
-    robot = urdfx.Robot.from_urdf_file(urdf_path)
-    ik = urdfx.SQPIKSolver(robot, "wrist_3_link")
+    robot = kinex.Robot.from_urdf_file(urdf_path)
+    ik = kinex.SQPIKSolver(robot, "wrist_3_link")
     
     # Generate a simple line trajectory
     start_pos = np.array([0.4, -0.4, 0.2])
@@ -43,7 +43,7 @@ def main():
         pos = start_pos * (1 - alpha) + end_pos * alpha
         
         # Create target pose with desired position and orientation
-        target_pose = urdfx.Transform.from_position_rpy(pos, np.array([roll, pitch, yaw]))
+        target_pose = kinex.Transform.from_position_rpy(pos, np.array([roll, pitch, yaw]))
         
         # Use previous solution as guess (warm start)
         result = ik.solve(target_pose, current_q)

@@ -2,38 +2,38 @@ cmake_minimum_required(VERSION 3.20)
 
 # Define the Python extension module
 # nanobind_add_module creates a shared library with the right suffix for Python
-nanobind_add_module(_urdfx src/bindings.cpp)
+nanobind_add_module(_kinex src/bindings.cpp)
 
 # Link against the core library only
 # nanobind is linked automatically by nanobind_add_module
-target_link_libraries(_urdfx PRIVATE urdfx)
+target_link_libraries(_kinex PRIVATE kinex)
 
 # Set C++ standard (should inherit from parent but good to be explicit)
-target_compile_features(_urdfx PRIVATE cxx_std_20)
+target_compile_features(_kinex PRIVATE cxx_std_20)
 
 # Define version
-target_compile_definitions(_urdfx PRIVATE URDFX_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(_kinex PRIVATE KINEX_VERSION="${PROJECT_VERSION}")
 
-# Set output directory to bindings/python/urdfx package folder
+# Set output directory to bindings/python/kinex package folder
 # This allows editable installs and testing to work easily
-set_target_properties(_urdfx PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/urdfx
-    OUTPUT_NAME _urdfx
+set_target_properties(_kinex PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/kinex
+    OUTPUT_NAME _kinex
 )
 
-# Avoid "lib" prefix on Windows/Linux (Python expects _urdfx.so/pyd not lib_urdfx.so)
-set_target_properties(_urdfx PROPERTIES PREFIX "")
+# Avoid "lib" prefix on Windows/Linux (Python expects _kinex.so/pyd not lib_kinex.so)
+set_target_properties(_kinex PROPERTIES PREFIX "")
 
-# Set RPATH to find liburdfx.so in the same directory
+# Set RPATH to find libkinex.so in the same directory
 # $ORIGIN means the directory containing the binary
 if(APPLE)
-    set_target_properties(_urdfx PROPERTIES
+    set_target_properties(_kinex PROPERTIES
         INSTALL_RPATH "@loader_path"
         BUILD_RPATH "@loader_path"
         BUILD_WITH_INSTALL_RPATH FALSE
     )
 else()
-    set_target_properties(_urdfx PROPERTIES
+    set_target_properties(_kinex PROPERTIES
         INSTALL_RPATH "$ORIGIN"
         BUILD_RPATH "$ORIGIN"
         BUILD_WITH_INSTALL_RPATH FALSE
@@ -44,60 +44,60 @@ endif()
 # so the extension module can find them without needing to set LD_LIBRARY_PATH
 if(WIN32)
     # Windows uses DLL files, no SONAME concept
-    add_custom_command(TARGET _urdfx POST_BUILD
+    add_custom_command(TARGET _kinex POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:urdfx>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:urdfx>
+            $<TARGET_FILE:kinex>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_FILE_NAME:kinex>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:pugixml-shared>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_FILE_NAME:pugixml-shared>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:spdlog>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:spdlog>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_FILE_NAME:spdlog>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 else()
     # Unix-like systems use SONAME
-    add_custom_command(TARGET _urdfx POST_BUILD
+    add_custom_command(TARGET _kinex POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:urdfx>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:urdfx>
+            $<TARGET_FILE:kinex>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_FILE_NAME:kinex>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_SONAME_FILE:urdfx>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_SONAME_FILE_NAME:urdfx>
+            $<TARGET_SONAME_FILE:kinex>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_SONAME_FILE_NAME:kinex>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:pugixml-shared>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_FILE_NAME:pugixml-shared>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_SONAME_FILE:pugixml-shared>
-            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_SONAME_FILE_NAME:pugixml-shared>
+            ${CMAKE_CURRENT_SOURCE_DIR}/kinex/$<TARGET_SONAME_FILE_NAME:pugixml-shared>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 endif()
 
 # Installation rules
-install(TARGETS _urdfx
-    LIBRARY DESTINATION urdfx
-    ARCHIVE DESTINATION urdfx
-    RUNTIME DESTINATION urdfx
+install(TARGETS _kinex
+    LIBRARY DESTINATION kinex
+    ARCHIVE DESTINATION kinex
+    RUNTIME DESTINATION kinex
     COMPONENT python
 )
 
-# Also install liburdfx.so and pugixml alongside the Python module
+# Also install libkinex.so and pugixml alongside the Python module
 # spdlog is typically header-only or statically linked, so we don't install it
-install(TARGETS urdfx
-    LIBRARY DESTINATION urdfx
-    ARCHIVE DESTINATION urdfx
-    RUNTIME DESTINATION urdfx
+install(TARGETS kinex
+    LIBRARY DESTINATION kinex
+    ARCHIVE DESTINATION kinex
+    RUNTIME DESTINATION kinex
     COMPONENT python
 )
 
 # Install pugixml if it's a shared library target
 if(TARGET pugixml-shared)
     install(TARGETS pugixml-shared
-        LIBRARY DESTINATION urdfx
-        ARCHIVE DESTINATION urdfx
-        RUNTIME DESTINATION urdfx
+        LIBRARY DESTINATION kinex
+        ARCHIVE DESTINATION kinex
+        RUNTIME DESTINATION kinex
         COMPONENT python
     )
 endif()
@@ -105,9 +105,9 @@ endif()
 # Install spdlog if it's a shared library target
 if(TARGET spdlog AND BUILD_SHARED_LIBS)
     install(TARGETS spdlog
-        LIBRARY DESTINATION urdfx
-        ARCHIVE DESTINATION urdfx
-        RUNTIME DESTINATION urdfx
+        LIBRARY DESTINATION kinex
+        ARCHIVE DESTINATION kinex
+        RUNTIME DESTINATION kinex
         COMPONENT python
     )
 endif()

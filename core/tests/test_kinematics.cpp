@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "urdfx/kinematics.h"
-#include "urdfx/urdf_parser.h"
-#include "urdfx/robot_model.h"
-#include "urdfx/logging.h"
+#include "kinex/kinematics.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/robot_model.h"
+#include "kinex/logging.h"
 #include <fstream>
 #include <filesystem>
 #include <chrono>
@@ -14,7 +14,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-using namespace urdfx;
+using namespace kinex;
 
 class ForwardKinematicsTest : public ::testing::Test {
 protected:
@@ -204,7 +204,7 @@ TEST_F(ForwardKinematicsTest, ComputeWithBothJointsRotated) {
     
     Transform result = fk.compute(joint_angles);
     
-    // First joint rotates +90° around Z: (1,0,0) → (0,1,0)
+    // First joint rotates +90° around Z: (1,0,0) �?(0,1,0)
     // Second joint rotates +90° around Z in link1's frame
     // The total rotation is 180°, so link2 should point back
     // Position should be approximately (0, 1, 0) as both rotations cancel the displacement

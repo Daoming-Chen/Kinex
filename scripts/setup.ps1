@@ -1,4 +1,4 @@
-# setup.ps1 - Setup script for urdfx development environment on Windows
+# setup.ps1 - Setup script for kinex development environment on Windows
 # This script checks for required dependencies and provides installation instructions
 # Usage: .\scripts\setup.ps1
 
@@ -278,7 +278,7 @@ function Install-Emscripten {
 # Main setup flow
 function Main {
     Write-Host ""
-    Write-Info "Starting urdfx development environment setup for Windows..."
+    Write-Info "Starting kinex development environment setup for Windows..."
     Write-Host ""
     
     # Check Windows version

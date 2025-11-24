@@ -1,10 +1,10 @@
-#include "urdfx/urdf_parser.h"
-#include "urdfx/kinematics.h"
-#include "urdfx/logging.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/kinematics.h"
+#include "kinex/logging.h"
 #include <iostream>
 #include <iomanip>
 
-using namespace urdfx;
+using namespace kinex;
 
 void printTransform(const Transform& transform) {
     auto [position, quaternion] = transform.asPositionQuaternion();
@@ -40,18 +40,18 @@ int main(int argc, char** argv) {
     try {
         // Parse URDF file
         std::string urdf_path = argv[1];
-        URDFX_LOG_INFO("Loading URDF file: {}", urdf_path);
+        KINEX_LOG_INFO("Loading URDF file: {}", urdf_path);
         
         URDFParser parser;
         auto robot = parser.parseFile(urdf_path);
         
-        URDFX_LOG_INFO("Robot '{}' loaded successfully", robot->getName());
-        URDFX_LOG_INFO("Number of links: {}", robot->getLinks().size());
-        URDFX_LOG_INFO("Number of joints: {}", robot->getJoints().size());
+        KINEX_LOG_INFO("Robot '{}' loaded successfully", robot->getName());
+        KINEX_LOG_INFO("Number of links: {}", robot->getLinks().size());
+        KINEX_LOG_INFO("Number of joints: {}", robot->getJoints().size());
         
         // Get actuated joints
         auto actuated_joints = robot->getActuatedJoints();
-        URDFX_LOG_INFO("Number of actuated joints: {}", actuated_joints.size());
+        KINEX_LOG_INFO("Number of actuated joints: {}", actuated_joints.size());
         
         // Find end-effector link
         std::string end_link;
@@ -76,15 +76,15 @@ int main(int argc, char** argv) {
         }
         
         if (end_link.empty()) {
-            URDFX_LOG_ERROR("Could not find end-effector link");
+            KINEX_LOG_ERROR("Could not find end-effector link");
             return 1;
         }
         
-        URDFX_LOG_INFO("Using end-effector link: {}", end_link);
+        KINEX_LOG_INFO("Using end-effector link: {}", end_link);
         
         // Create forward kinematics solver
         ForwardKinematics fk(robot, end_link);
-        URDFX_LOG_INFO("Forward kinematics solver created with {} DOF", fk.getNumJoints());
+        KINEX_LOG_INFO("Forward kinematics solver created with {} DOF", fk.getNumJoints());
         
         // Test at zero configuration
         std::cout << "\n=== Zero Configuration ===" << std::endl;
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
         return 0;
         
     } catch (const std::exception& e) {
-        URDFX_LOG_ERROR("Error: {}", e.what());
+        KINEX_LOG_ERROR("Error: {}", e.what());
         return 1;
     }
 }

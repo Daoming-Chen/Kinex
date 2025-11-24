@@ -1,11 +1,11 @@
 import pytest
-import urdfx
+import kinex
 import numpy as np
 
 def test_fk_ik_roundtrip(ur5_robot):
     """Test FK -> IK roundtrip to ensure consistency."""
-    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
-    ik = urdfx.SQPIKSolver(ur5_robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(ur5_robot, "wrist_3_link")
+    ik = kinex.SQPIKSolver(ur5_robot, "wrist_3_link")
     
     # Generate random valid configurations
     # UR5 limits are roughly +/- 2pi for most joints
@@ -35,13 +35,13 @@ def test_fk_ik_roundtrip(ur5_robot):
 
 def test_jacobian_numerical_check(ur5_robot):
     """Compare analytic Jacobian with numerical differentiation."""
-    fk = urdfx.ForwardKinematics(ur5_robot, "wrist_3_link")
-    jac_calc = urdfx.JacobianCalculator(ur5_robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(ur5_robot, "wrist_3_link")
+    jac_calc = kinex.JacobianCalculator(ur5_robot, "wrist_3_link")
     
     q = np.array([0.1, -0.5, 0.5, -1.0, 0.5, 0.0])
     
     # Analytic Jacobian
-    J_analytic = jac_calc.compute(q, urdfx.JacobianType.Analytic)
+    J_analytic = jac_calc.compute(q, kinex.JacobianType.Analytic)
     
     # Numerical differentiation (finite difference)
     epsilon = 1e-6
@@ -66,7 +66,7 @@ def test_jacobian_numerical_check(ur5_robot):
     # Check translational part match
     # Note: The analytic Jacobian might be in a different frame or representation 
     # than simple position difference if not careful.
-    # Analytic Jacobian in urdfx is Spatial Jacobian in base frame? 
+    # Analytic Jacobian in kinex is Spatial Jacobian in base frame? 
     # Actually, `JacobianType.Analytic` usually means Spatial Jacobian (v_base, w_base).
     # So the top 3 rows are linear velocity in base frame.
     
@@ -75,7 +75,7 @@ def test_jacobian_numerical_check(ur5_robot):
 
 def test_singularity_consistency(ur5_robot):
     """Check that singularity metrics are consistent."""
-    jac_calc = urdfx.JacobianCalculator(ur5_robot, "wrist_3_link")
+    jac_calc = kinex.JacobianCalculator(ur5_robot, "wrist_3_link")
     
     # Singular config (vertical arm)
     q_singular = np.zeros(6) 

@@ -1,5 +1,5 @@
-#include "urdfx/urdf_parser.h"
-#include "urdfx/logging.h"
+#include "kinex/urdf_parser.h"
+#include "kinex/logging.h"
 #include <pugixml.hpp>
 #include <fstream>
 #include <sstream>
@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace urdfx {
+namespace kinex {
 
 // Helper functions for parsing XML attributes
 namespace {
@@ -458,4 +458,4 @@ std::shared_ptr<Robot> URDFParser::parseDocument(const std::string& content, con
     }
 }
 
-} // namespace urdfx
+} // namespace kinex

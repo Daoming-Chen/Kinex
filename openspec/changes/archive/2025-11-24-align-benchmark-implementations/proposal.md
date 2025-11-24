@@ -74,7 +74,7 @@ Align the benchmark implementations so that:
 - Existing benchmark infrastructure (benchmark-infrastructure spec)
 - UR5e variant URDF files in examples/models/ur5/
 - Google Benchmark library (C++)
-- Python urdfx bindings
+- Python kinex bindings
 
 ## Risks
 

@@ -1,7 +1,7 @@
 # Proposal: Add CI/CD Pipeline
 
 ## Summary
-Create a comprehensive GitHub Actions workflow to automate building, testing, and publishing urdfx across multiple platforms (Linux, macOS, Windows) for C++ core library, Python wheels, and JavaScript/WebAssembly packages.
+Create a comprehensive GitHub Actions workflow to automate building, testing, and publishing kinex across multiple platforms (Linux, macOS, Windows) for C++ core library, Python wheels, and JavaScript/WebAssembly packages.
 
 ## Motivation
 Currently, the project lacks automated CI/CD infrastructure. This means:

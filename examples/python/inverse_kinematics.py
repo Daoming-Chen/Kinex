@@ -1,4 +1,4 @@
-import urdfx
+import kinex
 import numpy as np
 import os
 import sys
@@ -16,11 +16,11 @@ def main():
         sys.exit(1)
 
     # Load robot
-    robot = urdfx.Robot.from_urdf_file(urdf_path)
+    robot = kinex.Robot.from_urdf_file(urdf_path)
     
     # Create IK solver (use wrist_3_link as end effector)
-    ik = urdfx.SQPIKSolver(robot, "wrist_3_link")
-    fk = urdfx.ForwardKinematics(robot, "wrist_3_link")
+    ik = kinex.SQPIKSolver(robot, "wrist_3_link")
+    fk = kinex.ForwardKinematics(robot, "wrist_3_link")
     
     # Define target
     # Let's use FK to generate a reachable target

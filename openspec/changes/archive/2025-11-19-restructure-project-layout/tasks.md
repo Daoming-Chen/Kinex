@@ -1,6 +1,6 @@
 # Implementation Tasks: Restructure Project Layout
 
-This document outlines the step-by-step tasks to restructure the urdfx project for better multi-language support.
+This document outlines the step-by-step tasks to restructure the kinex project for better multi-language support.
 
 ## Phase 1: Preparation and Validation
 
@@ -35,7 +35,7 @@ This document outlines the step-by-step tasks to restructure the urdfx project f
 - [ ] Update `core/CMakeLists.txt` to reference new include path
 - [ ] Update `target_include_directories()` calls
 
-**Validation**: Check that header files are accessible with `#include <urdfx/...>`.
+**Validation**: Check that header files are accessible with `#include <kinex/...>`.
 
 ### Task 2.2: Migrate Source Files
 - [ ] Run: `git mv src core/src`
@@ -54,9 +54,9 @@ This document outlines the step-by-step tasks to restructure the urdfx project f
 ### Task 2.4: Update Core CMakeLists.txt
 - [ ] Create `core/CMakeLists.txt` with proper include/src/tests setup
 - [ ] Configure installation rules for headers
-- [ ] Export urdfx target for use by bindings
+- [ ] Export kinex target for use by bindings
 
-**Validation**: `cmake --install build --prefix /tmp/urdfx-test` succeeds.
+**Validation**: `cmake --install build --prefix /tmp/kinex-test` succeeds.
 
 ### Task 2.5: Verify Core Library Build
 - [ ] Clean build directory: `rm -rf build; mkdir build`
@@ -106,7 +106,7 @@ This document outlines the step-by-step tasks to restructure the urdfx project f
 ### Task 4.2: Create Python Examples Placeholder
 - [ ] Create `examples/python/README.md` with example plan
 - [ ] Create `examples/python/forward_kinematics.py` stub
-- [ ] Create `examples/python/requirements.txt` (empty or with `urdfx`)
+- [ ] Create `examples/python/requirements.txt` (empty or with `kinex`)
 
 **Validation**: Directory and files exist.
 
@@ -151,8 +151,8 @@ This document outlines the step-by-step tasks to restructure the urdfx project f
 **Validation**: README is clear and concise (< 200 lines).
 
 ### Task 5.3: Update Path References in Documentation
-- [ ] Search for old paths in all markdown files: `rg "include/urdfx" *.md`
-- [ ] Replace with new paths: `core/include/urdfx`
+- [ ] Search for old paths in all markdown files: `rg "include/kinex" *.md`
+- [ ] Replace with new paths: `core/include/kinex`
 - [ ] Update code snippets with correct include paths
 
 **Validation**: All documentation references are correct.

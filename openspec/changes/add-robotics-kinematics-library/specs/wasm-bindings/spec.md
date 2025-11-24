@@ -6,15 +6,15 @@
 The system SHALL compile the C++ library to WebAssembly for browser usage.
 
 #### Scenario: Build WASM module with Emscripten
-**Given** the urdfx C++ library  
+**Given** the kinex C++ library  
 **When** the user runs the WASM build script  
-**Then** a urdfx.js and urdfx.wasm file are generated  
+**Then** a kinex.js and kinex.wasm file are generated  
 **And** the combined size is < 2MB (uncompressed)  
 **And** the module works in modern browsers
 
 #### Scenario: Load WASM module in browser
-**Given** the built urdfx WASM module  
-**When** a web page loads the module with `import urdfx from './urdfx.js'`  
+**Given** the built kinex WASM module  
+**When** a web page loads the module with `import kinex from './kinex.js'`  
 **Then** the module loads successfully  
 **And** all exported functions are accessible  
 **And** no errors appear in browser console
@@ -24,7 +24,7 @@ The system SHALL expose core kinematics functions to JavaScript using Embind.
 
 #### Scenario: Create Robot from URDF string in JS
 **Given** URDF content as a JavaScript string  
-**When** the user calls `const robot = urdfx.Robot.fromURDFString(urdfContent)`  
+**When** the user calls `const robot = kinex.Robot.fromURDFString(urdfContent)`  
 **Then** a Robot instance is created in JavaScript  
 **And** the robot properties are accessible
 
@@ -39,9 +39,9 @@ The system SHALL expose core kinematics functions to JavaScript using Embind.
 The system SHALL include TypeScript declaration files (.d.ts) for type safety.
 
 #### Scenario: TypeScript type checking
-**Given** TypeScript code using urdfx WASM module  
+**Given** TypeScript code using kinex WASM module  
 **When** the user compiles with tsc  
-**Then** all urdfx types are recognized  
+**Then** all kinex types are recognized  
 **And** type errors are caught at compile time  
 **And** IDE provides accurate autocomplete
 
@@ -49,7 +49,7 @@ The system SHALL include TypeScript declaration files (.d.ts) for type safety.
 The system SHALL minimize WebAssembly binary size through optimization.
 
 #### Scenario: WASM binary size under limit
-**Given** the compiled urdfx.wasm file  
+**Given** the compiled kinex.wasm file  
 **When** measured after compression (gzip)  
 **Then** the size is < 500KB  
 **And** the module loads in < 1 second on a typical connection
@@ -128,7 +128,7 @@ The system SHALL work with Webpack, Vite, and other bundlers.
 
 #### Scenario: Import in Vite application
 **Given** a Vite React project  
-**When** the user imports urdfx with `import urdfx from 'urdfx'`  
+**When** the user imports kinex with `import kinex from 'kinex'`  
 **Then** Vite bundles the WASM module correctly  
 **And** the WASM file is copied to output directory  
 **And** the module loads at runtime
@@ -137,7 +137,7 @@ The system SHALL work with Webpack, Vite, and other bundlers.
 The system SHALL include JavaScript/TypeScript examples.
 
 #### Scenario: Access example code
-**Given** the urdfx repository  
+**Given** the kinex repository  
 **When** the user browses the examples/ directory  
 **Then** JavaScript examples are available for FK, IK, and Jacobian  
 **And** each example includes clear comments  

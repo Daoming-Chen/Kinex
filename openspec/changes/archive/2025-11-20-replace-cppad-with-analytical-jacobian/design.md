@@ -8,19 +8,19 @@ This document describes the technical design for replacing CppAD-based automatic
 
 ### Spatial Jacobian (Analytic)
 
-For a serial manipulator with joint configuration `q ∈ ℝⁿ`, the spatial Jacobian `J ∈ ℝ⁶ˣⁿ` relates joint velocities to end-effector twist:
+For a serial manipulator with joint configuration `q �?ℝⁿ`, the spatial Jacobian `J �?ℝ⁶ˣⁿ` relates joint velocities to end-effector twist:
 
 ```
-ẋ = J(q) q̇
+�?= J(q) q̇
 
-where ẋ = [v; ω] ∈ ℝ⁶  (linear and angular velocity in world frame)
+where �?= [v; ω] �?ℝ⁶  (linear and angular velocity in world frame)
 ```
 
 Each column `J_i` represents the contribution of joint `i`:
 
 **Revolute Joint:**
 ```
-J_i = [ z_i × (p_ee - p_i) ]  ∈ ℝ⁶
+J_i = [ z_i × (p_ee - p_i) ]  �?ℝ⁶
       [        z_i          ]
 
 where:
@@ -31,7 +31,7 @@ where:
 
 **Prismatic Joint:**
 ```
-J_i = [  z_i  ]  ∈ ℝ⁶
+J_i = [  z_i  ]  �?ℝ⁶
       [  0    ]
 ```
 
@@ -39,8 +39,8 @@ J_i = [  z_i  ]  ∈ ℝ⁶
 
 **Forward Pass (Single Traversal):**
 ```
-Input: Joint angles q ∈ ℝⁿ
-Output: Jacobian J ∈ ℝ⁶ˣⁿ
+Input: Joint angles q �?ℝⁿ
+Output: Jacobian J �?ℝ⁶ˣ�?
 
 1. Initialize:
    T_world = Identity  (accumulator for world transform)
@@ -61,8 +61,8 @@ Output: Jacobian J ∈ ℝ⁶ˣⁿ
 ```
 
 **Complexity:**
-- Time: O(n) — single forward pass + O(n) cross products
-- Space: O(n) — cache n joint frames (3 vectors each: z_i, p_i, p_ee)
+- Time: O(n) �?single forward pass + O(n) cross products
+- Space: O(n) �?cache n joint frames (3 vectors each: z_i, p_i, p_ee)
 
 ## Data Structure Design
 
@@ -86,7 +86,7 @@ struct JointFrameCache {
 ### AnalyticalJacobianCalculator API
 
 ```cpp
-class URDFX_API AnalyticalJacobianCalculator {
+class kinex_API AnalyticalJacobianCalculator {
 public:
     // Constructor (same as JacobianCalculator)
     AnalyticalJacobianCalculator(
@@ -324,35 +324,35 @@ BENCHMARK(BM_AnalyticalJacobian)->Unit(benchmark::kMicrosecond);
 ## Migration Plan
 
 ### Phase 1: Parallel Implementation (Week 1)
-- ✅ Create `AnalyticalJacobianCalculator` in new files:
-  - `core/include/urdfx/analytical_jacobian.h`
+- �?Create `AnalyticalJacobianCalculator` in new files:
+  - `core/include/kinex/analytical_jacobian.h`
   - `core/src/analytical_jacobian.cpp`
-- ✅ Implement core algorithm (forward pass + Jacobian fill)
-- ✅ Add unit tests for accuracy validation
+- �?Implement core algorithm (forward pass + Jacobian fill)
+- �?Add unit tests for accuracy validation
 
 ### Phase 2: API Compatibility (Week 1-2)
-- ✅ Port all methods from `JacobianCalculator`:
+- �?Port all methods from `JacobianCalculator`:
   - `compute()`, `isSingular()`, `getManipulability()`, etc.
-- ✅ Ensure identical results (within numerical tolerance)
-- ✅ Add integration tests with `SQPIKSolver`
+- �?Ensure identical results (within numerical tolerance)
+- �?Add integration tests with `SQPIKSolver`
 
 ### Phase 3: Integration (Week 2)
-- ✅ Update `SQPIKSolver` to use `AnalyticalJacobianCalculator`
-- ✅ Run full test suite (all tests pass)
-- ✅ Benchmark and document performance improvements
+- �?Update `SQPIKSolver` to use `AnalyticalJacobianCalculator`
+- �?Run full test suite (all tests pass)
+- �?Benchmark and document performance improvements
 
 ### Phase 4: Cleanup (Week 2)
-- ✅ Remove `JacobianCalculator` class
-- ✅ Remove CppAD includes from `kinematics.cpp` and headers
-- ✅ Update CMakeLists.txt to remove CppAD dependency
-- ✅ Remove `third_party/CppAD` submodule
-- ✅ Update documentation and README
+- �?Remove `JacobianCalculator` class
+- �?Remove CppAD includes from `kinematics.cpp` and headers
+- �?Update CMakeLists.txt to remove CppAD dependency
+- �?Remove `third_party/CppAD` submodule
+- �?Update documentation and README
 
 ### Rollback Strategy
 
 If analytical implementation fails validation:
 1. Keep both implementations in codebase
-2. Add CMake option: `URDFX_USE_ANALYTICAL_JACOBIAN` (default: ON)
+2. Add CMake option: `kinex_USE_ANALYTICAL_JACOBIAN` (default: ON)
 3. Fall back to CppAD if issues found in production
 
 Rollback is low-risk since:

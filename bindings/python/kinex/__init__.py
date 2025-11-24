@@ -1,5 +1,5 @@
-from ._urdfx import *
-from ._urdfx import __version__
+from ._kinex import *
+from ._kinex import __version__
 
 __all__ = [
     "Transform",

@@ -1,6 +1,6 @@
 import pytest
 import os
-import urdfx
+import kinex
 
 @pytest.fixture
 def test_data_dir():
@@ -15,10 +15,10 @@ def test_data_dir():
         return model_path
             
     # If not found, rely on environment variable or fail
-    if "URDFX_MODELS_DIR" in os.environ:
-        return os.environ["URDFX_MODELS_DIR"]
+    if "KINEX_MODELS_DIR" in os.environ:
+        return os.environ["KINEX_MODELS_DIR"]
         
-    pytest.skip(f"UR5 model not found at {model_path}. Please set URDFX_MODELS_DIR env var.")
+    pytest.skip(f"UR5 model not found at {model_path}. Please set KINEX_MODELS_DIR env var.")
 
 @pytest.fixture
 def ur5_urdf_path(test_data_dir):
@@ -26,5 +26,5 @@ def ur5_urdf_path(test_data_dir):
 
 @pytest.fixture
 def ur5_robot(ur5_urdf_path):
-    return urdfx.Robot.from_urdf_file(ur5_urdf_path)
+    return kinex.Robot.from_urdf_file(ur5_urdf_path)
 

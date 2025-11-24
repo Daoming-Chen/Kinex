@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Visualization script for urdfx Python benchmarks.
+Visualization script for kinex Python benchmarks.
 Supports Python benchmarks in Google Benchmark JSON format.
 Generates clean, consistent visualizations for benchmark results.
 """
@@ -175,7 +175,7 @@ def visualize_ik_benchmarks(benchmarks_by_robot: Dict[str, List[Dict]],
     # Save figure
     output_path = output_dir / f'{base_name}.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"âœ“ Saved: {output_path}")
+    print(f"âœ?Saved: {output_path}")
     
     plt.close()
 
@@ -185,7 +185,7 @@ def generate_summary_markdown(all_benchmarks: Dict[str, Dict], output_dir: Path)
     output_path = output_dir / 'benchmark_summary.md'
     
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("# urdfx Python Benchmark Summary\n\n")
+        f.write("# kinex Python Benchmark Summary\n\n")
         
         # Python Benchmarks
         if 'python_ur5e' in all_benchmarks or 'python_tier_b' in all_benchmarks:
@@ -216,7 +216,7 @@ def generate_summary_markdown(all_benchmarks: Dict[str, Dict], output_dir: Path)
         f.write("- Success rates improve dramatically with warm start\n")
         f.write("- Trajectory mode achieves best performance with fewest iterations\n")
     
-    print(f"âœ“ Summary saved: {output_path}")
+    print(f"âœ?Summary saved: {output_path}")
 
 
 def process_benchmark_file(filepath: Path, output_dir: Path, 
@@ -263,7 +263,7 @@ def process_benchmark_file(filepath: Path, output_dir: Path,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Visualization for urdfx Python benchmarks",
+        description="Visualization for kinex Python benchmarks",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
@@ -316,7 +316,7 @@ def main():
         generate_summary_markdown(all_benchmarks, output_dir)
     
     print(f"\n{'='*70}")
-    print("âœ“ Visualization complete!")
+    print("âœ?Visualization complete!")
     print(f"{'='*70}\n")
     
     return 0

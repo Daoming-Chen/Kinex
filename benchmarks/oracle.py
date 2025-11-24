@@ -1,22 +1,22 @@
 import numpy as np
 from typing import Optional, List, Tuple
-import urdfx
+import kinex
 
 class FKOracle:
     """
-    Wrapper around urdfx Forward Kinematics for benchmarking.
+    Wrapper around kinex Forward Kinematics for benchmarking.
     """
-    def __init__(self, robot: urdfx.Robot, end_link: Optional[str] = None):
+    def __init__(self, robot: kinex.Robot, end_link: Optional[str] = None):
         self.robot = robot
         self.end_link = end_link or self._find_leaf_link(robot)
         
         if not self.end_link:
             raise ValueError("Could not determine end link automatically.")
             
-        self.fk = urdfx.ForwardKinematics(robot, self.end_link)
+        self.fk = kinex.ForwardKinematics(robot, self.end_link)
         self.dof = robot.dof
 
-    def _find_leaf_link(self, robot: urdfx.Robot) -> str:
+    def _find_leaf_link(self, robot: kinex.Robot) -> str:
         """Find the first leaf link (no child joints)."""
         # Simple traversal or check all links
         # Assuming single chain for now or taking the "last" one
@@ -36,18 +36,18 @@ class FKOracle:
         tf = self.fk.compute(q)
         return tf.translation(), tf.rotation()
 
-    def compute_transform(self, q: np.ndarray) -> urdfx.Transform:
+    def compute_transform(self, q: np.ndarray) -> kinex.Transform:
         return self.fk.compute(q)
 
 class JointSampler:
     """
     Samples joint configurations within limits.
     """
-    def __init__(self, robot: urdfx.Robot, rng: np.random.RandomState = None):
+    def __init__(self, robot: kinex.Robot, rng: np.random.RandomState = None):
         self.robot = robot
         self.dof = robot.dof
         self.limits = robot.get_joint_limits() # Expected shape (dof, 2) or specialized object
-        # urdfx Robot.get_joint_limits return numpy array? Check pyi.
+        # kinex Robot.get_joint_limits return numpy array? Check pyi.
         # pyi says: def get_joint_limits(self) -> np.ndarray: ...
         # Assuming it returns (dof, 2) array of [lower, upper]
         

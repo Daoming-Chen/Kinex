@@ -1,5 +1,5 @@
 # Dependencies.cmake
-# This module finds or builds all dependencies for urdfx
+# This module finds or builds all dependencies for kinex
 
 # Prefer using system-installed packages, fall back to submodules
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_SOURCE_DIR}/third_party)

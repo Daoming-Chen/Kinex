@@ -6,7 +6,7 @@
 The system SHALL use CMake 3.20+ as the primary build system.
 
 #### Scenario: Configure project with CMake
-**Given** the urdfx source directory  
+**Given** the kinex source directory  
 **When** the user runs `cmake -B build -DCMAKE_BUILD_TYPE=Release`  
 **Then** CMake configures the project successfully  
 **And** all dependencies are found or fetched  
@@ -15,7 +15,7 @@ The system SHALL use CMake 3.20+ as the primary build system.
 #### Scenario: Build C++ library
 **Given** a configured CMake build directory  
 **When** the user runs `cmake --build build -j$(nproc)`  
-**Then** the core library liburdfx.so (or .dylib/.dll) is built  
+**Then** the core library libkinex.so (or .dylib/.dll) is built  
 **And** all tests are compiled  
 **And** the build completes without errors
 
@@ -23,7 +23,7 @@ The system SHALL use CMake 3.20+ as the primary build system.
 The system SHALL use git submodules for third-party C++ libraries.
 
 #### Scenario: Clone with submodules
-**Given** the urdfx git repository URL  
+**Given** the kinex git repository URL  
 **When** the user runs `git clone --recursive <url>`  
 **Then** all submodules are cloned: Eigen, pugixml, DaQP, spdlog, nanobind, googletest  
 **And** submodules are at specified commits/tags
@@ -57,9 +57,9 @@ The system SHALL support installing the library system-wide or to a prefix.
 #### Scenario: Install to system directory
 **Given** a built project in build/  
 **When** the user runs `sudo cmake --install build --prefix /usr/local`  
-**Then** headers are installed to /usr/local/include/urdfx/  
+**Then** headers are installed to /usr/local/include/kinex/  
 **And** library is installed to /usr/local/lib/  
-**And** CMake config files are installed to /usr/local/lib/cmake/urdfx/
+**And** CMake config files are installed to /usr/local/lib/cmake/kinex/
 
 #### Scenario: Install to custom prefix
 **Given** a built project  
@@ -70,14 +70,14 @@ The system SHALL support installing the library system-wide or to a prefix.
 ### Requirement: System SHALL export CMake targets for downstream projects
 The system SHALL provide CMake targets for easy integration.
 
-#### Scenario: Find and link urdfx in downstream project
-**Given** urdfx is installed  
+#### Scenario: Find and link kinex in downstream project
+**Given** kinex is installed  
 **When** a downstream CMakeLists.txt contains:  
 ```cmake
-find_package(urdfx REQUIRED)
-target_link_libraries(my_app urdfx::urdfx)
+find_package(kinex REQUIRED)
+target_link_libraries(my_app kinex::kinex)
 ```  
-**Then** CMake finds urdfx successfully  
+**Then** CMake finds kinex successfully  
 **And** the target is linked with correct include paths and libraries
 
 ### Requirement: System SHALL build Python bindings with CMake
@@ -87,7 +87,7 @@ The system SHALL integrate Python binding compilation into CMake.
 **Given** CMake configuration with `-DBUILD_PYTHON_BINDINGS=ON`  
 **When** the project is built  
 **Then** the Python extension module is compiled  
-**And** the module is placed in python/urdfx/ directory  
+**And** the module is placed in python/kinex/ directory  
 **And** setup.py can find and package it
 
 ### Requirement: System SHALL build WebAssembly with Emscripten toolchain
@@ -100,7 +100,7 @@ The system SHALL support WASM builds via Emscripten CMake toolchain.
 emcmake cmake -B build-wasm -DBUILD_WASM=ON
 cmake --build build-wasm
 ```  
-**Then** urdfx.js and urdfx.wasm are generated in build-wasm/wasm/  
+**Then** kinex.js and kinex.wasm are generated in build-wasm/wasm/  
 **And** the module is ready for browser use
 
 ### Requirement: System SHALL enforce C++20 standard
@@ -146,8 +146,8 @@ The system SHALL generate compilation database for clangd and other tools.
 The system SHALL support building outside the source directory.
 
 #### Scenario: Out-of-tree build
-**Given** the urdfx source at /home/user/urdfx  
-**When** the user builds in /tmp/urdfx-build  
+**Given** the kinex source at /home/user/kinex  
+**When** the user builds in /tmp/kinex-build  
 **Then** the build succeeds  
 **And** the source directory remains clean  
 **And** multiple build configurations can coexist
@@ -166,16 +166,16 @@ The system SHALL include clear build instructions in documentation.
 The system SHALL use spdlog as the logging library for all C++ code.
 
 #### Scenario: spdlog is available before C++ code compilation
-**Given** the urdfx project source  
+**Given** the kinex project source  
 **When** CMake configures the project  
 **Then** spdlog is found or built from submodule  
 **And** spdlog is available to all C++ targets  
-**And** logging headers are accessible via include/urdfx/logging.h
+**And** logging headers are accessible via include/kinex/logging.h
 
 #### Scenario: Logging infrastructure is configured
 **Given** a configured build  
-**When** C++ code includes urdfx/logging.h  
-**Then** logging macros (URDFX_LOG_DEBUG, URDFX_LOG_INFO, URDFX_LOG_WARN, URDFX_LOG_ERROR) are available  
+**When** C++ code includes kinex/logging.h  
+**Then** logging macros (kinex_LOG_DEBUG, kinex_LOG_INFO, kinex_LOG_WARN, kinex_LOG_ERROR) are available  
 **And** default log level is INFO  
 **And** logs can be written to console and/or file  
 **And** log level can be configured at runtime

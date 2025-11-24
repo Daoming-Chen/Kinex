@@ -1,7 +1,7 @@
 # Design: Windows Build Support
 
 ## Context
-The urdfx project currently supports Linux and macOS through a Bash-based setup script and CMake build system. Windows developers need native support to build the library with MSVC, which is the standard compiler for Windows development. This change adds full Windows platform support while maintaining backward compatibility with existing Linux/macOS workflows.
+The kinex project currently supports Linux and macOS through a Bash-based setup script and CMake build system. Windows developers need native support to build the library with MSVC, which is the standard compiler for Windows development. This change adds full Windows platform support while maintaining backward compatibility with existing Linux/macOS workflows.
 
 **Constraints**:
 - Must maintain cross-platform CMake configuration
@@ -10,14 +10,14 @@ The urdfx project currently supports Linux and macOS through a Bash-based setup 
 - Should follow Windows conventions (PowerShell scripts, backslash paths where appropriate)
 
 **Stakeholders**:
-- Windows developers wanting to use or contribute to urdfx
+- Windows developers wanting to use or contribute to kinex
 - CI/CD systems that need to test Windows builds
 - Robotics researchers using Windows for simulation and visualization
 
 ## Goals / Non-Goals
 
 **Goals**:
-- Enable Windows developers to build urdfx with MSVC using a simple setup script
+- Enable Windows developers to build kinex with MSVC using a simple setup script
 - Fix all MSVC-specific compilation errors and warnings
 - Ensure all dependencies work correctly on Windows
 - Provide clear documentation for Windows build process
@@ -85,15 +85,15 @@ The urdfx project currently supports Linux and macOS through a Bash-based setup 
 
 **Implementation**:
 ```cpp
-// In a header like urdfx/export.h
+// In a header like kinex/export.h
 #ifdef _MSC_VER
-  #ifdef URDFX_BUILD
-    #define URDFX_API __declspec(dllexport)
+  #ifdef kinex_BUILD
+    #define kinex_API __declspec(dllexport)
   #else
-    #define URDFX_API __declspec(dllimport)
+    #define kinex_API __declspec(dllimport)
   #endif
 #else
-  #define URDFX_API
+  #define kinex_API
 #endif
 ```
 

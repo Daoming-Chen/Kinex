@@ -1,9 +1,9 @@
-#include "urdfx/robot_model.h"
-#include "urdfx/logging.h"
+#include "kinex/robot_model.h"
+#include "kinex/logging.h"
 #include <cmath>
 #include <unordered_set>
 
-namespace urdfx {
+namespace kinex {
 
 // ============================================================================
 // Transform Implementation
@@ -259,4 +259,4 @@ void Robot::buildMaps() const {
     maps_built_ = true;
 }
 
-} // namespace urdfx
+} // namespace kinex

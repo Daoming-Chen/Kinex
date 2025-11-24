@@ -1,4 +1,4 @@
-# Publish urdfx WASM bindings to npm
+# Publish kinex WASM bindings to npm
 # This script builds the WASM module and publishes it to npm
 
 param(
@@ -17,12 +17,12 @@ function Write-Step {
 
 function Write-Success {
     param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
+    Write-Host "�?$Message" -ForegroundColor Green
 }
 
 function Write-Error-Custom {
     param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
+    Write-Host "�?$Message" -ForegroundColor Red
 }
 
 # Get script directory and project root
@@ -32,7 +32,7 @@ $WasmDir = Join-Path $ProjectRoot "bindings\wasm"
 $DistDir = Join-Path $WasmDir "dist"
 
 Write-Host "╔════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║   urdfx npm Publisher for Windows     ║" -ForegroundColor Cyan
+Write-Host "�?  kinex npm Publisher for Windows     �? -ForegroundColor Cyan
 Write-Host "╚════════════════════════════════════════╝" -ForegroundColor Cyan
 
 # Step 1: Check npm login status
@@ -67,8 +67,8 @@ if (-not $SkipBuild) {
 # Step 3: Verify build artifacts
 Write-Step "Verifying build artifacts..."
 $BuildWasmDir = Join-Path $ProjectRoot "build-wasm\wasm"
-$WasmJs = Join-Path $BuildWasmDir "urdfx.js"
-$WasmBinary = Join-Path $BuildWasmDir "urdfx.wasm"
+$WasmJs = Join-Path $BuildWasmDir "kinex.js"
+$WasmBinary = Join-Path $BuildWasmDir "kinex.wasm"
 
 if (-not (Test-Path $WasmJs)) {
     Write-Error-Custom "WASM JavaScript file not found: $WasmJs"
@@ -92,7 +92,7 @@ Copy-Item $WasmJs $DistDir
 Copy-Item $WasmBinary $DistDir
 
 # Copy additional files
-$TypeDefs = Join-Path $WasmDir "urdfx.d.ts"
+$TypeDefs = Join-Path $WasmDir "kinex.d.ts"
 $ReadmeSource = Join-Path $WasmDir "dist\README.md"
 $License = Join-Path $ProjectRoot "LICENSE"
 
@@ -114,30 +114,30 @@ if (Test-Path $License) {
 if (-not (Test-Path $ReadmeSource)) {
     Write-Host "README.md not found, creating default..." -ForegroundColor Yellow
     $ReadmeContent = @"
-# urdfx
+# kinex
 
 A modern WebAssembly robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving.
 
 ## Installation
 
 ``````bash
-npm install urdfx
+npm install kinex
 ``````
 
 ## Quick Start
 
 ``````javascript
-const createUrdfxModule = require('urdfx');
+const createkinexModule = require('kinex');
 
 (async () => {
-  const urdfx = await createUrdfxModule();
+  const kinex = await createkinexModule();
   
-  const urdfXml = ``<?xml version="1.0"?>
+  const kinexml = ``<?xml version="1.0"?>
   <robot name="my_robot">
     <!-- Your URDF content -->
   </robot>``;
   
-  const robot = urdfx.Robot.fromURDFString(urdfXml);
+  const robot = kinex.Robot.fromURDFString(kinexml);
   console.log('Robot:', robot.getName());
   
   robot.dispose();
@@ -146,7 +146,7 @@ const createUrdfxModule = require('urdfx');
 
 ## Documentation
 
-For full documentation, visit: https://github.com/Daoming-Chen/urdfx
+For full documentation, visit: https://github.com/Daoming-Chen/kinex
 
 ## License
 
@@ -169,24 +169,24 @@ if (Test-Path $PackageJsonPath) {
     $PackageJson = Get-Content $PackageJsonPath -Raw | ConvertFrom-Json
 } else {
     $PackageJson = @{
-        name = "urdfx"
+        name = "kinex"
         version = "1.0.0"
         description = "A modern WebAssembly robotics kinematics library"
-        main = "urdfx.js"
-        types = "urdfx.d.ts"
+        main = "kinex.js"
+        types = "kinex.d.ts"
         type = "module"
-        files = @("urdfx.js", "urdfx.wasm", "urdfx.d.ts", "README.md", "LICENSE")
+        files = @("kinex.js", "kinex.wasm", "kinex.d.ts", "README.md", "LICENSE")
         keywords = @("robotics", "kinematics", "urdf", "inverse-kinematics", "forward-kinematics", "jacobian", "webassembly", "wasm", "robot", "3d")
-        author = "urdfx contributors"
+        author = "kinex contributors"
         license = "MIT"
         repository = @{
             type = "git"
-            url = "https://github.com/Daoming-Chen/urdfx.git"
+            url = "https://github.com/Daoming-Chen/kinex.git"
         }
         bugs = @{
-            url = "https://github.com/Daoming-Chen/urdfx/issues"
+            url = "https://github.com/Daoming-Chen/kinex/issues"
         }
-        homepage = "https://github.com/Daoming-Chen/urdfx#readme"
+        homepage = "https://github.com/Daoming-Chen/kinex#readme"
         engines = @{
             node = ">=14.0.0"
         }
@@ -263,7 +263,7 @@ if ($DryRun) {
         Pop-Location
     }
 } else {
-    Write-Host "`n⚠️  Ready to publish urdfx@$($PackageJson.version) to npm" -ForegroundColor Yellow
+    Write-Host "`n⚠️  Ready to publish kinex@$($PackageJson.version) to npm" -ForegroundColor Yellow
     Write-Host "Press Enter to continue or Ctrl+C to cancel..." -ForegroundColor Yellow
     Read-Host
     
@@ -277,11 +277,11 @@ if ($DryRun) {
         }
         
         Write-Host "`n╔════════════════════════════════════════╗" -ForegroundColor Green
-        Write-Host "║   Successfully published to npm! 🎉   ║" -ForegroundColor Green
+        Write-Host "�?  Successfully published to npm! 🎉   �? -ForegroundColor Green
         Write-Host "╚════════════════════════════════════════╝" -ForegroundColor Green
-        Write-Host "`nPackage: urdfx@$($PackageJson.version)" -ForegroundColor Green
-        Write-Host "URL: https://www.npmjs.com/package/urdfx" -ForegroundColor Cyan
-        Write-Host "`nInstall with: npm install urdfx" -ForegroundColor Cyan
+        Write-Host "`nPackage: kinex@$($PackageJson.version)" -ForegroundColor Green
+        Write-Host "URL: https://www.npmjs.com/package/kinex" -ForegroundColor Cyan
+        Write-Host "`nInstall with: npm install kinex" -ForegroundColor Cyan
     } finally {
         Pop-Location
     }

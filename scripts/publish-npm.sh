@@ -1,5 +1,5 @@
 #!/bin/bash
-# Publish urdfx WASM bindings to npm
+# Publish kinex WASM bindings to npm
 # This script builds the WASM module and publishes it to npm
 
 set -e
@@ -60,11 +60,11 @@ function write_step {
 }
 
 function write_success {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}�?$1${NC}"
 }
 
 function write_error {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}�?$1${NC}"
 }
 
 # Get script directory and project root
@@ -74,7 +74,7 @@ WASM_DIR="$PROJECT_ROOT/bindings/wasm"
 DIST_DIR="$WASM_DIR/dist"
 
 echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║   urdfx npm Publisher for Linux/Mac   ║${NC}"
+echo -e "${CYAN}�?  kinex npm Publisher for Linux/Mac   �?{NC}"
 echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
 
 # Step 1: Check npm login status
@@ -104,8 +104,8 @@ fi
 # Step 3: Verify build artifacts
 write_step "Verifying build artifacts..."
 BUILD_WASM_DIR="$PROJECT_ROOT/build-wasm/wasm"
-WASM_JS="$BUILD_WASM_DIR/urdfx.js"
-WASM_BINARY="$BUILD_WASM_DIR/urdfx.wasm"
+WASM_JS="$BUILD_WASM_DIR/kinex.js"
+WASM_BINARY="$BUILD_WASM_DIR/kinex.wasm"
 
 if [ ! -f "$WASM_JS" ]; then
     write_error "WASM JavaScript file not found: $WASM_JS"
@@ -127,7 +127,7 @@ cp "$WASM_JS" "$DIST_DIR/"
 cp "$WASM_BINARY" "$DIST_DIR/"
 
 # Copy additional files
-TYPE_DEFS="$WASM_DIR/urdfx.d.ts"
+TYPE_DEFS="$WASM_DIR/kinex.d.ts"
 README_SOURCE="$WASM_DIR/dist/README.md"
 LICENSE="$PROJECT_ROOT/LICENSE"
 
@@ -149,30 +149,30 @@ fi
 if [ ! -f "$README_SOURCE" ]; then
     echo -e "${YELLOW}README.md not found, creating default...${NC}"
     cat > "$DIST_DIR/README.md" << 'EOF'
-# urdfx
+# kinex
 
 A modern WebAssembly robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving.
 
 ## Installation
 
 ```bash
-npm install urdfx
+npm install kinex
 ```
 
 ## Quick Start
 
 ```javascript
-const createUrdfxModule = require('urdfx');
+const createkinexModule = require('kinex');
 
 (async () => {
-  const urdfx = await createUrdfxModule();
+  const kinex = await createkinexModule();
   
-  const urdfXml = `<?xml version="1.0"?>
+  const kinexml = `<?xml version="1.0"?>
   <robot name="my_robot">
     <!-- Your URDF content -->
   </robot>`;
   
-  const robot = urdfx.Robot.fromURDFString(urdfXml);
+  const robot = kinex.Robot.fromURDFString(kinexml);
   console.log('Robot:', robot.getName());
   
   robot.dispose();
@@ -181,7 +181,7 @@ const createUrdfxModule = require('urdfx');
 
 ## Documentation
 
-For full documentation, visit: https://github.com/Daoming-Chen/urdfx
+For full documentation, visit: https://github.com/Daoming-Chen/kinex
 
 ## License
 
@@ -201,16 +201,16 @@ PACKAGE_JSON_PATH="$DIST_DIR/package.json"
 # Create package.json
 cat > "$PACKAGE_JSON_PATH" << EOF
 {
-  "name": "urdfx",
+  "name": "kinex",
   "version": "${VERSION:-1.0.0}",
   "description": "A modern WebAssembly robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving",
-  "main": "urdfx.js",
-  "types": "urdfx.d.ts",
+  "main": "kinex.js",
+  "types": "kinex.d.ts",
   "type": "module",
   "files": [
-    "urdfx.js",
-    "urdfx.wasm",
-    "urdfx.d.ts",
+    "kinex.js",
+    "kinex.wasm",
+    "kinex.d.ts",
     "README.md",
     "LICENSE"
   ],
@@ -226,16 +226,16 @@ cat > "$PACKAGE_JSON_PATH" << EOF
     "robot",
     "3d"
   ],
-  "author": "urdfx contributors",
+  "author": "kinex contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Daoming-Chen/urdfx.git"
+    "url": "https://github.com/Daoming-Chen/kinex.git"
   },
   "bugs": {
-    "url": "https://github.com/Daoming-Chen/urdfx/issues"
+    "url": "https://github.com/Daoming-Chen/kinex/issues"
   },
-  "homepage": "https://github.com/Daoming-Chen/urdfx#readme",
+  "homepage": "https://github.com/Daoming-Chen/kinex#readme",
   "engines": {
     "node": ">=14.0.0"
   }
@@ -287,7 +287,7 @@ if [ "$DRY_RUN" = true ]; then
     write_success "Dry run completed successfully"
     echo -e "\n${YELLOW}To publish for real, run without --dry-run flag${NC}"
 else
-    echo -e "\n${YELLOW}⚠️  Ready to publish urdfx@$PACKAGE_VERSION to npm${NC}"
+    echo -e "\n${YELLOW}⚠️  Ready to publish kinex@$PACKAGE_VERSION to npm${NC}"
     echo -e "${YELLOW}Press Enter to continue or Ctrl+C to cancel...${NC}"
     read
     
@@ -296,11 +296,11 @@ else
     npm publish
     
     echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}║   Successfully published to npm! 🎉   ║${NC}"
+    echo -e "${GREEN}�?  Successfully published to npm! 🎉   �?{NC}"
     echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
-    echo -e "\n${GREEN}Package: urdfx@$PACKAGE_VERSION${NC}"
-    echo -e "${CYAN}URL: https://www.npmjs.com/package/urdfx${NC}"
-    echo -e "\n${CYAN}Install with: npm install urdfx${NC}"
+    echo -e "\n${GREEN}Package: kinex@$PACKAGE_VERSION${NC}"
+    echo -e "${CYAN}URL: https://www.npmjs.com/package/kinex${NC}"
+    echo -e "\n${CYAN}Install with: npm install kinex${NC}"
 fi
 
 # Step 9: Clean up info

@@ -27,13 +27,13 @@ async function main() {
     scene.add(light);
     scene.add(new THREE.AmbientLight(0x444444));
 
-    // 2. Initialize URDFX (WASM)
+    // 2. Initialize KINEX (WASM)
     const infoDiv = document.getElementById('info');
     infoDiv.innerText = 'Loading WASM...';
 
-    let urdfx;
+    let KINEX;
     try {
-        urdfx = await createUrdfxModule({
+        KINEX = await createKinexModule({
             locateFile: (path, prefix) => {
                 if (path.endsWith('.wasm')) {
                     return '../../build-wasm/wasm/' + path;
@@ -41,7 +41,7 @@ async function main() {
                 return prefix + path;
             }
         });
-        console.log('URDFX loaded');
+        console.log('kinex loaded');
     } catch (e) {
         console.error(e);
         infoDiv.innerText = 'Error loading WASM. Check console.';
@@ -62,9 +62,9 @@ async function main() {
         return;
     }
 
-    // 4. Create URDFX Robot Model
-    const robotKinematics = urdfx.Robot.fromURDFString(urdfContent);
-    console.log(`URDFX Robot loaded: ${robotKinematics.getName()}, DOF: ${robotKinematics.getDOF()}`);
+    // 4. Create KINEX Robot Model
+    const robotKinematics = kinex.Robot.fromURDFString(urdfContent);
+    console.log(`KINEX Robot loaded: ${robotKinematics.getName()}, DOF: ${robotKinematics.getDOF()}`);
 
     // 5. Load Visual Robot (Three.js)
     const loader = new URDFLoader();
@@ -97,8 +97,8 @@ async function main() {
             // Also rotate our grid/camera to match or just rotate the robot.
             // Let's keep Three.js Y-up and rotate robot to be upright.
             
-            infoDiv.innerText = 'URDFX Visualization Demo';
-            initGUI(robotVisual, robotKinematics, urdfx);
+            infoDiv.innerText = 'kinex Visualization Demo';
+            initGUI(robotVisual, robotKinematics, KINEX);
         },
         undefined,
         (err) => {
@@ -122,7 +122,7 @@ async function main() {
     animate();
 }
 
-function initGUI(robotVisual, robotKinematics, urdfx) {
+function initGUI(robotVisual, robotKinematics, KINEX) {
     const gui = new GUI({ title: 'Robot Control' });
     const jointNames = robotKinematics.getJointNames();
     const numJoints = jointNames.size();
@@ -131,12 +131,12 @@ function initGUI(robotVisual, robotKinematics, urdfx) {
     // Map joint names to indices for kinematics
     // Note: robotKinematics.getJointNames() returns all joints, but we only control movable ones (DOF)
     // We need to identify which joints are controllable.
-    // In urdfx, usually the order of jointAngles corresponds to the movable joints.
+    // In KINEX, usually the order of jointAngles corresponds to the movable joints.
     // Let's assume standard order.
     
     // We will create a config object for the GUI
     const config = {};
-    const jointLimits = {}; // Store limits if available (urdfx might provide them, or we guess)
+    const jointLimits = {}; // Store limits if available (KINEX might provide them, or we guess)
 
     // Helper to get movable joints
     const movableJoints = [];
@@ -144,7 +144,7 @@ function initGUI(robotVisual, robotKinematics, urdfx) {
         const name = jointNames.get(i);
         const joint = robotKinematics.getJoint(name);
         const type = joint.getType(); // We assume getJoint returns a Joint object
-        // Check if joint is fixed (urdfx might have an enum or string)
+        // Check if joint is fixed (KINEX might have an enum or string)
         // Based on previous example, we just iterate.
         // Let's try to find the joint in the visual robot to see if it's movable
         if (robotVisual.joints[name]) {
@@ -165,14 +165,14 @@ function initGUI(robotVisual, robotKinematics, urdfx) {
     movableJoints.forEach((name, index) => {
         gui.add(config, name, jointLimits[name].min, jointLimits[name].max)
            .name(name)
-           .onChange(() => updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx));
+           .onChange(() => updateRobot(robotVisual, robotKinematics, config, movableJoints, KINEX));
     });
 
     // Initial update
-    updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx);
+    updateRobot(robotVisual, robotKinematics, config, movableJoints, KINEX);
 }
 
-function updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx) {
+function updateRobot(robotVisual, robotKinematics, config, movableJoints, KINEX) {
     // 1. Update Visual Robot
     for (const name of movableJoints) {
         if (robotVisual.joints[name]) {
@@ -180,11 +180,11 @@ function updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx)
         }
     }
 
-    // 2. Update Kinematics (URDFX)
+    // 2. Update Kinematics (KINEX)
     // We need to construct the joint angles array.
-    // Assuming the order in movableJoints matches the DOF order in urdfx.
-    // This is a strong assumption. A better way is to check urdfx API for setting joint by name.
-    // But urdfx usually takes a vector of doubles.
+    // Assuming the order in movableJoints matches the DOF order in kinex.
+    // This is a strong assumption. A better way is to check KINEX API for setting joint by name.
+    // But KINEX usually takes a vector of doubles.
     // Let's assume the order of movable joints found matches.
     
     const dof = robotKinematics.getDOF();
@@ -193,10 +193,10 @@ function updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx)
     // We need to map names to indices. 
     // If we don't know the order, we might be in trouble.
     // However, usually URDF parsers maintain order.
-    // Let's try to match by iterating joints in urdfx and checking if they are movable.
+    // Let's try to match by iterating joints in KINEX and checking if they are movable.
     
     // Re-construct the mapping logic to be safe:
-    // urdfx likely expects joints in the order they appear in the chain or file.
+    // KINEX likely expects joints in the order they appear in the chain or file.
     // Let's assume the order we added them to GUI (which came from getJointNames) is correct,
     // filtering for movable ones.
     
@@ -220,7 +220,7 @@ function updateRobot(robotVisual, robotKinematics, config, movableJoints, urdfx)
     const rootLinkName = robotKinematics.getRootLink();
     
     try {
-        const fk = new urdfx.ForwardKinematics(robotKinematics, lastLinkName, rootLinkName);
+        const fk = new kinex.ForwardKinematics(robotKinematics, lastLinkName, rootLinkName);
         const pose = fk.compute(angles);
         // console.log('FK for ' + lastLinkName, pose.position);
         fk.dispose();

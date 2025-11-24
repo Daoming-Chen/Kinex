@@ -7,25 +7,25 @@ set(URDFX_SOURCES
 )
 
 set(URDFX_HEADERS
-    ${PROJECT_SOURCE_DIR}/include/urdfx/logging.h
-    ${PROJECT_SOURCE_DIR}/include/urdfx/robot_model.h
-    ${PROJECT_SOURCE_DIR}/include/urdfx/urdf_parser.h
-    ${PROJECT_SOURCE_DIR}/include/urdfx/kinematics.h
-    ${PROJECT_SOURCE_DIR}/include/urdfx/inverse_kinematics.h
+    ${PROJECT_SOURCE_DIR}/include/kinex/logging.h
+    ${PROJECT_SOURCE_DIR}/include/kinex/robot_model.h
+    ${PROJECT_SOURCE_DIR}/include/kinex/urdf_parser.h
+    ${PROJECT_SOURCE_DIR}/include/kinex/kinematics.h
+    ${PROJECT_SOURCE_DIR}/include/kinex/inverse_kinematics.h
 )
 
 # Create core library
-add_library(urdfx ${URDFX_SOURCES} ${URDFX_HEADERS})
+add_library(kinex ${URDFX_SOURCES} ${URDFX_HEADERS})
 
 # Set library properties
-set_target_properties(urdfx PROPERTIES
+set_target_properties(kinex PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
     PUBLIC_HEADER "${URDFX_HEADERS}"
 )
 
 # Include directories
-target_include_directories(urdfx
+target_include_directories(kinex
     PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -34,7 +34,7 @@ target_include_directories(urdfx
 )
 
 # Link dependencies
-target_link_libraries(urdfx
+target_link_libraries(kinex
     PUBLIC
         Eigen3::Eigen
         spdlog::spdlog
@@ -44,13 +44,13 @@ target_link_libraries(urdfx
 )
 
 # Compile definitions
-target_compile_definitions(urdfx
+target_compile_definitions(kinex
     PRIVATE
         URDFX_BUILD
 )
 
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(urdfx
+    target_compile_definitions(kinex
         PUBLIC
             URDFX_SHARED
     )

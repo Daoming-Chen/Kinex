@@ -1,17 +1,17 @@
 #pragma once
 
-#include "urdfx/export.h"
-#include "urdfx/robot_model.h"
+#include "kinex/export.h"
+#include "kinex/robot_model.h"
 #include <string>
 #include <memory>
 #include <stdexcept>
 
-namespace urdfx {
+namespace kinex {
 
 /**
  * @brief Exception thrown during URDF parsing
  */
-class URDFX_API URDFParseException : public std::runtime_error {
+class KINEX_API URDFParseException : public std::runtime_error {
 public:
     URDFParseException(const std::string& message, int line = -1)
         : std::runtime_error(formatMessage(message, line))
@@ -36,7 +36,7 @@ private:
  * This class uses pugixml to parse URDF XML files and construct
  * a Robot model with links, joints, and their properties.
  */
-class URDFX_API URDFParser {
+class KINEX_API URDFParser {
 public:
     URDFParser();
     ~URDFParser();
@@ -79,4 +79,4 @@ private:
     std::shared_ptr<Robot> parseDocument(const std::string& content, const std::string& source);
 };
 
-} // namespace urdfx
+} // namespace kinex

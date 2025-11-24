@@ -5,15 +5,15 @@
 ### Requirement: System SHALL expose C++ API to Python via nanobind
 The system SHALL provide Python bindings using nanobind for all core functionality.
 
-#### Scenario: Import urdfx module in Python
-**Given** the urdfx library is installed  
-**When** the user runs `import urdfx` in Python  
+#### Scenario: Import kinex module in Python
+**Given** the kinex library is installed  
+**When** the user runs `import kinex` in Python  
 **Then** the module loads without errors  
 **And** all core classes are accessible (Robot, ForwardKinematics, JacobianCalculator, IKSolver)
 
 #### Scenario: Load robot from URDF in Python
 **Given** a URDF file path "ur5_urdf/ur5e.urdf"  
-**When** the user calls `robot = urdfx.Robot.from_urdf("ur5_urdf/ur5e.urdf")`  
+**When** the user calls `robot = kinex.Robot.from_urdf("ur5_urdf/ur5e.urdf")`  
 **Then** a Robot object is returned  
 **And** the robot can be queried for links and joints
 
@@ -52,9 +52,9 @@ The system SHALL follow Python naming conventions for better integration.
 The system SHALL include .pyi type stub files for static type checking.
 
 #### Scenario: Type checking with mypy
-**Given** Python code using urdfx with type hints  
+**Given** Python code using kinex with type hints  
 **When** the user runs `mypy script.py`  
-**Then** mypy recognizes urdfx types  
+**Then** mypy recognizes kinex types  
 **And** type errors are caught at check time  
 **And** IDE autocomplete works correctly
 
@@ -73,7 +73,7 @@ The system SHALL support Python's context manager protocol for resource manageme
 
 #### Scenario: Use Robot as context manager
 **Given** a Robot object  
-**When** the user uses `with urdfx.Robot.from_urdf(...) as robot:`  
+**When** the user uses `with kinex.Robot.from_urdf(...) as robot:`  
 **Then** the robot is properly initialized  
 **And** resources are cleaned up on context exit
 
@@ -81,14 +81,14 @@ The system SHALL support Python's context manager protocol for resource manageme
 The system SHALL be installable as a Python package.
 
 #### Scenario: Install via pip
-**Given** the urdfx project with setup.py  
+**Given** the kinex project with setup.py  
 **When** the user runs `pip install .`  
 **Then** the package is installed to site-packages  
-**And** `import urdfx` works from any directory
+**And** `import kinex` works from any directory
 
 #### Scenario: Install wheel distribution
-**Given** a built wheel file urdfx-1.0.0-cp38-cp38-linux_x86_64.whl  
-**When** the user runs `pip install urdfx-1.0.0-*.whl`  
+**Given** a built wheel file kinex-1.0.0-cp38-cp38-linux_x86_64.whl  
+**When** the user runs `pip install kinex-1.0.0-*.whl`  
 **Then** the binary package installs without compilation  
 **And** all dependencies are satisfied
 
@@ -97,13 +97,13 @@ The system SHALL support Python 3.8 through 3.12.
 
 #### Scenario: Test on Python 3.8
 **Given** Python 3.8 environment  
-**When** urdfx is installed and tested  
+**When** kinex is installed and tested  
 **Then** all tests pass  
 **And** NumPy 1.20+ compatibility is verified
 
 #### Scenario: Test on Python 3.12
 **Given** Python 3.12 environment  
-**When** urdfx is installed and tested  
+**When** kinex is installed and tested  
 **Then** all tests pass  
 **And** nanobind is compatible with Python 3.12
 
@@ -126,8 +126,8 @@ The system SHALL minimize memory overhead in Python bindings.
 The system SHALL provide documentation for Python API.
 
 #### Scenario: Access docstrings
-**Given** any urdfx Python class or function  
-**When** the user calls `help(urdfx.Robot)`  
+**Given** any kinex Python class or function  
+**When** the user calls `help(kinex.Robot)`  
 **Then** detailed docstrings are displayed  
 **And** parameter types and return types are documented  
 **And** usage examples are included

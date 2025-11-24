@@ -1,47 +1,47 @@
-# Core C++ library for urdfx
+# Core C++ library for kinex
 cmake_minimum_required(VERSION 3.20)
 
 # Core library sources
-set(URDFX_SOURCES
+set(KINEX_SOURCES
     src/robot_model.cpp
     src/urdf_parser.cpp
     src/kinematics.cpp
     src/inverse_kinematics.cpp
 )
 
-set(URDFX_HEADERS
-    include/urdfx/logging.h
-    include/urdfx/robot_model.h
-    include/urdfx/urdf_parser.h
-    include/urdfx/kinematics.h
-    include/urdfx/inverse_kinematics.h
-    include/urdfx/export.h
+set(KINEX_HEADERS
+    include/kinex/logging.h
+    include/kinex/robot_model.h
+    include/kinex/urdf_parser.h
+    include/kinex/kinematics.h
+    include/kinex/inverse_kinematics.h
+    include/kinex/export.h
 )
 
 # Create core library
-add_library(urdfx ${URDFX_SOURCES} ${URDFX_HEADERS})
+add_library(kinex ${KINEX_SOURCES} ${KINEX_HEADERS})
 
 # Set library properties
 if(APPLE)
-    set_target_properties(urdfx PROPERTIES
+    set_target_properties(kinex PROPERTIES
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${URDFX_HEADERS}"
+        PUBLIC_HEADER "${KINEX_HEADERS}"
         INSTALL_RPATH "@loader_path"
         BUILD_RPATH "@loader_path"
     )
 else()
-    set_target_properties(urdfx PROPERTIES
+    set_target_properties(kinex PROPERTIES
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
-        PUBLIC_HEADER "${URDFX_HEADERS}"
+        PUBLIC_HEADER "${KINEX_HEADERS}"
         INSTALL_RPATH "$ORIGIN"
         BUILD_RPATH "$ORIGIN"
     )
 endif()
 
 # Include directories
-target_include_directories(urdfx
+target_include_directories(kinex
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -50,7 +50,7 @@ target_include_directories(urdfx
 )
 
 # Link dependencies
-target_link_libraries(urdfx
+target_link_libraries(kinex
     PUBLIC
         Eigen3::Eigen
         spdlog::spdlog
@@ -60,35 +60,35 @@ target_link_libraries(urdfx
 )
 
 # Compile definitions
-target_compile_definitions(urdfx
+target_compile_definitions(kinex
     PRIVATE
-        URDFX_BUILD
+        KINEX_BUILD
 )
 
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(urdfx
+    target_compile_definitions(kinex
         PUBLIC
-            URDFX_SHARED
+            KINEX_SHARED
     )
 endif()
 
 # Installation rules
-install(TARGETS urdfx
-    EXPORT urdfxTargets
+install(TARGETS kinex
+    EXPORT kinexTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/urdfx
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/kinex
 )
 
 # Only export targets if all dependencies are system packages (not submodules)
 # This avoids export errors when building with submodule dependencies
 if(Eigen3_FOUND AND spdlog_FOUND AND pugixml_FOUND)
     # Export targets
-    install(EXPORT urdfxTargets
-        FILE urdfxTargets.cmake
-        NAMESPACE urdfx::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/urdfx
+    install(EXPORT kinexTargets
+        FILE kinexTargets.cmake
+        NAMESPACE kinex::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/kinex
     )
 else()
     message(STATUS "Skipping CMake export (using submodule dependencies)")

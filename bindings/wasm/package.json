@@ -1,5 +1,5 @@
 {
-    "name": "@urdfx/wasm-tests",
+    "name": "@kinex/wasm-tests",
     "version": "1.0.0",
     "private": true,
     "scripts": {

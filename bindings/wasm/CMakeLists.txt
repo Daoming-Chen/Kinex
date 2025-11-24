@@ -4,46 +4,46 @@ if(NOT EMSCRIPTEN)
     message(FATAL_ERROR "wasm bindings require the Emscripten toolchain. Configure the project with emcmake.")
 endif()
 
-set(URDFX_WASM_TARGET urdfx_wasm)
+set(KINEX_WASM_TARGET kinex_wasm)
 
-add_executable(${URDFX_WASM_TARGET}
+add_executable(${KINEX_WASM_TARGET}
     src/bindings.cpp
 )
 
-set_target_properties(${URDFX_WASM_TARGET} PROPERTIES
-    OUTPUT_NAME "urdfx"
+set_target_properties(${KINEX_WASM_TARGET} PROPERTIES
+    OUTPUT_NAME "kinex"
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/wasm
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/wasm
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/wasm
 )
 
-target_compile_definitions(${URDFX_WASM_TARGET}
+target_compile_definitions(${KINEX_WASM_TARGET}
     PRIVATE
-        URDFX_WASM_BUILD
+        KINEX_WASM_BUILD
 )
 
-target_include_directories(${URDFX_WASM_TARGET}
+target_include_directories(${KINEX_WASM_TARGET}
     PRIVATE
         ${PROJECT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${URDFX_WASM_TARGET}
+target_link_libraries(${KINEX_WASM_TARGET}
     PRIVATE
-        urdfx
+        kinex
 )
 
-target_compile_options(${URDFX_WASM_TARGET}
+target_compile_options(${KINEX_WASM_TARGET}
     PRIVATE
         -O3
         -msimd128
 )
 
-target_link_options(${URDFX_WASM_TARGET}
+target_link_options(${KINEX_WASM_TARGET}
     PRIVATE
         -O3
         --bind
         -sMODULARIZE=1
-        -sEXPORT_NAME=createUrdfxModule
+        -sEXPORT_NAME=createKinexModule
         -sALLOW_MEMORY_GROWTH=1
         -sENVIRONMENT=web,worker,node
         -sFILESYSTEM=0
@@ -53,24 +53,24 @@ target_link_options(${URDFX_WASM_TARGET}
         -sALLOW_TABLE_GROWTH
 )
 
-set(URDFX_WASM_OUTPUT_DIR ${CMAKE_BINARY_DIR}/wasm)
-set(URDFX_WASM_BINARY ${URDFX_WASM_OUTPUT_DIR}/urdfx.wasm)
+set(KINEX_WASM_OUTPUT_DIR ${CMAKE_BINARY_DIR}/wasm)
+set(KINEX_WASM_BINARY ${KINEX_WASM_OUTPUT_DIR}/kinex.wasm)
 
-add_custom_command(TARGET ${URDFX_WASM_TARGET} POST_BUILD
+add_custom_command(TARGET ${KINEX_WASM_TARGET} POST_BUILD
     COMMAND ${CMAKE_COMMAND}
-        -DURDFX_WASM_PATH=${URDFX_WASM_BINARY}
+        -DKINEX_WASM_PATH=${KINEX_WASM_BINARY}
         -P ${PROJECT_SOURCE_DIR}/bindings/wasm/cmake/CheckWasmSize.cmake
-    BYPRODUCTS ${URDFX_WASM_BINARY}
-    COMMENT "Checking urdfx.wasm binary size"
+    BYPRODUCTS ${KINEX_WASM_BINARY}
+    COMMENT "Checking kinex.wasm binary size"
 )
 
 install(FILES
-    ${URDFX_WASM_OUTPUT_DIR}/urdfx.js
-    ${URDFX_WASM_OUTPUT_DIR}/urdfx.wasm
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/urdfx/wasm
+    ${KINEX_WASM_OUTPUT_DIR}/kinex.js
+    ${KINEX_WASM_OUTPUT_DIR}/kinex.wasm
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/kinex/wasm
 )
 
 install(FILES
-    ${PROJECT_SOURCE_DIR}/bindings/wasm/urdfx.d.ts
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/urdfx/wasm
+    ${PROJECT_SOURCE_DIR}/bindings/wasm/kinex.d.ts
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/kinex/wasm
 )

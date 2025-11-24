@@ -2,33 +2,33 @@
 
 /**
  * @file export.h
- * @brief Export macros for building urdfx as a shared library (DLL) on Windows
+ * @brief Export macros for building kinex as a shared library (DLL) on Windows
  */
 
-// Define URDFX_API for proper symbol export/import on Windows
+// Define KINEX_API for proper symbol export/import on Windows
 #if defined(_WIN32) || defined(_WIN64)
     // Windows DLL export/import
-    #ifdef URDFX_BUILD
+    #ifdef KINEX_BUILD
         // Building the library - export symbols
-        #ifdef URDFX_SHARED
-            #define URDFX_API __declspec(dllexport)
+        #ifdef KINEX_SHARED
+            #define KINEX_API __declspec(dllexport)
         #else
-            #define URDFX_API
+            #define KINEX_API
         #endif
     #else
         // Using the library - import symbols
-        #ifdef URDFX_SHARED
-            #define URDFX_API __declspec(dllimport)
+        #ifdef KINEX_SHARED
+            #define KINEX_API __declspec(dllimport)
         #else
-            #define URDFX_API
+            #define KINEX_API
         #endif
     #endif
 #else
     // Non-Windows platforms
     #if defined(__GNUC__) && __GNUC__ >= 4
-        #define URDFX_API __attribute__((visibility("default")))
+        #define KINEX_API __attribute__((visibility("default")))
     #else
-        #define URDFX_API
+        #define KINEX_API
     #endif
 #endif
 
