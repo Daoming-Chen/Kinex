@@ -12,6 +12,11 @@ nanobind_add_module(_kinex src/bindings.cpp)
 # Link to kinex library
 target_link_libraries(_kinex PRIVATE kinex)
 
+# Disable pedantic warnings for nanobind to avoid issues with zero-size arrays
+if(NOT MSVC)
+    target_compile_options(_kinex PRIVATE -Wno-pedantic)
+endif()
+
 # Set output properties
 set_target_properties(_kinex PROPERTIES
     OUTPUT_NAME "_kinex"

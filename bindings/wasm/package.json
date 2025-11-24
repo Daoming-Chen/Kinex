@@ -11,7 +11,8 @@
     ],
     "scripts": {
         "test": "jest",
-        "test:node": "jest --testPathPattern=tests/node"
+        "test:node": "jest --testPathPattern=tests/node",
+        "test:browser": "jest --testPathPattern=tests/browser"
     },
     "devDependencies": {
         "jest": "^29.0.0"
