@@ -4,7 +4,6 @@
 
 #include "urdfx/inverse_kinematics.h"
 #include "urdfx/kinematics.h"
-#include "urdfx/analytical_jacobian.h"
 #include "urdfx/robot_model.h"
 #include "urdfx/urdf_parser.h"
 
@@ -302,7 +301,7 @@ class JacobianCalculatorHandle {
 public:
     JacobianCalculatorHandle(std::shared_ptr<RobotHandle> robot, const std::string& end_link, const std::string& base_link = "")
         : robot_(std::move(robot))
-        , calculator_(std::make_unique<urdfx::AnalyticalJacobianCalculator>(robot_->getRobot(), end_link, base_link)) {}
+        , calculator_(std::make_unique<urdfx::JacobianCalculator>(robot_->getRobot(), end_link, base_link)) {}
 
     MatrixData compute(const std::vector<double>& joint_angles, urdfx::JacobianType type = urdfx::JacobianType::Analytic, const std::string& target_link = "") const {
         ensureAlive();
@@ -371,7 +370,7 @@ private:
     }
 
     std::shared_ptr<RobotHandle> robot_;
-    std::unique_ptr<urdfx::AnalyticalJacobianCalculator> calculator_;
+    std::unique_ptr<urdfx::JacobianCalculator> calculator_;
 };
 
 class SQPIKSolverHandle {

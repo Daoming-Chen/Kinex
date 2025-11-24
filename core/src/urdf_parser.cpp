@@ -108,7 +108,10 @@ Geometry parseGeometry(const pugi::xml_node& geometry_node, const std::string& b
             // Not a URI, treat as relative path
             std::filesystem::path mesh_path(geometry.mesh_filename);
             if (mesh_path.is_relative()) {
-                geometry.mesh_filename = (std::filesystem::path(base_dir) / mesh_path).string();
+                auto full_path = (std::filesystem::path(base_dir) / mesh_path).string();
+                // Normalize path separators to forward slashes for consistency
+                std::replace(full_path.begin(), full_path.end(), '\\', '/');
+                geometry.mesh_filename = full_path;
             }
         }
         

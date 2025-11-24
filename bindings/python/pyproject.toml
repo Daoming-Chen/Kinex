@@ -29,7 +29,6 @@ dependencies = [
 [tool.scikit-build]
 cmake.source-dir = "../.."
 build-dir = "build"
-wheel.install-dir = "urdfx"
 cmake.args = [
     "-DBUILD_PYTHON_BINDINGS=ON",
     "-DBUILD_TESTING=OFF", 
@@ -37,10 +36,10 @@ cmake.args = [
     "-DBUILD_BENCHMARKS=OFF",
     "-DBUILD_WASM=OFF"
 ]
-install.components = ["python"]
+# Temporarily remove component filter to debug installation issue
+# install.components = ["python"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 addopts = "-v"
 

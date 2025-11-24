@@ -26,11 +26,19 @@ set_target_properties(_urdfx PROPERTIES PREFIX "")
 
 # Set RPATH to find liburdfx.so in the same directory
 # $ORIGIN means the directory containing the binary
-set_target_properties(_urdfx PROPERTIES
-    INSTALL_RPATH "$ORIGIN"
-    BUILD_RPATH "$ORIGIN"
-    BUILD_WITH_INSTALL_RPATH FALSE
-)
+if(APPLE)
+    set_target_properties(_urdfx PROPERTIES
+        INSTALL_RPATH "@loader_path"
+        BUILD_RPATH "@loader_path"
+        BUILD_WITH_INSTALL_RPATH FALSE
+    )
+else()
+    set_target_properties(_urdfx PROPERTIES
+        INSTALL_RPATH "$ORIGIN"
+        BUILD_RPATH "$ORIGIN"
+        BUILD_WITH_INSTALL_RPATH FALSE
+    )
+endif()
 
 # For editable/development installs, copy all needed .so/.dll files to the Python package directory
 # so the extension module can find them without needing to set LD_LIBRARY_PATH
@@ -43,6 +51,9 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
             ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:pugixml-shared>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:spdlog>
+            ${CMAKE_CURRENT_SOURCE_DIR}/urdfx/$<TARGET_FILE_NAME:spdlog>
         COMMENT "Copying shared libraries to Python package directory for editable install"
     )
 else()
@@ -84,6 +95,16 @@ install(TARGETS urdfx
 # Install pugixml if it's a shared library target
 if(TARGET pugixml-shared)
     install(TARGETS pugixml-shared
+        LIBRARY DESTINATION urdfx
+        ARCHIVE DESTINATION urdfx
+        RUNTIME DESTINATION urdfx
+        COMPONENT python
+    )
+endif()
+
+# Install spdlog if it's a shared library target
+if(TARGET spdlog AND BUILD_SHARED_LIBS)
+    install(TARGETS spdlog
         LIBRARY DESTINATION urdfx
         ARCHIVE DESTINATION urdfx
         RUNTIME DESTINATION urdfx
