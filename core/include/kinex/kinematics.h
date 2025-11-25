@@ -64,6 +64,12 @@ public:
      * These are the fixed transformations from parent to child link frames
      */
     const std::vector<Transform>& getStaticTransforms() const { return static_transforms_; }
+    
+    /**
+     * @brief Get all joints in the chain (including fixed joints)
+     * This is used for FK computation which needs to include fixed joint transforms
+     */
+    const std::vector<std::shared_ptr<Joint>>& getAllJoints() const { return all_joints_; }
 
 private:
     std::shared_ptr<const Robot> robot_;
@@ -72,6 +78,9 @@ private:
     
     // Ordered list of actuated joints from base to end
     std::vector<std::shared_ptr<Joint>> joints_;
+    
+    // Ordered list of ALL joints from base to end (including fixed)
+    std::vector<std::shared_ptr<Joint>> all_joints_;
     
     // Ordered list of link names from base to end
     std::vector<std::string> link_names_;
@@ -135,6 +144,21 @@ public:
     Transform computeToLink(
         const Eigen::VectorXd& joint_angles,
         const std::string& target_link,
+        bool check_bounds = false) const;
+    
+    /**
+     * @brief Compute transforms for all links in the robot
+     * 
+     * This method traverses the complete link tree (not just the kinematic chain)
+     * and computes the transform from base_link to each link, including links
+     * connected by fixed joints.
+     * 
+     * @param joint_angles Vector of joint angles for actuated joints
+     * @param check_bounds If true, verify joint angles are within limits
+     * @return Map from link name to transform (relative to base_link)
+     */
+    std::unordered_map<std::string, Transform> computeAllLinkTransforms(
+        const Eigen::VectorXd& joint_angles,
         bool check_bounds = false) const;
     
     /**

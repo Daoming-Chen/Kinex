@@ -245,6 +245,26 @@ public:
         return fk_->getNumJoints();
     }
 
+    val computeAllLinkTransforms(const std::vector<double>& joint_angles, bool check_bounds = false) const {
+        ensureAlive();
+        auto q = toEigenVector(joint_angles, fk_->getNumJoints());
+        auto transforms = fk_->computeAllLinkTransforms(q, check_bounds);
+        
+        // Convert std::unordered_map to JavaScript Map
+        val result = val::global("Map").new_();
+        
+        for (const auto& [link_name, transform] : transforms) {
+            PoseData pose = toPoseData(transform);
+            val pose_obj = val::object();
+            pose_obj.set("position", val::array(pose.position.begin(), pose.position.end()));
+            pose_obj.set("quaternion", val::array(pose.quaternion.begin(), pose.quaternion.end()));
+            
+            result.call<void>("set", link_name, pose_obj);
+        }
+        
+        return result;
+    }
+
     void dispose() {
         fk_.reset();
         robot_.reset();
@@ -744,6 +764,11 @@ EMSCRIPTEN_BINDINGS(KINEX_wasm_bindings) {
             const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
             const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
             return self.computeMatrix(angles, check_bounds);
+        }))
+        .function("computeAllLinkTransforms", emscripten::optional_override([](ForwardKinematicsHandle& self, val joint_angles, val maybe_check_bounds) {
+            const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
+            const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
+            return self.computeAllLinkTransforms(angles, check_bounds);
         }))
         .function("getNumJoints", &ForwardKinematicsHandle::getNumJoints)
         .function("dispose", &ForwardKinematicsHandle::dispose);
