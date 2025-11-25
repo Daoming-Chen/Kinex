@@ -70,6 +70,7 @@ void KinematicChain::buildChain() {
     
     // Filter to only actuated joints and build static transforms
     link_names_ = path_links;
+    all_joints_ = path_joints;  // Store all joints including fixed
     
     for (auto& joint : path_joints) {
         if (joint->isActuated()) {
@@ -137,12 +138,15 @@ Transform ForwardKinematics::compute(
     // Start with identity transform
     Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
     
-    const auto& joints = chain_.getJoints();
+    // Use all joints (including fixed) to correctly compute FK
+    const auto& all_joints = chain_.getAllJoints();
+    
+    // Index for actuated joint angles
+    size_t actuated_idx = 0;
     
     // Accumulate transformations through the chain
-    for (size_t i = 0; i < joints.size(); ++i) {
-        const auto& joint = joints[i];
-        double q = joint_angles[i];
+    for (size_t i = 0; i < all_joints.size(); ++i) {
+        const auto& joint = all_joints[i];
         
         // Apply the joint's full transformation:
         // 1. Static origin transform (from joint definition)
@@ -158,17 +162,19 @@ Transform ForwardKinematics::compute(
             case JointType::Revolute:
             case JointType::Continuous: {
                 // Rotation around joint axis
+                double q = joint_angles[actuated_idx++];
                 Eigen::AngleAxisd rotation(q, joint->getAxis());
                 joint_transform.linear() = rotation.toRotationMatrix();
                 break;
             }
             case JointType::Prismatic: {
                 // Translation along joint axis
+                double q = joint_angles[actuated_idx++];
                 joint_transform.translation() = q * joint->getAxis();
                 break;
             }
             case JointType::Fixed:
-                // No additional transform (but this shouldn't happen as fixed joints are filtered)
+                // No additional transform needed, only origin transform was applied above
                 break;
             case JointType::Floating:
             case JointType::Planar:
@@ -292,6 +298,106 @@ void ForwardKinematics::checkJointLimits(const Eigen::VectorXd& joint_angles) co
             }
         }
     }
+}
+
+std::unordered_map<std::string, Transform> ForwardKinematics::computeAllLinkTransforms(
+    const Eigen::VectorXd& joint_angles,
+    bool check_bounds) const
+{
+    if (check_bounds) {
+        checkJointLimits(joint_angles);
+    }
+    
+    std::unordered_map<std::string, Transform> result;
+    
+    // Create a map of joint angles by joint name for easy lookup
+    std::unordered_map<std::string, double> joint_angle_map;
+    const auto& chain_joints = chain_.getJoints();
+    
+    if (static_cast<size_t>(joint_angles.size()) < chain_joints.size()) {
+        throw std::invalid_argument(
+            "Joint angles size (" + std::to_string(joint_angles.size()) + 
+            ") is less than number of actuated joints (" + 
+            std::to_string(chain_joints.size()) + ")");
+    }
+    
+    for (size_t i = 0; i < chain_joints.size(); ++i) {
+        joint_angle_map[chain_joints[i]->getName()] = joint_angles[i];
+    }
+    
+    // Start from base link with identity transform
+    const std::string& base_link = chain_.getBaseLink();
+    result[base_link] = Transform(Eigen::Isometry3d::Identity());
+    
+    // BFS to traverse all links starting from base
+    std::queue<std::string> to_visit;
+    to_visit.push(base_link);
+    
+    while (!to_visit.empty()) {
+        std::string current_link = to_visit.front();
+        to_visit.pop();
+        
+        const Eigen::Isometry3d& parent_transform = result[current_link].getTransform();
+        
+        // Get all child joints of current link
+        auto child_joints = robot_->getChildJoints(current_link);
+        
+        for (const auto& joint : child_joints) {
+            const std::string& child_link = joint->getChildLink();
+            
+            // Skip if already visited
+            if (result.find(child_link) != result.end()) {
+                continue;
+            }
+            
+            // Compute transform through this joint
+            Eigen::Isometry3d T = parent_transform;
+            
+            // Apply joint's origin transform
+            T = T * joint->getOrigin().getTransform();
+            
+            // Apply joint-dependent transform
+            Eigen::Isometry3d joint_transform = Eigen::Isometry3d::Identity();
+            
+            switch (joint->getType()) {
+                case JointType::Revolute:
+                case JointType::Continuous: {
+                    // Find joint angle if actuated
+                    auto it = joint_angle_map.find(joint->getName());
+                    if (it != joint_angle_map.end()) {
+                        double q = it->second;
+                        Eigen::AngleAxisd rotation(q, joint->getAxis());
+                        joint_transform.linear() = rotation.toRotationMatrix();
+                    }
+                    break;
+                }
+                case JointType::Prismatic: {
+                    auto it = joint_angle_map.find(joint->getName());
+                    if (it != joint_angle_map.end()) {
+                        double q = it->second;
+                        joint_transform.translation() = q * joint->getAxis();
+                    }
+                    break;
+                }
+                case JointType::Fixed:
+                    // No additional transform needed
+                    break;
+                case JointType::Floating:
+                case JointType::Planar:
+                    KINEX_LOG_WARN("Joint type not fully supported: {}", 
+                                   static_cast<int>(joint->getType()));
+                    break;
+            }
+            
+            T = T * joint_transform;
+            
+            // Store result and add to queue
+            result[child_link] = Transform(T);
+            to_visit.push(child_link);
+        }
+    }
+    
+    return result;
 }
 
 namespace {
@@ -425,53 +531,63 @@ void JacobianCalculator::computeAnalyticalJacobian(
     JointFrameCache& cache,
     Eigen::MatrixXd& J_out) const
 {
-    const auto& joints = chain.getJoints();
-    size_t dof = joints.size();
+    const auto& all_joints = chain.getAllJoints();
+    const auto& actuated_joints = chain.getJoints();
+    size_t dof = actuated_joints.size();
 
     // Initialize world transform accumulator
     Eigen::Isometry3d T_world = Eigen::Isometry3d::Identity();
+    
+    // Index for actuated joints (for Jacobian columns)
+    size_t actuated_idx = 0;
 
     // Forward pass: Compute all joint frames in world coordinates
-    for (size_t i = 0; i < dof; ++i) {
-        const auto& joint = joints[i];
-        double q = joint_angles[i];
+    for (size_t i = 0; i < all_joints.size(); ++i) {
+        const auto& joint = all_joints[i];
 
         // 1. Apply static origin transform
         T_world = T_world * joint->getOrigin().getTransform();
 
-        // 2. Cache joint axis and position in world frame BEFORE applying joint rotation/translation
-        Eigen::Vector3d axis_local = joint->getAxis();
-        cache.z_world[i] = T_world.linear() * axis_local;
-        cache.p_world[i] = T_world.translation();
+        // 2. For actuated joints, cache their axis and position
+        if (joint->isActuated() && actuated_idx < dof) {
+            double q = joint_angles[actuated_idx];
+            
+            // Cache joint axis and position in world frame BEFORE applying joint rotation/translation
+            Eigen::Vector3d axis_local = joint->getAxis();
+            cache.z_world[actuated_idx] = T_world.linear() * axis_local;
+            cache.p_world[actuated_idx] = T_world.translation();
 
-        // 3. Apply joint-dependent transform
-        Eigen::Isometry3d joint_transform = Eigen::Isometry3d::Identity();
-        
-        switch (joint->getType()) {
-            case JointType::Revolute:
-            case JointType::Continuous: {
-                // Optimization for common Z-axis case (0, 0, 1)
-                if (axis_local.x() == 0 && axis_local.y() == 0 && axis_local.z() == 1) {
-                     double c = std::cos(q);
-                     double s = std::sin(q);
-                     joint_transform.linear() << c, -s, 0,
-                                                 s,  c, 0,
-                                                 0,  0, 1;
-                } else {
-                    Eigen::AngleAxisd rotation(q, axis_local);
-                    joint_transform.linear() = rotation.toRotationMatrix();
+            // 3. Apply joint-dependent transform
+            Eigen::Isometry3d joint_transform = Eigen::Isometry3d::Identity();
+            
+            switch (joint->getType()) {
+                case JointType::Revolute:
+                case JointType::Continuous: {
+                    // Optimization for common Z-axis case (0, 0, 1)
+                    if (axis_local.x() == 0 && axis_local.y() == 0 && axis_local.z() == 1) {
+                         double c = std::cos(q);
+                         double s = std::sin(q);
+                         joint_transform.linear() << c, -s, 0,
+                                                     s,  c, 0,
+                                                     0,  0, 1;
+                    } else {
+                        Eigen::AngleAxisd rotation(q, axis_local);
+                        joint_transform.linear() = rotation.toRotationMatrix();
+                    }
+                    break;
                 }
-                break;
+                case JointType::Prismatic: {
+                    joint_transform.translation() = q * axis_local;
+                    break;
+                }
+                default:
+                    break;
             }
-            case JointType::Prismatic: {
-                joint_transform.translation() = q * axis_local;
-                break;
-            }
-            default:
-                break;
+            
+            T_world = T_world * joint_transform;
+            actuated_idx++;
         }
-        
-        T_world = T_world * joint_transform;
+        // Fixed joints only contribute their origin transform (already applied above)
     }
 
     // Store end-effector position
@@ -479,7 +595,7 @@ void JacobianCalculator::computeAnalyticalJacobian(
 
     // Backward pass/Fill: Compute Jacobian columns
     for (size_t i = 0; i < dof; ++i) {
-        const auto& joint = joints[i];
+        const auto& joint = actuated_joints[i];
         const Eigen::Vector3d& z_i = cache.z_world[i];
         const Eigen::Vector3d& p_i = cache.p_world[i];
 

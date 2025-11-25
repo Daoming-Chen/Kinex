@@ -1,76 +1,26 @@
-# JavaScript/WebAssembly Examples for KINEX
+# Kinex UR5 Visualizer
 
-## Overview
+This example demonstrates how to use Kinex with Three.js to visualize a UR5 robot and perform Inverse Kinematics (IK) interactively.
 
-JavaScript examples using the WebAssembly bindings for kinex.
+## Prerequisites
 
-## Examples
+-   A web server to serve the files (due to CORS and module loading).
+-   An internet connection to load `@kinex/wasm` from unpkg.
+-   The UR5 model must be available at `../models/ur5/`.
 
-1. **forward_kinematics.js** - Basic forward kinematics in Node.js
-2. **visualization.html** - Interactive 3D robot visualization with Three.js
-3. **inverse_kinematics.js** - IK solving in the browser (Planned)
-4. **performance_benchmark.js** - Performance testing (Planned)
+## How to Run
 
-## Setup
+1.  Open a terminal in the root of the Kinex repository (`~/Dev/Kinex`).
+2.  Start a simple HTTP server:
+    ```bash
+    python3 -m http.server 8000
+    ```
+3.  Open your browser and navigate to:
+    [http://localhost:8000/examples/javascript/index.html](http://localhost:8000/examples/javascript/index.html)
 
-1. Build the WASM module:
-   ```bash
-   ./scripts/build-wasm.ps1
-   ```
+## Features
 
-2. Install dependencies (if any):
-   ```bash
-   cd examples/javascript
-   npm install
-   ```
-
-## Running Examples
-
-### Forward Kinematics
-
-This example loads the UR5e robot model and computes forward kinematics for a given joint configuration.
-
-```bash
-cd examples/javascript
-npm run fk
-# OR
-node forward_kinematics.js
-```
-
-### Visualization Demo
-
-This demo visualizes the robot using Three.js and allows control via sliders.
-Since it loads local files (WASM, URDF), you must run it using a local web server.
-
-Using Python:
-```bash
-# Run from the repository root
-python -m http.server
-# Open http://localhost:8000/examples/javascript/visualization.html
-```
-
-Using Node.js (serve):
-```bash
-npx serve .
-# Open the provided URL and navigate to examples/javascript/visualization.html
-```
-
-## Basic Usage
-
-```javascript
-import KINEX from 'kinex-wasm';
-
-// Initialize module
-const robot = await kinex.parseURDF('robot.urdf');
-
-// Compute forward kinematics
-const jointAngles = [0, 1.57, -1.57, 0, 0, 0];
-const pose = robot.forwardKinematics(jointAngles);
-
-console.log('End effector position:', pose.position);
-console.log('End effector orientation:', pose.orientation);
-```
-
-## Live Demo
-
-See `apps/visualization/` for a full-featured React application using kinex-wasm.
+-   **Visualization**: Loads the UR5 URDF and meshes using Three.js.
+-   **Interaction**: A red sphere represents the target position and orientation. Drag it to move the robot.
+-   **Inverse Kinematics**: The robot's joints are updated in real-time using Kinex's `SQPIKSolver` to track the target.
+-   **Forward Kinematics**: The robot's visual links are updated using Kinex's `ForwardKinematics`.

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinex UR5 Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "@kinex/wasm": "https://unpkg.com/@kinex/wasm@latest/kinex.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="loading">Loading Kinex and Models...</div>
+    <div id="instructions">
+        Controls:<br>
+        Left Click + Drag: Rotate Camera<br>
+        Right Click + Drag: Pan Camera<br>
+        Scroll: Zoom<br>
+        <b>T</b>: Translate Mode<br>
+        <b>R</b>: Rotate Mode
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
