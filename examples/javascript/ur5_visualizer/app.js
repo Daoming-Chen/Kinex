@@ -120,7 +120,7 @@ function setupThreeJS() {
     const container = document.getElementById('container');
     
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x222222);
+    scene.background = new THREE.Color(0x2e8b57);
     
     // Camera
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -135,18 +135,13 @@ function setupThreeJS() {
     container.appendChild(renderer.domElement);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new THREE.AmbientLight(0xaaaaaa);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(1, 1, 2);
     dirLight.castShadow = true;
     scene.add(dirLight);
-
-    // Grid
-    const gridHelper = new THREE.GridHelper(10, 10);
-    gridHelper.rotation.x = Math.PI / 2; // Rotate to be on XY plane
-    scene.add(gridHelper);
 
     const axesHelper = new THREE.AxesHelper(1);
     scene.add(axesHelper);
@@ -211,9 +206,9 @@ async function createRobotVisuals() {
                     object.traverse((child) => {
                         if (child.isMesh) {
                             child.material = new THREE.MeshStandardMaterial({
-                                color: 0xaaaaaa,
-                                roughness: 0.5,
-                                metalness: 0.5
+                                color: 0xeeeeee,
+                                roughness: 0.4,
+                                metalness: 0.6
                             });
                             child.castShadow = true;
                             child.receiveShadow = true;
