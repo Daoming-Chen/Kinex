@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-// import createKinexModule from '../../../build-wasm/wasm/kinex.js'; // Loaded via script tag
+// import createKinexModule from '@kinex/wasm'; // Loaded dynamically
 
 // Configuration
-const URDF_PATH = '../../../examples/models/ur5/ur5e.urdf';
-const MESH_BASE_PATH = '../../../examples/models/ur5/'; // Meshes are relative to this
+const URDF_PATH = '../models/ur5/ur5e+x.urdf';
+const MESH_BASE_PATH = '../models/ur5/'; // Meshes are relative to this
 const END_EFFECTOR_LINK = 'wrist_3_link';
 
 // Globals
@@ -34,19 +34,80 @@ async function init() {
     setupThreeJS();
 
     // 2. Load Kinex
+    let createKinexModule;
+    let locateFile = undefined;
+
+    const loadScript = (src) => {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = (e) => reject(e);
+            document.head.appendChild(script);
+        });
+    };
+
     try {
-        kinex = await createKinexModule({
-            locateFile: (path, prefix) => {
+        // Try local build first
+        await loadScript('../../build-wasm/wasm/kinex.js');
+        if (window.createKinexModule) {
+            createKinexModule = window.createKinexModule;
+            console.log("Loaded local Kinex build");
+            
+            locateFile = (path, prefix) => {
                 if (path.endsWith('.wasm')) {
-                    return '../../../build-wasm/wasm/' + path;
+                    return '../../build-wasm/wasm/' + path;
                 }
                 return prefix + path;
-            }
-        });
-        console.log("Kinex loaded");
+            };
+        } else {
+            throw new Error("createKinexModule not found in window after loading script");
+        }
+
     } catch (e) {
-        console.error("Failed to load Kinex:", e);
-        document.getElementById('loading').innerText = "Failed to load Kinex: " + e;
+        console.log("Local Kinex build not found or failed to load, falling back to npm version...", e);
+        try {
+            // Try loading from npm via import map
+            // Note: If the npm package is UMD, import might not work as expected without a bundler
+            // So we might need to fallback to script tag for npm too if import fails to give us the function
+            const module = await import('@kinex/wasm');
+            createKinexModule = module.default;
+            
+            if (typeof createKinexModule !== 'function') {
+                 console.log("Import failed to provide function, trying script tag for npm...");
+                 await loadScript('https://unpkg.com/@kinex/wasm@latest/kinex.js');
+                 createKinexModule = window.createKinexModule;
+            }
+
+            console.log("Loaded Kinex from npm");
+            
+            locateFile = (path, prefix) => {
+                if (path.endsWith('.wasm')) {
+                    return 'https://unpkg.com/@kinex/wasm@latest/kinex.wasm';
+                }
+                return prefix + path;
+            };
+        } catch (e2) {
+            console.error("Failed to load Kinex:", e2);
+            document.getElementById('loading').innerText = "Failed to load Kinex: " + e2;
+            return;
+        }
+    }
+
+    try {
+        console.log("Calling createKinexModule...");
+        kinex = await createKinexModule({
+            locateFile: locateFile,
+            print: (text) => console.log("[Kinex stdout]: " + text),
+            printErr: (text) => console.error("[Kinex stderr]: " + text),
+        });
+        console.log("Kinex initialized");
+    } catch (e) {
+        console.error("Failed to initialize Kinex:", e);
+        if (typeof e === 'object') {
+             console.error("Error details:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
+        }
+        document.getElementById('loading').innerText = "Failed to initialize Kinex: " + e;
         return;
     }
 
@@ -176,48 +237,97 @@ async function createRobotVisuals() {
             const geometry = visual.geometry;
             const origin = visual.origin;
             
-            // Only handle meshes for now
+            let object = null;
+            let scale = [1, 1, 1];
+
+            // Handle different geometry types
             if (geometry.type === kinex.GeometryType.Mesh) {
                 const meshFilename = geometry.mesh_filename;
-                const scale = geometry.mesh_scale;
+                scale = geometry.mesh_scale;
                 
                 // Construct path
                 const meshPath = MESH_BASE_PATH + meshFilename;
                 
                 try {
-                    const object = await loadMesh(loader, meshPath);
-                    
-                    // Apply scale
-                    object.scale.set(scale[0], scale[1], scale[2]);
-                    
-                    // Apply visual origin
-                    const visualGroup = new THREE.Group();
-                    visualGroup.add(object);
-                    
-                    const pos = origin.translation();
-                    const quat = origin.asPose().quaternion; // w, x, y, z
-                    
-                    visualGroup.position.set(pos[0], pos[1], pos[2]);
-                    visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]); // Three.js is x, y, z, w
-                    
-                    linkGroup.add(visualGroup);
-                    
-                    // Material
-                    object.traverse((child) => {
-                        if (child.isMesh) {
-                            child.material = new THREE.MeshStandardMaterial({
-                                color: 0xeeeeee,
-                                roughness: 0.4,
-                                metalness: 0.6
-                            });
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-
+                    object = await loadMesh(loader, meshPath);
                 } catch (e) {
                     console.warn(`Failed to load mesh ${meshPath}:`, e);
+                    continue;
                 }
+            } else if (geometry.type === kinex.GeometryType.Box) {
+                const size = geometry.box_size;
+                const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+                object = new THREE.Mesh(geo);
+            } else if (geometry.type === kinex.GeometryType.Cylinder) {
+                const radius = geometry.cylinder_radius;
+                const length = geometry.cylinder_length;
+                const geo = new THREE.CylinderGeometry(radius, radius, length, 32);
+                // URDF cylinders are Z-aligned, Three.js are Y-aligned. Rotate 90 deg around X.
+                geo.rotateX(Math.PI / 2);
+                object = new THREE.Mesh(geo);
+            } else if (geometry.type === kinex.GeometryType.Sphere) {
+                const radius = geometry.sphere_radius;
+                const geo = new THREE.SphereGeometry(radius, 32, 32);
+                object = new THREE.Mesh(geo);
+            }
+
+            if (object) {
+                // Apply scale if it's a mesh (others are sized by geometry parameters)
+                if (geometry.type === kinex.GeometryType.Mesh) {
+                    object.scale.set(scale[0], scale[1], scale[2]);
+                }
+
+                // Determine color
+                let color = 0xeeeeee;
+                let opacity = 1.0;
+                let transparent = false;
+                
+                // Try to get color from visual if available
+                if (visual.color) {
+                     const c = visual.color;
+                     // Assuming Vector4 is exposed as array-like [r, g, b, a]
+                     if (c.length >= 3) {
+                         color = new THREE.Color(c[0], c[1], c[2]);
+                     }
+                     if (c.length >= 4) {
+                         opacity = c[3];
+                         if (opacity < 1.0) transparent = true;
+                     }
+                }
+
+                const material = new THREE.MeshStandardMaterial({
+                    color: color,
+                    roughness: 0.4,
+                    metalness: 0.6,
+                    transparent: transparent,
+                    opacity: opacity
+                });
+
+                // Apply material and shadows
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material = material;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                if (object.isMesh) {
+                    object.material = material;
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                }
+
+                // Apply visual origin
+                const visualGroup = new THREE.Group();
+                visualGroup.add(object);
+                
+                const pos = origin.translation();
+                const quat = origin.asPose().quaternion; // w, x, y, z
+                
+                visualGroup.position.set(pos[0], pos[1], pos[2]);
+                visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]); // Three.js is x, y, z, w
+                
+                linkGroup.add(visualGroup);
             }
         }
     }

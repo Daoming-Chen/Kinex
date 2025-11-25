@@ -5,8 +5,8 @@ This example demonstrates how to use Kinex with Three.js to visualize a UR5 robo
 ## Prerequisites
 
 -   A web server to serve the files (due to CORS and module loading).
--   The Kinex WASM build must be available at `../../../build-wasm/wasm/`.
--   The UR5 model must be available at `../../../examples/models/ur5/`.
+-   An internet connection to load `@kinex/wasm` from unpkg.
+-   The UR5 model must be available at `../models/ur5/`.
 
 ## How to Run
 
@@ -16,7 +16,7 @@ This example demonstrates how to use Kinex with Three.js to visualize a UR5 robo
     python3 -m http.server 8000
     ```
 3.  Open your browser and navigate to:
-    [http://localhost:8000/examples/javascript/ur5_visualizer/index.html](http://localhost:8000/examples/javascript/ur5_visualizer/index.html)
+    [http://localhost:8000/examples/javascript/index.html](http://localhost:8000/examples/javascript/index.html)
 
 ## Features
 

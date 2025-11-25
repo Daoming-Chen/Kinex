@@ -34,20 +34,18 @@
     </link>
 
     <!-- Joint for X-axis translation -->
-    <joint name="external_axis_x_joint" type="prismatic">
+    <joint name="external_axis_x_joint" type="fixed">
         <parent link="world"/>
         <child link="base_x_link"/>
         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <axis xyz="1.0 0.0 0.0"/>
-        <!-- Limits for movement along X (e.g., +/- 1.5 meters) -->
-        <limit lower="-1.5" upper="1.5" effort="1000" velocity="10"/>
     </joint>
 
-    <!-- Fixed joint connecting the X-axis link to the original UR5 'base' link. -->
-    <joint type="fixed" name="external_axis_to_ur5_base_fixed">
+    <joint type="prismatic" name="external_axis_to_ur5_base_fixed">
         <parent link="base_x_link"/>
         <child link="base"/>
-        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 3.141592653589793"/>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <axis xyz="1.0 0.0 0.0"/>
+        <limit lower="-1.5" upper="1.5" effort="1000" velocity="10"/>
     </joint>
 
     <!--
