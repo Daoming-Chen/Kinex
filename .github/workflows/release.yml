@@ -33,9 +33,10 @@ jobs:
       
       - name: Build wheels
         run: |
-          cd bindings/python
           python -m cibuildwheel --output-dir wheelhouse
         env:
+          # Tell cibuildwheel where to find the pyproject.toml
+          CIBW_PROJECT_DIR: bindings/python
           # Build for Python 3.10-3.12
           CIBW_BUILD: cp310-* cp311-* cp312-*
           # Skip 32-bit builds and musllinux
@@ -60,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
-          path: bindings/python/wheelhouse/*.whl
+          path: wheelhouse/*.whl
           retention-days: 7
 
   build-wasm:
@@ -78,9 +79,11 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Setup Emscripten SDK
+      - name: Install Emscripten SDK
         run: |
-          cd third_party/emsdk
+          cd third_party
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
       

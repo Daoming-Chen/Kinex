@@ -6,6 +6,7 @@
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/unordered_map.h>
 
 #include "kinex/robot_model.h"
 #include "kinex/kinematics.h"
@@ -224,7 +225,8 @@ NB_MODULE(_kinex, m) {
         .def("get_link_names", &KinematicChain::getLinkNames)
         .def("get_end_link", &KinematicChain::getEndLink)
         .def("get_base_link", &KinematicChain::getBaseLink)
-        .def("get_static_transforms", &KinematicChain::getStaticTransforms);
+        .def("get_static_transforms", &KinematicChain::getStaticTransforms)
+        .def("get_all_joints", &KinematicChain::getAllJoints);
 
     nb::class_<ForwardKinematics>(m, "ForwardKinematics")
         .def(nb::init<std::shared_ptr<const Robot>, const std::string&, const std::string&>(),
@@ -233,6 +235,8 @@ NB_MODULE(_kinex, m) {
              nb::arg("joint_angles"), nb::arg("check_bounds") = false)
         .def("compute_to_link", &ForwardKinematics::computeToLink,
              nb::arg("joint_angles"), nb::arg("target_link"), nb::arg("check_bounds") = false)
+        .def("compute_all_link_transforms", &ForwardKinematics::computeAllLinkTransforms,
+             nb::arg("joint_angles"), nb::arg("check_bounds") = false)
         .def("get_chain", &ForwardKinematics::getChain)
         .def("get_num_joints", &ForwardKinematics::getNumJoints)
         .def_prop_ro("num_joints", &ForwardKinematics::getNumJoints);
