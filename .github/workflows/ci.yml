@@ -110,35 +110,25 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Install Python build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install scikit-build-core pytest numpy
-      
-      - name: Build Python wheel
-        run: |
-          cd bindings/python
-          python -m pip wheel . -w dist --no-deps
-      
-      - name: Install Python wheel
-        run: |
-          cd bindings/python
-          python -m pip install --find-links=dist kinex
-      
-      - name: Run Python tests
-        shell: pwsh
-        run: |
-          # Run tests from a different directory to ensure we're testing the installed package
-          # not the source directory
-          cd "${{ runner.temp }}"
-          pytest "${{ github.workspace }}/bindings/python/tests" -v
-      
+      - name: Build wheels and test
+        uses: pypa/cibuildwheel@v2.21.3
+        with:
+          package-dir: bindings/python
+        env:
+          # Map matrix python version (3.10) to cibuildwheel tag (cp310-*)
+          # We remove the dot from the version string
+          CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' }}-*
+          CIBW_ARCHS: auto64
+          CIBW_TEST_REQUIRES: pytest numpy
+          # Run tests using the installed wheel
+          CIBW_TEST_COMMAND: pytest {project}/bindings/python/tests -v
+
       - name: Upload wheel artifacts
         if: matrix.python-version == '3.11'
         uses: actions/upload-artifact@v4
         with:
           name: python-wheel-${{ matrix.os }}
-          path: bindings/python/dist/*.whl
+          path: ./wheelhouse/*.whl
           retention-days: 7
 
   wasm-build-test:
