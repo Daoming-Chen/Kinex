@@ -35,6 +35,11 @@ if(BUILD_PYTHON_BINDINGS OR NOT spdlog_FOUND)
     
     add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/spdlog EXCLUDE_FROM_ALL)
     
+    # Ensure static library is built with PIC for linking into shared library
+    if(TARGET spdlog)
+        set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+    
     # Restore original BUILD_SHARED_LIBS state
     set(BUILD_SHARED_LIBS ${ORIG_BUILD_SHARED_LIBS_SPDLOG})
     
@@ -58,6 +63,14 @@ if(BUILD_PYTHON_BINDINGS OR NOT pugixml_FOUND)
     endif()
     
     add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/pugixml EXCLUDE_FROM_ALL)
+    
+    # Ensure static library is built with PIC for linking into shared library
+    if(TARGET pugixml-static)
+        set_property(TARGET pugixml-static PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+    if(TARGET pugixml)
+        set_property(TARGET pugixml PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
     
     # Restore original BUILD_SHARED_LIBS state
     set(BUILD_SHARED_LIBS ${ORIG_BUILD_SHARED_LIBS})
@@ -89,6 +102,7 @@ if(NOT TARGET daqp)
             ${daqp_prefix}/codegen
         )
         set_target_properties(daqp PROPERTIES C_STANDARD 99)
+        set_target_properties(daqp PROPERTIES POSITION_INDEPENDENT_CODE ON)
         
         # Add profiling definition if enabled
         target_compile_definitions(daqp PUBLIC PROFILING)
@@ -112,6 +126,7 @@ if(NOT TARGET daqp)
         add_library(daqp STATIC ${DAQP_SOURCES})
         target_include_directories(daqp PUBLIC ${daqp_prefix}/include)
         set_target_properties(daqp PROPERTIES C_STANDARD 99)
+        set_target_properties(daqp PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
     
     # Create alias target
