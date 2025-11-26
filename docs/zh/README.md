@@ -17,16 +17,16 @@
 每种语言绑定的详细 API 文档:
 
 - **[Python API](api/python.md)** - Python 绑定参考
-- **[C++ API](api/README.md)** - C++ 核心库文档
+- **C++ API** - 核心库文档 (即将推出)
 - **WebAssembly API** - JavaScript/TypeScript 绑定 (即将推出)
 
 ## 教程
 
 常见任务的分步指南:
 
-- **[C++ 教程](tutorials/cpp-tutorial.md)** - 在 C++ 应用中使用 Kinex
-- **Python 教程** (即将推出)
-- **Web 应用教程** (即将推出)
+- **C++ 教程** - 在 C++ 应用中使用 Kinex (即将推出)
+- **Python 教程** - Python 示例和模式 (即将推出)
+- **Web 应用教程** - 使用 WASM 构建 Web 应用 (即将推出)
 
 ## 性能
 
@@ -58,7 +58,7 @@
 ### C++
 
 - [C++ 快速开始](guides/getting-started.md#c)
-- [C++ 教程](tutorials/cpp-tutorial.md)
+- C++ 教程 (即将推出)
 - [从源码编译](guides/building.md)
 - [C++ 示例](../../examples/cpp/)
 
@@ -88,5 +88,5 @@
 **快速链接:**
 - [主 README](../../README_zh.md)
 - [GitHub 仓库](https://github.com/Daoming-Chen/Kinex)
-- [npm 包](https://www.npmjs.com/package/@kinex/wasm)
+- [npm 包](https://www.npmjs.com/package/@daoming.chen/kinex)
 - [PyPI 包](https://pypi.org/project/kinex/) (即将推出)

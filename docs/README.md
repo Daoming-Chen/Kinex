@@ -17,16 +17,16 @@ New to Kinex? Start here:
 Detailed API documentation for each language binding:
 
 - **[Python API](api/python.md)** - Python bindings reference
-- **[C++ API](api/README.md)** - C++ core library documentation
+- **C++ API** - Core library documentation (coming soon)
 - **WebAssembly API** - JavaScript/TypeScript bindings (coming soon)
 
 ## Tutorials
 
 Step-by-step guides for common tasks:
 
-- **[C++ Tutorial](tutorials/cpp-tutorial.md)** - Using Kinex in C++ applications
-- **Python Tutorial** (coming soon)
-- **Web Application Tutorial** (coming soon)
+- **C++ Tutorial** - Using Kinex in C++ applications (coming soon)
+- **Python Tutorial** - Python examples and patterns (coming soon)
+- **Web Application Tutorial** - Building web apps with WASM (coming soon)
 
 ## Performance
 
@@ -88,5 +88,5 @@ Need help?
 **Quick Links:**
 - [Main README](../README.md)
 - [GitHub Repository](https://github.com/Daoming-Chen/Kinex)
-- [npm Package](https://www.npmjs.com/package/@kinex/wasm)
+- [npm Package](https://www.npmjs.com/package/@daoming.chen/kinex)
 - [PyPI Package](https://pypi.org/project/kinex/) (coming soon)
