@@ -123,7 +123,7 @@ endif()
 
 # nanobind (only if building Python bindings)
 if(BUILD_PYTHON_BINDINGS)
-    find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+    find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
     
     # nanobind doesn't have a standard CMake config, use submodule
     if(NOT TARGET nanobind)
