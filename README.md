@@ -66,11 +66,11 @@ solution = ik.solve(target_pose, initial_guess)
 
 ```bash
 # Install from npm
-npm install kinex
+npm install @daoming.chen/kinex
 ```
 
 ```javascript
-import createkinexModule from 'kinex';
+import createkinexModule from '@daoming.chen/kinex';
 
 // Initialize WASM module
 const kinex = await createkinexModule();
@@ -112,10 +112,10 @@ robot.dispose();
 The easiest way to use kinex in JavaScript/TypeScript projects:
 
 ```bash
-npm install kinex
+npm install @daoming.chen/kinex
 ```
 
-Available on npm: https://www.npmjs.com/package/kinex
+Available on npm: https://www.npmjs.com/package/@daoming.chen/kinex
 
 ### Building from Source
 

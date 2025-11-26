@@ -31,7 +31,7 @@ pip install kinex
 ### JavaScript/WASM
 
 ```bash
-npm install kinex-wasm
+npm install @daoming.chen/kinex
 ```
 
 ## Quick Start
@@ -57,7 +57,7 @@ auto pose = fk.compute(joint_angles);
 ### JavaScript/WASM
 
 ```javascript
-import kinex from 'kinex-wasm';
+import kinex from '@daoming.chen/kinex';
 
 const robot = await kinex.parseURDF('robot.urdf');
 const pose = robot.forwardKinematics([0, 1.57, -1.57, 0, 0, 0]);

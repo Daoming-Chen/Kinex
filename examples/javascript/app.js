@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-// import createKinexModule from '@kinex/wasm'; // Loaded dynamically
+// import createKinexModule from '@daoming.chen/kinex'; // Loaded dynamically
 
 // Configuration
 const URDF_PATH = './models/ur5/ur5e+x.urdf';
@@ -49,12 +49,12 @@ async function init() {
 
     try {
         // Try loading from npm via import map
-        const module = await import('@kinex/wasm');
+        const module = await import('@daoming.chen/kinex');
         createKinexModule = module.default;
 
         if (typeof createKinexModule !== 'function') {
             console.log("Import failed to provide function, trying script tag for npm...");
-            await loadScript('https://unpkg.com/@kinex/wasm@latest/kinex.js');
+            await loadScript('https://unpkg.com/@daoming.chen/kinex@latest/kinex.js');
             createKinexModule = window.createKinexModule;
         }
 
@@ -62,7 +62,7 @@ async function init() {
 
         locateFile = (path, prefix) => {
             if (path.endsWith('.wasm')) {
-                return 'https://unpkg.com/@kinex/wasm@latest/kinex.wasm';
+                return 'https://unpkg.com/@daoming.chen/kinex@latest/kinex.wasm';
             }
             return prefix + path;
         };

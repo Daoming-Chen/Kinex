@@ -63,19 +63,10 @@ jobs:
           name: wasm-package
           path: bindings/wasm
       
-      - name: Fix Package Name for NPM
-        run: |
-          cd bindings/wasm
-          # 强制将包名修改为 'kinex' 以解决 Scope 权限问题
-          # 如果 'kinex' 已经被别人占用，请修改下方的 name 为 'kinex-wasm' 或其他名字
-          npm pkg set name="kinex"
-          echo "Package name updated to:"
-          npm pkg get name
-      
       - name: Publish to NPM
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           cd bindings/wasm
-          npm publish
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

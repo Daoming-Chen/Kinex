@@ -1,5 +1,5 @@
 ﻿{
-    "name": "@kinex/wasm",
+    "name": "@daoming.chen/kinex",
     "version": "1.0.0",
     "description": "WebAssembly bindings for kinex robotics kinematics library",
     "main": "kinex.js",
