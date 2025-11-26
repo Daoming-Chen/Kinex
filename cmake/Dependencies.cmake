@@ -14,20 +14,67 @@ endif()
 message(STATUS "Using Eigen3: ${EIGEN3_INCLUDE_DIR}")
 
 # spdlog (must be available before any C++ code compilation)
-find_package(spdlog QUIET)
-if(NOT spdlog_FOUND)
-    message(STATUS "spdlog not found on system, using submodule")
-    set(SPDLOG_BUILD_SHARED ${BUILD_SHARED_LIBS})
+if(NOT BUILD_PYTHON_BINDINGS)
+    find_package(spdlog QUIET)
+endif()
+if(BUILD_PYTHON_BINDINGS OR NOT spdlog_FOUND)
+    message(STATUS "spdlog not found on system or forced submodule (Python build), using submodule")
+    # Force static build for Python bindings to avoid distribution issues
+    if(BUILD_PYTHON_BINDINGS)
+        set(SPDLOG_BUILD_SHARED OFF)
+    else()
+        set(SPDLOG_BUILD_SHARED ${BUILD_SHARED_LIBS})
+    endif()
+    
+    # Save original BUILD_SHARED_LIBS state
+    set(ORIG_BUILD_SHARED_LIBS_SPDLOG ${BUILD_SHARED_LIBS})
+    
+    if(BUILD_PYTHON_BINDINGS)
+        set(BUILD_SHARED_LIBS OFF)
+    endif()
+    
     add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/spdlog EXCLUDE_FROM_ALL)
+    
+    # Ensure static library is built with PIC for linking into shared library
+    if(TARGET spdlog)
+        set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+    
+    # Restore original BUILD_SHARED_LIBS state
+    set(BUILD_SHARED_LIBS ${ORIG_BUILD_SHARED_LIBS_SPDLOG})
+    
     # spdlog provides spdlog::spdlog target
 endif()
 message(STATUS "Using spdlog")
 
 # pugixml
-find_package(pugixml QUIET)
-if(NOT pugixml_FOUND)
-    message(STATUS "pugixml not found on system, using submodule")
+if(NOT BUILD_PYTHON_BINDINGS)
+    find_package(pugixml QUIET)
+endif()
+if(BUILD_PYTHON_BINDINGS OR NOT pugixml_FOUND)
+    message(STATUS "pugixml not found on system or forced submodule (Python build), using submodule")
+    
+    # Save original BUILD_SHARED_LIBS state
+    set(ORIG_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
+    
+    # Force static build for Python bindings to avoid distribution issues
+    if(BUILD_PYTHON_BINDINGS)
+        set(BUILD_SHARED_LIBS OFF)
+    endif()
+    
     add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/pugixml EXCLUDE_FROM_ALL)
+    
+    # Ensure static library is built with PIC for linking into shared library
+    if(TARGET pugixml-static)
+        set_property(TARGET pugixml-static PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+    if(TARGET pugixml)
+        set_property(TARGET pugixml PROPERTY POSITION_INDEPENDENT_CODE ON)
+    endif()
+    
+    # Restore original BUILD_SHARED_LIBS state
+    set(BUILD_SHARED_LIBS ${ORIG_BUILD_SHARED_LIBS})
+    
     # Create alias target if not provided
     if(NOT TARGET pugixml::pugixml)
         add_library(pugixml::pugixml ALIAS pugixml)
@@ -55,6 +102,7 @@ if(NOT TARGET daqp)
             ${daqp_prefix}/codegen
         )
         set_target_properties(daqp PROPERTIES C_STANDARD 99)
+        set_target_properties(daqp PROPERTIES POSITION_INDEPENDENT_CODE ON)
         
         # Add profiling definition if enabled
         target_compile_definitions(daqp PUBLIC PROFILING)
@@ -78,6 +126,7 @@ if(NOT TARGET daqp)
         add_library(daqp STATIC ${DAQP_SOURCES})
         target_include_directories(daqp PUBLIC ${daqp_prefix}/include)
         set_target_properties(daqp PROPERTIES C_STANDARD 99)
+        set_target_properties(daqp PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
     
     # Create alias target
@@ -123,7 +172,7 @@ endif()
 
 # nanobind (only if building Python bindings)
 if(BUILD_PYTHON_BINDINGS)
-    find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+    find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
     
     # nanobind doesn't have a standard CMake config, use submodule
     if(NOT TARGET nanobind)

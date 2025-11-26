@@ -80,3 +80,5 @@ htmlcov/
 
 # Ignore actionlint binary
 actionlint
+
+.venv/

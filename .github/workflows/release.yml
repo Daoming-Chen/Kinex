@@ -9,69 +9,20 @@ on:
 jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.3
-        env:
-          CIBW_BUILD: cp310-* cp311-* cp312-*
-          CIBW_ARCHS: auto64
-
-      - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}
-          path: ./wheelhouse/*.whl
+    uses: ./.github/workflows/reusable-build-wheels.yml
+    with:
+      os: ${{ matrix.os }}
+      cibw_build: 'cp310-* cp311-* cp312-* cp313-*'
+      upload_name: 'wheels-${{ matrix.os }}'
 
   build-wasm:
     name: Build WASM
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      
-      - name: Install Emscripten SDK
-        run: |
-          cd third_party
-          git clone https://github.com/emscripten-core/emsdk.git
-          cd emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-      
-      - name: Build WASM
-        run: |
-          source third_party/emsdk/emsdk_env.sh
-          emcmake cmake -B build-wasm -DBUILD_WASM=ON -DBUILD_TESTING=OFF -DBUILD_PYTHON_BINDINGS=OFF -DCMAKE_BUILD_TYPE=Release
-          cmake --build build-wasm -j 4
-      
-      - name: Prepare NPM package
-        run: |
-          find build-wasm -name "kinex.js" -exec cp {} bindings/wasm/ \;
-          find build-wasm -name "kinex.wasm" -exec cp {} bindings/wasm/ \;
-          ls -l bindings/wasm/kinex.js bindings/wasm/kinex.wasm
-
-      - name: Upload WASM package
-        uses: actions/upload-artifact@v4
-        with:
-          name: wasm-package
-          path: bindings/wasm/
+    uses: ./.github/workflows/reusable-build-wasm.yml
+    with:
+      upload_artifacts: true
 
   publish-pypi:
     name: Publish to PyPI
