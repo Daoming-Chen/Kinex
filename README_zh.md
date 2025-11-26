@@ -1,6 +1,7 @@
 # Kinex
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/kinex.svg)](https://pypi.org/project/kinex/)
 [![npm version](https://img.shields.io/npm/v/@daoming.chen/kinex.svg)](https://www.npmjs.com/package/@daoming.chen/kinex)
 
 [English](README.md) | [文档](docs/zh/) | [示例](examples/)
