@@ -9,7 +9,7 @@ Visit the live demo at: [https://Daoming-Chen.github.io/Kinex/](https://Daoming-
 ## Prerequisites
 
 -   A web server to serve the files (due to CORS and module loading).
--   An internet connection to load `@kinex/wasm` from npm.
+-   An internet connection to load `@daoming.chen/kinex` from npm.
 -   The UR5 model files (included in this example).
 
 ## How to Run Locally

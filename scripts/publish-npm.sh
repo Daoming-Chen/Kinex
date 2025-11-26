@@ -60,11 +60,11 @@ function write_step {
 }
 
 function write_success {
-    echo -e "${GREEN}�?$1${NC}"
+    echo -e "${GREEN}�?$1${NC}"
 }
 
 function write_error {
-    echo -e "${RED}�?$1${NC}"
+    echo -e "${RED}�?$1${NC}"
 }
 
 # Get script directory and project root
@@ -74,7 +74,7 @@ WASM_DIR="$PROJECT_ROOT/bindings/wasm"
 DIST_DIR="$WASM_DIR/dist"
 
 echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}�?  kinex npm Publisher for Linux/Mac   �?{NC}"
+echo -e "${CYAN}�?  kinex npm Publisher for Linux/Mac   �?{NC}"
 echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
 
 # Step 1: Check npm login status
@@ -156,7 +156,7 @@ A modern WebAssembly robotics kinematics library providing URDF parsing, forward
 ## Installation
 
 ```bash
-npm install kinex
+npm install @daoming.chen/kinex
 ```
 
 ## Quick Start
@@ -201,7 +201,7 @@ PACKAGE_JSON_PATH="$DIST_DIR/package.json"
 # Create package.json
 cat > "$PACKAGE_JSON_PATH" << EOF
 {
-  "name": "kinex",
+  "name": "@daoming.chen/kinex",
   "version": "${VERSION:-1.0.0}",
   "description": "A modern WebAssembly robotics kinematics library providing URDF parsing, forward kinematics, Jacobian computation, and inverse kinematics solving",
   "main": "kinex.js",
@@ -296,11 +296,11 @@ else
     npm publish
     
     echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}�?  Successfully published to npm! 🎉   �?{NC}"
+    echo -e "${GREEN}�?  Successfully published to npm! 🎉   �?{NC}"
     echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
     echo -e "\n${GREEN}Package: kinex@$PACKAGE_VERSION${NC}"
-    echo -e "${CYAN}URL: https://www.npmjs.com/package/kinex${NC}"
-    echo -e "\n${CYAN}Install with: npm install kinex${NC}"
+    echo -e "${CYAN}URL: https://www.npmjs.com/package/@daoming.chen/kinex${NC}"
+    echo -e "\n${CYAN}Install with: npm install @daoming.chen/kinex${NC}"
 fi
 
 # Step 9: Clean up info

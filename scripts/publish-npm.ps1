@@ -121,7 +121,7 @@ A modern WebAssembly robotics kinematics library providing URDF parsing, forward
 ## Installation
 
 ``````bash
-npm install kinex
+npm install @daoming.chen/kinex
 ``````
 
 ## Quick Start
@@ -190,7 +190,7 @@ if (Test-Path $PackageJsonPath) {
     $PackageJson = Get-Content $PackageJsonPath -Raw | ConvertFrom-Json
 } else {
     $PackageJson = @{
-        name = "kinex"
+        name = "@daoming.chen/kinex"
         version = "1.0.0"
         description = "A modern WebAssembly robotics kinematics library"
         main = "kinex.js"
@@ -299,8 +299,8 @@ if ($DryRun) {
         Write-Host "�?  Successfully published to npm! 🎉   �? -ForegroundColor Green
         Write-Host "╚════════════════════════════════════════╝" -ForegroundColor Green
         Write-Host "`nPackage: kinex@$($PackageJson.version)" -ForegroundColor Green
-        Write-Host "URL: https://www.npmjs.com/package/kinex" -ForegroundColor Cyan
-        Write-Host "`nInstall with: npm install kinex" -ForegroundColor Cyan
+        Write-Host "URL: https://www.npmjs.com/package/@daoming.chen/kinex" -ForegroundColor Cyan
+        Write-Host "`nInstall with: npm install @daoming.chen/kinex" -ForegroundColor Cyan
     } finally {
         Pop-Location
     }
