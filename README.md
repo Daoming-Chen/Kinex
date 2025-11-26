@@ -147,7 +147,7 @@ For platform-specific instructions, see the [build guide](docs/guides/building.m
 
 ## 📄 License
 
-[License information to be added]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
