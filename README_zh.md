@@ -138,12 +138,12 @@ sudo cmake --install build
 - ✅ WebAssembly 绑定
 - ✅ 性能基准测试
 - ✅ Three.js 可视化示例
-- 🚧 Python 绑定 (功能可用,持续开发中)
+- ✅ Python 绑定
 - 🚧 完整的 Web 应用
-- 🔜 碰撞检测 (FCL 集成)
-- 🔜 多解 IK
+- 🔜 碰撞检测 (集成 [COAL](https://github.com/coal-library/coal))
+- 🔜 多解 IK (集成 [IKFlow](https://github.com/jstmn/ikflow))
+- 🔜 笛卡尔路径跟踪 (参考 [RelaxedIK](https://github.com/uwgraphics/relaxed_ik_core))
 - 🔜 ROS2 集成
-- 🔜 动力学计算
 
 ## 📄 许可证
 

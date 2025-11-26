@@ -138,12 +138,12 @@ For platform-specific instructions, see the [build guide](docs/guides/building.m
 - ✅ WebAssembly bindings
 - ✅ Performance benchmarks
 - ✅ Three.js visualization examples
-- 🚧 Python bindings (functional, under active development)
+- ✅ Python bindings
 - 🚧 Full-featured web application
-- 🔜 Collision detection (FCL integration)
-- 🔜 Multi-solution IK
+- 🔜 Collision detection ([COAL](https://github.com/coal-library/coal) integration)
+- 🔜 Multi-solution IK ([IKFlow](https://github.com/jstmn/ikflow) integration)
+- 🔜 Cartesian path tracking ([RelaxedIK](https://github.com/uwgraphics/relaxed_ik_core)-inspired)
 - 🔜 ROS2 integration
-- 🔜 Dynamics computation
 
 ## 📄 License
 
