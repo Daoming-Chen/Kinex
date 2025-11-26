@@ -4,7 +4,7 @@ This example demonstrates how to use Kinex with Three.js to visualize a UR5 robo
 
 ## Live Demo
 
-Visit the live demo at: [https://YOUR_USERNAME.github.io/Kinex/](https://YOUR_USERNAME.github.io/Kinex/)
+Visit the live demo at: [https://Daoming-Chen.github.io/Kinex/](https://Daoming-Chen.github.io/Kinex/)
 
 ## Prerequisites
 
