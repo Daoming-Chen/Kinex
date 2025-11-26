@@ -33,10 +33,9 @@ jobs:
       
       - name: Build wheels
         run: |
-          python -m cibuildwheel --output-dir wheelhouse
+          cd bindings/python
+          python -m cibuildwheel --output-dir ../../wheelhouse
         env:
-          # Tell cibuildwheel where to find the pyproject.toml
-          CIBW_PROJECT_DIR: bindings/python
           # Build for Python 3.10-3.12
           CIBW_BUILD: cp310-* cp311-* cp312-*
           # Skip 32-bit builds and musllinux
@@ -97,11 +96,12 @@ jobs:
         run: |
           cd bindings/wasm
           # Copy WASM artifacts to package
-          if [ -f ../../build-wasm/bindings/wasm/kinex.wasm ]; then
-            cp ../../build-wasm/bindings/wasm/kinex.wasm ./
-            cp ../../build-wasm/bindings/wasm/kinex.js ./
+          if [ -f ../../build-wasm/wasm/kinex.wasm ]; then
+            cp ../../build-wasm/wasm/kinex.wasm ./
+            cp ../../build-wasm/wasm/kinex.js ./
           else
             echo "Error: WASM build artifacts not found"
+            ls -la ../../build-wasm/wasm/ || echo "build-wasm/wasm directory not found"
             exit 1
           fi
       
@@ -124,7 +124,7 @@ jobs:
       - name: Install dependencies and run tests
         run: |
           cd bindings/wasm
-          npm ci
+          npm install
           npm run test:node
       
       - name: Upload WASM artifacts
@@ -179,7 +179,7 @@ jobs:
       - name: Test WASM package
         run: |
           cd wasm-test
-          npm ci
+          npm install
           npm run test:node
 
   publish-pypi:
