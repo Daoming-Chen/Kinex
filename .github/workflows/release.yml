@@ -32,10 +32,10 @@ jobs:
           python -m pip install cibuildwheel
       
       - name: Build wheels
-        run: |
-          cd bindings/python
-          python -m cibuildwheel --output-dir ../../wheelhouse
+        run: python -m cibuildwheel --output-dir wheelhouse
         env:
+          # Set the project directory to bindings/python
+          CIBW_PROJECT_DIR: bindings/python
           # Build for Python 3.10-3.12
           CIBW_BUILD: cp310-* cp311-* cp312-*
           # Skip 32-bit builds and musllinux
@@ -96,12 +96,16 @@ jobs:
         run: |
           cd bindings/wasm
           # Copy WASM artifacts to package
+          echo "Looking for WASM build artifacts..."
+          find ../../build-wasm -name "kinex.wasm" -o -name "kinex.js" || true
           if [ -f ../../build-wasm/wasm/kinex.wasm ]; then
+            echo "Found WASM artifacts in build-wasm/wasm/"
             cp ../../build-wasm/wasm/kinex.wasm ./
             cp ../../build-wasm/wasm/kinex.js ./
           else
             echo "Error: WASM build artifacts not found"
-            ls -la ../../build-wasm/wasm/ || echo "build-wasm/wasm directory not found"
+            echo "Contents of build-wasm directory:"
+            ls -laR ../../build-wasm/ || echo "build-wasm directory not found"
             exit 1
           fi
       
