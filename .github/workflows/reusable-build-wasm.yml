@@ -1,0 +1,62 @@
+name: Reusable WASM Build
+
+on:
+  workflow_call:
+    inputs:
+      upload_artifacts:
+        description: 'Whether to upload artifacts'
+        default: true
+        type: boolean
+
+jobs:
+  build-wasm:
+    name: Build WASM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      # 使用现成的 Action 替代手动脚本，支持缓存，速度更快
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+          actions-cache-folder: 'emsdk-cache'
+      
+      - name: Build WASM
+        run: |
+          emcmake cmake -B build-wasm -DBUILD_WASM=ON -DBUILD_TESTING=OFF -DBUILD_PYTHON_BINDINGS=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-wasm -j 4
+      
+      - name: Install Node.js dependencies
+        run: |
+          cd bindings/wasm
+          npm install --verbose
+      
+      - name: Run Node.js tests
+        run: |
+          cd bindings/wasm
+          npm run test:node
+      
+      - name: Prepare Artifacts (for Release)
+        if: inputs.upload_artifacts
+        run: |
+          # 确保构建产物被复制到 bindings/wasm 目录下，方便后续打包
+          find build-wasm -name "kinex.js" -exec cp {} bindings/wasm/ \;
+          find build-wasm -name "kinex.wasm" -exec cp {} bindings/wasm/ \;
+      
+      - name: Upload WASM Artifacts
+        if: inputs.upload_artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-package
+          path: bindings/wasm/
+          retention-days: 5

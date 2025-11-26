@@ -1,0 +1,63 @@
+name: Reusable Python Wheels
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+        description: 'Operating System (e.g., ubuntu-latest)'
+      cibw_build:
+        required: true
+        type: string
+        description: 'CIBW_BUILD pattern (e.g., cp313-*)'
+      upload_name:
+        required: false
+        type: string
+        default: ''
+        description: 'Artifact name for upload (optional)'
+
+jobs:
+  build-wheels:
+    name: Build ${{ inputs.cibw_build }} on ${{ inputs.os }}
+    runs-on: ${{ inputs.os }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.3
+        with:
+          package-dir: bindings/python
+        env:
+          CIBW_BUILD: ${{ inputs.cibw_build }}
+          CIBW_ARCHS: auto64
+          # 运行测试，确保构建的 Wheel 可用
+          CIBW_TEST_REQUIRES: pytest numpy
+          CIBW_TEST_COMMAND: pytest {project}/bindings/python/tests -v
+
+      - name: Upload wheel artifacts
+        if: inputs.upload_name != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.upload_name }}
+          path: ./wheelhouse/*.whl
+          retention-days: 5
