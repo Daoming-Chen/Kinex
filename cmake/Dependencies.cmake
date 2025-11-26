@@ -14,24 +14,40 @@ endif()
 message(STATUS "Using Eigen3: ${EIGEN3_INCLUDE_DIR}")
 
 # spdlog (must be available before any C++ code compilation)
-find_package(spdlog QUIET)
-if(NOT spdlog_FOUND)
-    message(STATUS "spdlog not found on system, using submodule")
+if(NOT BUILD_PYTHON_BINDINGS)
+    find_package(spdlog QUIET)
+endif()
+if(BUILD_PYTHON_BINDINGS OR NOT spdlog_FOUND)
+    message(STATUS "spdlog not found on system or forced submodule (Python build), using submodule")
     # Force static build for Python bindings to avoid distribution issues
     if(BUILD_PYTHON_BINDINGS)
         set(SPDLOG_BUILD_SHARED OFF)
     else()
         set(SPDLOG_BUILD_SHARED ${BUILD_SHARED_LIBS})
     endif()
+    
+    # Save original BUILD_SHARED_LIBS state
+    set(ORIG_BUILD_SHARED_LIBS_SPDLOG ${BUILD_SHARED_LIBS})
+    
+    if(BUILD_PYTHON_BINDINGS)
+        set(BUILD_SHARED_LIBS OFF)
+    endif()
+    
     add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/spdlog EXCLUDE_FROM_ALL)
+    
+    # Restore original BUILD_SHARED_LIBS state
+    set(BUILD_SHARED_LIBS ${ORIG_BUILD_SHARED_LIBS_SPDLOG})
+    
     # spdlog provides spdlog::spdlog target
 endif()
 message(STATUS "Using spdlog")
 
 # pugixml
-find_package(pugixml QUIET)
-if(NOT pugixml_FOUND)
-    message(STATUS "pugixml not found on system, using submodule")
+if(NOT BUILD_PYTHON_BINDINGS)
+    find_package(pugixml QUIET)
+endif()
+if(BUILD_PYTHON_BINDINGS OR NOT pugixml_FOUND)
+    message(STATUS "pugixml not found on system or forced submodule (Python build), using submodule")
     
     # Save original BUILD_SHARED_LIBS state
     set(ORIG_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
