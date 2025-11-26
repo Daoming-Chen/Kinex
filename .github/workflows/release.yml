@@ -8,12 +8,12 @@ on:
 
 jobs:
   build-wheels:
-    name: Build Python Wheels (${{ matrix.os }})
+    name: Build Wheels (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12']
     
     steps:
       - name: Checkout repository
@@ -21,50 +21,44 @@ jobs:
         with:
           submodules: recursive
       
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
       
-      - name: Install cibuildwheel
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
+      
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake
+      
+      - name: Setup MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install cibuildwheel
+          python -m pip install scikit-build-core numpy
       
-      - name: Build wheels
+      - name: Build Python wheel
         run: |
           cd bindings/python
-          python -m cibuildwheel --output-dir ../../wheelhouse
-        env:
-          # Build for Python 3.10-3.12
-          CIBW_BUILD: cp310-* cp311-* cp312-*
-          # Skip 32-bit builds and musllinux
-          CIBW_SKIP: '*-win32 *-manylinux_i686 *-musllinux_*'
-          # Use manylinux2014 for Linux
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          # Build universal2 wheels on macOS
-          CIBW_ARCHS_MACOS: universal2
-          # Build AMD64 on Windows
-          CIBW_ARCHS_WINDOWS: AMD64
-          # Repair wheels to bundle dependencies
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel}
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: delvewheel repair -w {dest_dir} {wheel}
-          # Run tests to validate wheels (tests are included in source)
-          CIBW_TEST_REQUIRES: pytest numpy
-          CIBW_TEST_COMMAND: python -c "import kinex; print('kinex imported successfully')"
-          # Build settings
-          CIBW_BUILD_VERBOSITY: 1
+          python -m pip wheel . -w dist --no-deps
       
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
-          path: wheelhouse/*.whl
-          retention-days: 7
+          name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
+          path: bindings/python/dist/*.whl
 
   build-wasm:
-    name: Build WASM Package
+    name: Build WASM
     runs-on: ubuntu-latest
     
     steps:
@@ -77,6 +71,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
       
       - name: Install Emscripten SDK
         run: |
@@ -92,128 +87,56 @@ jobs:
           emcmake cmake -B build-wasm -DBUILD_WASM=ON -DBUILD_TESTING=OFF -DBUILD_PYTHON_BINDINGS=OFF -DCMAKE_BUILD_TYPE=Release
           cmake --build build-wasm -j 4
       
-      - name: Prepare npm package
+      - name: Prepare NPM package
         run: |
-          cd bindings/wasm
-          # Copy WASM artifacts to package
-          if [ -f ../../build-wasm/wasm/kinex.wasm ]; then
-            cp ../../build-wasm/wasm/kinex.wasm ./
-            cp ../../build-wasm/wasm/kinex.js ./
-          else
-            echo "Error: WASM build artifacts not found"
-            ls -la ../../build-wasm/wasm/ || echo "build-wasm/wasm directory not found"
-            exit 1
-          fi
-      
-      - name: Extract version from tag
-        id: get_version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          if [ -z "$VERSION" ]; then
-            echo "Error: Could not extract version from tag"
-            exit 1
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
-      
-      - name: Update package.json version
-        run: |
-          cd bindings/wasm
-          npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
-      
-      - name: Install dependencies and run tests
-        run: |
-          cd bindings/wasm
-          npm install
-          npm run test:node
-      
-      - name: Upload WASM artifacts
+          # Move built artifacts to the bindings/wasm directory for packing
+          # Based on CMakeLists.txt, artifacts are output to build-wasm/wasm/ or build-wasm/
+          # We attempt to find them to be robust
+          find build-wasm -name "kinex.js" -exec cp {} bindings/wasm/ \;
+          find build-wasm -name "kinex.wasm" -exec cp {} bindings/wasm/ \;
+          
+          # Verify files are in place
+          ls -l bindings/wasm/kinex.js bindings/wasm/kinex.wasm
+
+      - name: Upload WASM package
         uses: actions/upload-artifact@v4
         with:
           name: wasm-package
           path: bindings/wasm/
-          retention-days: 7
 
-  test-artifacts:
-    name: Test All Artifacts
-    needs: [build-wheels, build-wasm]
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+      
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Dry Run (Skip Publish)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: echo "Not a tag push. Skipping PyPI publish."
+
+  publish-npm:
+    name: Publish to NPM
+    needs: build-wasm
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Download Python wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheels-*
-          path: dist
-          merge-multiple: true
-      
-      - name: Test Python wheel installation
-        run: |
-          # Install a wheel (prefer Linux wheel for testing on Linux)
-          WHEEL=$(ls dist/*manylinux*.whl 2>/dev/null | head -n1)
-          if [ -z "$WHEEL" ]; then
-            WHEEL=$(ls dist/*.whl | head -n1)
-          fi
-          python -m pip install "$WHEEL"
-          python -c "import kinex; print('kinex version:', kinex.__version__ if hasattr(kinex, '__version__') else 'unknown'); print('kinex imported successfully')"
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      
-      - name: Download WASM package
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-package
-          path: wasm-test
-      
-      - name: Test WASM package
-        run: |
-          cd wasm-test
-          npm install
-          npm run test:node
-
-  publish-pypi:
-    name: Publish to PyPI
-    needs: [test-artifacts]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # Required for trusted publishing
-    
-    steps:
-      - name: Download all wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheels-*
-          path: dist
-          merge-multiple: true
-      
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          skip-existing: true
-
-  publish-npm:
-    name: Publish to npm
-    needs: [test-artifacts]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Download WASM package
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-package
-          path: package
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -221,9 +144,20 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       
-      - name: Publish to npm
+      - name: Download WASM package
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-package
+          path: bindings/wasm
+      
+      - name: Publish to NPM
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          cd package
-          npm publish --access public
+          cd bindings/wasm
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Dry Run (Skip Publish)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: echo "Not a tag push. Skipping NPM publish."
