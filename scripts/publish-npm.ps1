@@ -289,7 +289,7 @@ if ($DryRun) {
     Write-Step "Publishing to npm..."
     Push-Location $DistDir
     try {
-        npm publish
+        npm publish --access public
         if ($LASTEXITCODE -ne 0) {
             Write-Error-Custom "npm publish failed"
             exit 1

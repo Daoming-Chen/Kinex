@@ -293,7 +293,7 @@ else
     
     write_step "Publishing to npm..."
     cd "$DIST_DIR"
-    npm publish
+    npm publish --access public
     
     echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}�?  Successfully published to npm! 🎉   �?{NC}"
