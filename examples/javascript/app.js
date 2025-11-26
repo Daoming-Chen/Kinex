@@ -5,8 +5,8 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 // import createKinexModule from '@kinex/wasm'; // Loaded dynamically
 
 // Configuration
-const URDF_PATH = '../models/ur5/ur5e+x.urdf';
-const MESH_BASE_PATH = '../models/ur5/'; // Meshes are relative to this
+const URDF_PATH = './models/ur5/ur5e+x.urdf';
+const MESH_BASE_PATH = './models/ur5/'; // Meshes are relative to this
 const END_EFFECTOR_LINK = 'wrist_3_link';
 
 // Globals
@@ -33,7 +33,7 @@ async function init() {
     // 1. Setup Three.js
     setupThreeJS();
 
-    // 2. Load Kinex
+    // 2. Load Kinex from npm
     let createKinexModule;
     let locateFile = undefined;
 
@@ -48,50 +48,28 @@ async function init() {
     };
 
     try {
-        // Try local build first
-        await loadScript('../../build-wasm/wasm/kinex.js');
-        if (window.createKinexModule) {
+        // Try loading from npm via import map
+        const module = await import('@kinex/wasm');
+        createKinexModule = module.default;
+
+        if (typeof createKinexModule !== 'function') {
+            console.log("Import failed to provide function, trying script tag for npm...");
+            await loadScript('https://unpkg.com/@kinex/wasm@latest/kinex.js');
             createKinexModule = window.createKinexModule;
-            console.log("Loaded local Kinex build");
-            
-            locateFile = (path, prefix) => {
-                if (path.endsWith('.wasm')) {
-                    return '../../build-wasm/wasm/' + path;
-                }
-                return prefix + path;
-            };
-        } else {
-            throw new Error("createKinexModule not found in window after loading script");
         }
 
-    } catch (e) {
-        console.log("Local Kinex build not found or failed to load, falling back to npm version...", e);
-        try {
-            // Try loading from npm via import map
-            // Note: If the npm package is UMD, import might not work as expected without a bundler
-            // So we might need to fallback to script tag for npm too if import fails to give us the function
-            const module = await import('@kinex/wasm');
-            createKinexModule = module.default;
-            
-            if (typeof createKinexModule !== 'function') {
-                 console.log("Import failed to provide function, trying script tag for npm...");
-                 await loadScript('https://unpkg.com/@kinex/wasm@latest/kinex.js');
-                 createKinexModule = window.createKinexModule;
+        console.log("Loaded Kinex from npm");
+
+        locateFile = (path, prefix) => {
+            if (path.endsWith('.wasm')) {
+                return 'https://unpkg.com/@kinex/wasm@latest/kinex.wasm';
             }
-
-            console.log("Loaded Kinex from npm");
-            
-            locateFile = (path, prefix) => {
-                if (path.endsWith('.wasm')) {
-                    return 'https://unpkg.com/@kinex/wasm@latest/kinex.wasm';
-                }
-                return prefix + path;
-            };
-        } catch (e2) {
-            console.error("Failed to load Kinex:", e2);
-            document.getElementById('loading').innerText = "Failed to load Kinex: " + e2;
-            return;
-        }
+            return prefix + path;
+        };
+    } catch (e) {
+        console.error("Failed to load Kinex:", e);
+        document.getElementById('loading').innerText = "Failed to load Kinex: " + e;
+        return;
     }
 
     try {
