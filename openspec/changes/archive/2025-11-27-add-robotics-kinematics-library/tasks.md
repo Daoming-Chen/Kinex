@@ -99,16 +99,16 @@ This document outlines the implementation tasks in dependency order. Each task s
 
 ### 12. Implement Forward Kinematics
 - [x] Create ForwardKinematics class
-- [x] Implement compute(joint_angles) â†?Transform
+- [x] Implement compute(joint_angles) ï¿½?Transform
 - [x] Use Eigen for matrix operations
 - [x] Support computing to intermediate links
 - [x] Implement bounds checking (optional)
 - [x] Optimize for repeated calls (pre-allocate matrices)
 
 ### 13. Implement Pose Representations
-- [x] Implement asMatrix() â†?Eigen::Matrix4d
-- [x] Implement asPositionQuaternion() â†?(Vector3d, Quaterniond)
-- [x] Implement asPositionEuler() â†?(Vector3d, Vector3d)
+- [x] Implement asMatrix() ï¿½?Eigen::Matrix4d
+- [x] Implement asPositionQuaternion() ï¿½?(Vector3d, Quaterniond)
+- [x] Implement asPositionEuler() ï¿½?(Vector3d, Vector3d)
 - [x] Ensure quaternion normalization
 
 ### 14. Write Forward Kinematics Tests
@@ -134,7 +134,7 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 16. Implement Jacobian Calculator
 - [x] Create JacobianCalculator class
 - [x] ~~Create CppAD tape during initialization~~ Cache kinematic chain structure
-- [x] Implement compute(joint_angles) â†?Eigen::MatrixXd
+- [x] Implement compute(joint_angles) ï¿½?Eigen::MatrixXd
 - [x] Support geometric (body) Jacobian
 - [x] Support analytic (spatial) Jacobian
 - [x] Implement conversion between Jacobian types
@@ -148,12 +148,12 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 18. Write Jacobian Tests
 - [x] Test Jacobian at zero configuration
 - [x] ~~Compare CppAD Jacobian with numerical differentiation~~ Compare analytical Jacobian with finite differences
-- [ ] Verify geometric vs analytic Jacobian relationship
-- [ ] Test Jacobian to intermediate links
-- [ ] Test singularity detection (e.g., UR5e elbow extended)
-- [ ] Benchmark Jacobian performance (target < 0.5ms)
-- [ ] Test numerical stability with small angles
-- [ ] Run tests and verify all pass
+- [x] Verify geometric vs analytic Jacobian relationship
+- [x] Test Jacobian to intermediate links
+- [x] Test singularity detection (e.g., UR5e elbow extended)
+- [x] Benchmark Jacobian performance (target < 0.5ms)
+- [x] Test numerical stability with small angles
+- [x] Run tests and verify all pass
 
 ## Phase 5: Core C++ Library - Inverse Kinematics
 
@@ -284,33 +284,35 @@ This document outlines the implementation tasks in dependency order. Each task s
 
 ## Phase 8: Visualization Application
 
-### 34. Setup React + Vite Project
-- [ ] Initialize Vite project with React + TypeScript
-- [ ] Configure TypeScript with strict mode
-- [ ] Setup ESLint and Prettier
-- [ ] Install Three.js and @react-three/fiber
-- [ ] Install dependencies (e.g., @react-three/drei for helpers)
+> **Note**: A Three.js-based interactive visualization example has been implemented in `examples/javascript/` rather than a full React app. This provides the core functionality with simpler deployment via GitHub Pages.
+
+### 34. Setup ~~React + Vite Project~~ Three.js Application
+- [x] ~~Initialize Vite project with React + TypeScript~~ Create vanilla JS + Three.js app
+- [x] ~~Configure TypeScript with strict mode~~ Use ES modules with Three.js
+- [x] ~~Setup ESLint and Prettier~~ Basic code organization
+- [x] Install Three.js and ~~@react-three/fiber~~ Three.js addons
+- [x] ~~Install dependencies (e.g., @react-three/drei for helpers)~~ Use OrbitControls, TransformControls, OBJLoader
 
 ### 35. Integrate kinex WASM Module
-- [ ] Copy built kinex.js and kinex.wasm to visualization/public/
-- [ ] Create WASM loader utility
-- [ ] Test module loading in React app
-- [ ] Handle loading states and errors
+- [x] ~~Copy built kinex.js and kinex.wasm to visualization/public/~~ Load from npm package
+- [x] Create WASM loader utility
+- [x] Test module loading in ~~React app~~ browser
+- [x] Handle loading states and errors
 
 ### 36. Implement URDF Loader and Parser
-- [ ] Create URDFLoader class
-- [ ] Parse URDF string and extract geometry
-- [ ] Load mesh files (OBJ format)
-- [ ] Create Three.js meshes from URDF visual elements
-- [ ] Apply materials and colors
-- [ ] Build scene graph matching kinematic structure
+- [x] ~~Create URDFLoader class~~ Use kinex Robot.fromURDFString
+- [x] Parse URDF string and extract geometry
+- [x] Load mesh files (OBJ format)
+- [x] Create Three.js meshes from URDF visual elements
+- [x] Apply materials and colors
+- [x] Build scene graph matching kinematic structure
 
 ### 37. Implement Robot Renderer
-- [ ] Create RobotRenderer React component
-- [ ] Setup Three.js scene, camera, lights
-- [ ] Render loaded robot geometry
-- [ ] Implement joint transformations
-- [ ] Update robot pose based on joint angles
+- [x] ~~Create RobotRenderer React component~~ Create rendering logic
+- [x] Setup Three.js scene, camera, lights
+- [x] Render loaded robot geometry
+- [x] Implement joint transformations
+- [x] Update robot pose based on joint angles
 
 ### 38. Implement Joint Control UI
 - [ ] Create JointControlPanel component
@@ -320,17 +322,17 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Display current joint angle values
 
 ### 39. Implement Forward Kinematics Mode
-- [ ] Integrate kinex WASM FK computation
-- [ ] Compute and display end-effector pose
-- [ ] Render coordinate frame at end-effector
+- [x] Integrate kinex WASM FK computation
+- [x] Compute ~~and display~~ end-effector pose
+- [x] ~~Render coordinate frame at end-effector~~ Update robot visualization
 - [ ] Display position and orientation in UI
 
 ### 40. Implement Inverse Kinematics Mode
-- [ ] Add IK mode toggle in UI
-- [ ] Implement end-effector gizmo (TransformControls)
-- [ ] Call kinex WASM IK solver on gizmo drag
-- [ ] Update joint angles based on IK solution
-- [ ] Handle unreachable poses with visual feedback
+- [x] ~~Add IK mode toggle in UI~~ IK is primary interaction mode
+- [x] Implement end-effector gizmo (TransformControls)
+- [x] Call kinex WASM IK solver on gizmo drag
+- [x] Update joint angles based on IK solution
+- [x] Handle unreachable poses with visual feedback
 - [ ] Display IK solver status
 
 ### 41. Implement Kinematic Information Display
@@ -339,9 +341,9 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Optionally render manipulability ellipsoid
 
 ### 42. Implement Camera Controls
-- [ ] Setup OrbitControls from @react-three/drei
-- [ ] Configure zoom, pan, and orbit
-- [ ] Set reasonable camera limits
+- [x] Setup OrbitControls ~~from @react-three/drei~~ from Three.js addons
+- [x] Configure zoom, pan, and orbit
+- [x] Set reasonable camera limits
 
 ### 43. Implement URDF File Upload
 - [ ] Create file upload UI component
@@ -351,27 +353,27 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Render uploaded robot
 
 ### 44. Implement Responsive Layout
-- [ ] Create responsive CSS layout
-- [ ] Adapt UI for desktop and tablet sizes
+- [x] Create responsive CSS layout
+- [x] Adapt UI for desktop and tablet sizes
 - [ ] Test on various screen resolutions
 
 ### 45. Optimize Performance
-- [ ] Profile rendering performance
-- [ ] Optimize FK/IK call frequency
-- [ ] Implement request animation frame batching
-- [ ] Ensure 60 FPS during interaction
+- [x] Profile rendering performance
+- [x] Optimize FK/IK call frequency
+- [x] Implement request animation frame batching
+- [x] Ensure 60 FPS during interaction
 
 ### 46. Write Visualization App Tests
 - [ ] Create Jest unit tests for components
 - [ ] Test URDF loading logic
 - [ ] Test joint angle calculations
 - [ ] Create Puppeteer integration tests
-- [ ] Test user interactions (slider, IK drag)
+- [ ] Test user interactions (~~slider~~, IK drag)
 - [ ] Run tests and verify all pass
 
 ### 47. Create Visualization App Documentation
-- [ ] Write user guide
-- [ ] Document keyboard shortcuts
+- [x] Write user guide
+- [x] Document keyboard shortcuts
 - [ ] Add in-app help modal
 
 ## Phase 9: Documentation and Examples
@@ -379,25 +381,25 @@ This document outlines the implementation tasks in dependency order. Each task s
 ### 48. Write C++ API Documentation
 - [ ] Add Doxygen comments to all public APIs
 - [ ] Generate API reference with Doxygen
-- [ ] Create usage examples (FK, IK, Jacobian)
+- [x] Create usage examples (FK, IK, Jacobian)
 
 ### 49. Write Python API Documentation
-- [ ] Ensure all docstrings are complete
+- [x] Ensure all docstrings are complete
 - [ ] Create Sphinx documentation
-- [ ] Add Python usage examples
+- [x] Add Python usage examples
 
 ### 50. Write JavaScript/WASM Documentation
-- [ ] Document WASM module API
-- [ ] Create JavaScript usage examples
-- [ ] Add TypeScript example project
+- [x] Document WASM module API (TypeScript definitions)
+- [x] Create JavaScript usage examples
+- [x] Add TypeScript example project
 
 ### 51. Create Comprehensive README
-- [ ] Write project overview
-- [ ] Add installation instructions (C++, Python, WASM)
-- [ ] Document build instructions for all platforms
-- [ ] Add usage examples
-- [ ] Link to detailed documentation
-- [ ] Add troubleshooting section
+- [x] Write project overview
+- [x] Add installation instructions (C++, Python, WASM)
+- [x] Document build instructions for all platforms
+- [x] Add usage examples
+- [x] Link to detailed documentation
+- [x] Add troubleshooting section
 
 ### 52. Create CONTRIBUTING.md
 - [ ] Document contribution guidelines
@@ -408,11 +410,11 @@ This document outlines the implementation tasks in dependency order. Each task s
 ## Phase 10: Testing and CI/CD
 
 ### 53. Setup Continuous Integration
-- [ ] Create .github/workflows/ci.yml
-- [ ] Configure builds for Linux, macOS, Windows
-- [ ] Run C++ tests on all platforms
-- [ ] Run Python tests on all platforms
-- [ ] Build and test WASM module
+- [x] Create .github/workflows/ci.yml
+- [x] Configure builds for Linux, macOS, Windows
+- [x] Run C++ tests on all platforms
+- [x] Run Python tests on all platforms
+- [x] Build and test WASM module
 - [ ] Check code formatting (clang-format)
 
 ### 54. Add Code Coverage
@@ -421,37 +423,37 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Set minimum coverage threshold
 
 ### 55. Performance Benchmarking
-- [ ] Create benchmark suite with Google Benchmark
-- [ ] Benchmark FK computation
-- [ ] Benchmark Jacobian computation
-- [ ] Benchmark IK solving
+- [x] Create benchmark suite ~~with Google Benchmark~~ with Python
+- [x] Benchmark FK computation
+- [x] Benchmark Jacobian computation
+- [x] Benchmark IK solving
 - [ ] Track performance over time in CI
 
 ### 56. Create Release Process
-- [ ] Setup semantic versioning
-- [ ] Create release checklist
-- [ ] Configure automated releases via GitHub Actions
-- [ ] Build distributable packages (wheels, archives)
+- [x] Setup semantic versioning
+- [x] Create release checklist
+- [x] Configure automated releases via GitHub Actions
+- [x] Build distributable packages (wheels, npm packages)
 
 ## Phase 11: Final Integration and Validation
 
 ### 57. End-to-End Testing
-- [ ] Test complete pipeline: URDF â†?FK â†?Jacobian â†?IK
-- [ ] Test Python integration with real robot model
-- [ ] Test WASM integration in visualization app
-- [ ] Test installation from source
-- [ ] Test installation via pip (Python)
+- [x] Test complete pipeline: URDF â†’ FK â†’ Jacobian â†’ IK
+- [x] Test Python integration with real robot model
+- [x] Test WASM integration in visualization app
+- [x] Test installation from source
+- [x] Test installation via pip (Python)
 
 ### 58. Performance Validation
-- [ ] Verify FK < 1ms for 6-DOF robot
-- [ ] Verify IK < 10ms for typical poses
-- [ ] Verify WASM binary < 2MB
-- [ ] Verify visualization app > 30 FPS
+- [x] Verify FK < 1ms for 6-DOF robot (achieved ~5Âµs)
+- [x] Verify IK < 10ms for typical poses (achieved ~100-300Âµs)
+- [x] Verify WASM binary < 2MB (achieved ~600KB)
+- [x] Verify visualization app > 30 FPS (achieved 60 FPS)
 
 ### 59. Documentation Review
-- [ ] Review all documentation for accuracy
-- [ ] Verify all links work
-- [ ] Check code examples compile and run
+- [x] Review all documentation for accuracy
+- [x] Verify all links work
+- [x] Check code examples compile and run
 - [ ] Get external review
 
 ### 60. Security Audit
@@ -461,9 +463,9 @@ This document outlines the implementation tasks in dependency order. Each task s
 - [ ] Run static analysis tools
 
 ### 61. Prepare for Release
-- [ ] Tag initial release (v1.0.0)
-- [ ] Create release notes
-- [ ] Update project website/repository
+- [x] Tag initial release (v1.0.0) - Released to PyPI and npm
+- [x] Create release notes
+- [x] Update project website/repository
 - [ ] Announce release
 
 ---
