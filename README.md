@@ -153,15 +153,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Eigen** - Fast linear algebra library
 - **DaQP** - Efficient quadratic programming solver
-- **LoIK** - Insights on differential inverse kinematics:
-  ```bibtex
-  @inproceedings{wingoLoIK2024,
-    title = {{Linear-time Differential Inverse Kinematics: an Augmented Lagrangian Perspective}},
-    author = {Wingo, Bruce and Sathya, Ajay and Caron, Stéphane and Hutchinson, Seth and Carpentier, Justin},
-    year = {2024},
-    booktitle = {Robotics: Science and Systems}
-  }
-  ```
+- **pugixml** - Lightweight XML parser for URDF parsing
+- **nanobind** - Efficient C++/Python bindings
+- **spdlog** - Fast C++ logging library
+- **GoogleTest** - C++ testing framework
+- **Emscripten** - WebAssembly compilation toolchain
 
 ## 📧 Support
 
