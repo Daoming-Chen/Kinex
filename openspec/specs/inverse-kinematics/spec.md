@@ -3,8 +3,8 @@
 ## Purpose
 TBD - created by archiving change add-robotics-kinematics-library. Update Purpose after archive.
 ## Requirements
-### Requirement: System SHALL solve IK using SQP algorithm with DaQP
-The system SHALL solve inverse kinematics using Sequential Quadratic Programming with joint limit constraints.
+### Requirement: IKSolver SHALL solve inverse kinematics using RobotModel
+The SQPIKSolver SHALL compute joint angles to achieve a target end-effector pose using a RobotModel (previously called Robot) and SQP optimization.
 
 #### Scenario: Solve IK for reachable pose
 **Given** a UR5e robot model  
