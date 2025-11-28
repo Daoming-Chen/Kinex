@@ -3,6 +3,31 @@
 ## Purpose
 Consolidate and standardize benchmark scenarios and metrics across C++ and Python implementations so results are comparable and reproducible. This document defines the canonical benchmark infrastructure, dataset generation, scenario semantics, metric naming/units, multi-robot support, and expected behavior for both native and binding-based benchmarks.
 ## Requirements
+### Requirement: Benchmarks SHALL use RobotModel for robot structural models
+
+All benchmark scripts SHALL use RobotModel (previously Robot) when loading robot models from URDF files.
+
+#### Scenario: Tier A benchmarks use RobotModel
+**GIVEN** the run_tier_a_benchmarks.py script
+**WHEN** robots are loaded from URDF files
+**THEN** the script uses `kinex.RobotModel` or the low-level API with RobotModel
+**AND** benchmarks continue to measure performance accurately
+**AND** results are comparable to previous benchmark runs
+
+#### Scenario: Tier B benchmarks generate RobotModel instances
+**GIVEN** the urdf_generator.py script
+**WHEN** synthetic robots are generated
+**THEN** the generated URDF strings are parsed into RobotModel instances
+**AND** benchmark solvers accept RobotModel parameters
+**AND** performance measurements remain valid
+
+#### Scenario: Oracle comparisons use RobotModel
+**GIVEN** the oracle.py script for IK validation
+**WHEN** comparing kinex results against other libraries
+**THEN** the oracle uses RobotModel for loading robots
+**AND** FK/IK/Jacobian computations use the updated API
+**AND** validation logic remains correct
+
 ### Requirement: Benchmark Dataset Generation
 
 The benchmark infrastructure SHALL provide tools to generate ground-truth datasets for IK evaluation.
@@ -363,9 +388,9 @@ The benchmark infrastructure SHALL provide clear documentation of organization a
 
 - **WHEN** developer wants to add a new benchmark
 - **THEN** documentation provides decision criteria:
-  - "Measuring core algorithm performance?" â†?`benchmarks/cpp/` or `benchmarks/python/`
-  - "Measuring binding overhead?" â†?`bindings/python/benchmarks/`
-  - "Creating test infrastructure?" â†?`benchmarks/tools/`
+  - "Measuring core algorithm performance?" ï¿½?`benchmarks/cpp/` or `benchmarks/python/`
+  - "Measuring binding overhead?" ï¿½?`bindings/python/benchmarks/`
+  - "Creating test infrastructure?" ï¿½?`benchmarks/tools/`
 - **AND** includes examples for each category
 
 #### Scenario: Import pattern documentation
