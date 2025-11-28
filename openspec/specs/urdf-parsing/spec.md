@@ -3,13 +3,13 @@
 ## Purpose
 TBD - created by archiving change add-robotics-kinematics-library. Update Purpose after archive.
 ## Requirements
-### Requirement: System SHALL parse URDF from file
-The system SHALL parse URDF XML files into an in-memory robot model structure.
+### Requirement: URDFParser SHALL parse URDF files into robot structural models
+The URDFParser SHALL parse URDF XML files into a `RobotModel` instance containing links, joints, and properties.
 
 #### Scenario: Load UR5e robot from URDF file
 **Given** a valid URDF file at path "ur5_urdf/ur5e.urdf"  
-**When** the user calls `Robot::fromURDF("ur5_urdf/ur5e.urdf")`  
-**Then** the system returns a Robot object containing all links and joints  
+**When** the user calls `parser.parseFile("ur5_urdf/ur5e.urdf")`  
+**Then** the system returns a `RobotModel` shared pointer containing all links and joints  
 **And** the robot has 6 revolute joints  
 **And** each joint has valid axis, limits, and origin data
 
@@ -68,8 +68,8 @@ The system SHALL support parsing URDF content from in-memory strings.
 
 #### Scenario: Parse URDF from string buffer
 **Given** a string containing valid URDF XML content  
-**When** the user calls `Robot::fromURDFString(urdf_content)`  
-**Then** the system returns a valid Robot object  
+**When** the user calls `parser.parseString(urdf_content)`  
+**Then** the system returns a `RobotModel` shared pointer  
 **And** the parsing behavior is identical to file-based parsing
 
 ### Requirement: System SHALL validate robot model
