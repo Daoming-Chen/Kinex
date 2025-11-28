@@ -75,8 +75,8 @@ class BenchmarkRunner:
         stats = gen.get_statistics()
         self.log(f"  Robot: {stats['num_revolute']} revolute, {stats['num_prismatic']} prismatic joints")
         
-        # 2. Load robot
-        robot = kinex.Robot.from_urdf_string(urdf_str)
+        # 2. Load robot model
+        robot = kinex.RobotModel.from_urdf_string(urdf_str)
         
         # 3. Setup oracle and sampler
         oracle = FKOracle(robot)
@@ -131,7 +131,7 @@ class BenchmarkRunner:
         return results
     
     def _run_case_type(self,
-                      robot: kinex.Robot,
+                      robot: kinex.RobotModel,
                       oracle: FKOracle,
                       sampler: JointSampler,
                       solver: kinex.SQPIKSolver,
@@ -291,7 +291,7 @@ def main():
         result['benchmark_time_s'] = elapsed
         all_results.append(result)
         
-        print(f"\n  âœ?Completed in {elapsed:.2f}s")
+        print(f"\n  ï¿½?Completed in {elapsed:.2f}s")
     
     total_elapsed = time.time() - start_total
     
@@ -313,8 +313,8 @@ def main():
         }, f, indent=2)
     
     print("\n" + "=" * 70)
-    print(f"âœ?All benchmarks completed in {total_elapsed:.2f}s")
-    print(f"âœ?Results saved to: {results_file}")
+    print(f"ï¿½?All benchmarks completed in {total_elapsed:.2f}s")
+    print(f"ï¿½?Results saved to: {results_file}")
     print("=" * 70)
 
 

@@ -1,22 +1,28 @@
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 import kinex
 
 class FKOracle:
     """
     Wrapper around kinex Forward Kinematics for benchmarking.
     """
-    def __init__(self, robot: kinex.RobotModel, end_link: Optional[str] = None):
+    def __init__(self, robot: Union[kinex.RobotModel, kinex.Robot], end_link: Optional[str] = None):
         self.robot = robot
-        self.end_link = end_link or self._find_leaf_link(robot)
+        # Handle both RobotModel (low-level) and Robot (high-level)
+        if hasattr(robot, "model"):
+            self.model = robot.model
+        else:
+            self.model = robot
+            
+        self.end_link = end_link or self._find_leaf_link(self.model)
         
         if not self.end_link:
             raise ValueError("Could not determine end link automatically.")
             
-        self.fk = kinex.ForwardKinematics(robot, self.end_link)
-        self.dof = robot.dof
+        self.fk = kinex.ForwardKinematics(self.model, self.end_link)
+        self.dof = self.model.dof
 
-    def _find_leaf_link(self, robot: kinex.Robot) -> str:
+    def _find_leaf_link(self, robot: kinex.RobotModel) -> str:
         """Find the first leaf link (no child joints)."""
         # Simple traversal or check all links
         # Assuming single chain for now or taking the "last" one
@@ -43,9 +49,14 @@ class JointSampler:
     """
     Samples joint configurations within limits.
     """
-    def __init__(self, robot: kinex.Robot, rng: np.random.RandomState = None):
+    def __init__(self, robot: Union[kinex.Robot, kinex.RobotModel], rng: np.random.RandomState = None):
         self.robot = robot
-        self.dof = robot.dof
+        if hasattr(robot, "dof"):
+            self.dof = robot.dof
+        else:
+            # Fallback if dof property missing (shouldn't happen with bindings)
+            self.dof = len(robot.get_actuated_joints())
+            
         self.limits = robot.get_joint_limits() # Expected shape (dof, 2) or specialized object
         # kinex Robot.get_joint_limits return numpy array? Check pyi.
         # pyi says: def get_joint_limits(self) -> np.ndarray: ...

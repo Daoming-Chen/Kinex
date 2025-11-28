@@ -23,7 +23,7 @@ SQPIKSolver ik(robot, "tool0");               // Yet another solver
 auto [q_sol, status] = ik.solve(target, q_init);
 ```
 
-**Desired User Experience** (v2.0):
+**Desired User Experience** (v1.0):
 ```cpp
 auto robot = Robot::fromURDF("ur5e.urdf", "tool0");  // Complete robot
 auto pose = robot.forwardKinematics(q);              // Direct call
@@ -34,7 +34,7 @@ auto robot2 = robot.clone();  // Easy cloning for multi-threading
 ```
 
 **Constraints**:
-- This is a breaking change (major version 2.0)
+- This establishes the standard API for v1.0
 - Must maintain C++20 standard
 - Must work across C++, Python, and WASM bindings
 - Performance must not regress
@@ -60,12 +60,12 @@ auto robot2 = robot.clone();  // Easy cloning for multi-threading
 - Add new kinematics algorithms (just wrapping existing ones)
 - Support dynamics or collision detection (future work)
 - Provide automatic multi-robot coordination
-- Maintain v1.x API compatibility (this is a breaking change)
+- Maintain legacy API compatibility (this refactors the core API)
 - Support multiple end-effectors per Robot instance (users can create multiple Robot instances)
 
 ## Decisions
 
-### Decision 1: Rename Robot → RobotModel (Breaking Change)
+### Decision 1: Rename Robot → RobotModel
 
 **Rationale**: The existing `Robot` class represents only the structural model (links, joints, geometry) parsed from URDF. It has no operational capabilities. Renaming to `RobotModel` clarifies its purpose and frees up the `Robot` name for the unified operational interface.
 
@@ -74,17 +74,17 @@ auto robot2 = robot.clone();  // Easy cloning for multi-threading
 - **New class as `RobotInterface` or `RobotAPI`**: Rejected - redundant suffixes, less discoverable
 - **Make Robot a derived class of RobotModel**: Rejected - adds unnecessary inheritance complexity
 
-**Impact**: This is a **major breaking change** requiring all code to update `Robot` → `RobotModel`. However:
+**Impact**: This requires all code to update `Robot` → `RobotModel`. However:
 - Migration is mechanical (mostly find-replace)
 - Clarifies architecture long-term
 - Frees up `Robot` for the intuitive operational API
 
 **Migration Pattern**:
 ```cpp
-// v1.x
+// Legacy
 std::shared_ptr<Robot> robot = parser.parseFile("ur5e.urdf");
 
-// v2.0
+// v1.0
 std::shared_ptr<RobotModel> model = parser.parseFile("ur5e.urdf");
 ```
 

@@ -41,42 +41,40 @@ import kinex
 import numpy as np
 
 # Load robot from URDF file
-robot = kinex.Robot.from_urdf("path/to/robot.urdf")
+# Specify the end-effector link name
+robot = kinex.Robot.from_urdf("path/to/robot.urdf", "tool0")
 
 # Get robot information
 print(f"Robot: {robot.name}")
 print(f"DOF: {robot.dof}")
 
 # Forward Kinematics
-fk = kinex.ForwardKinematics(robot, end_link="tool0")
 joint_angles = np.array([0.0, -1.57, 1.57, 0.0, 1.57, 0.0])
-pose = fk.compute(joint_angles)
+pose = robot.forward_kinematics(joint_angles)
 
-print(f"End-effector position: {pose.position}")
-print(f"End-effector orientation (quaternion): {pose.quaternion}")
+print(f"End-effector position: {pose.translation()}")
+print(f"End-effector rotation:\n{pose.rotation()}")
 
 # Inverse Kinematics
-ik = kinex.SQPIKSolver(robot, end_link="tool0")
-
 # Define target pose
-target_pose = {
-    "position": [0.4, 0.2, 0.5],
-    "quaternion": [1.0, 0.0, 0.0, 0.0]  # w, x, y, z
-}
+target_pose = kinex.Transform.from_position_rpy(
+    [0.4, 0.2, 0.5],  # x, y, z
+    [0, 3.14, 0]      # roll, pitch, yaw
+)
 
 # Solve IK from zero initial guess
-result = ik.solve(target_pose, initial_guess=np.zeros(robot.dof))
+solution, status = robot.inverse_kinematics(target_pose, np.zeros(robot.dof))
 
-if result.converged:
-    print(f"IK Solution: {result.solution}")
-    print(f"Iterations: {result.iterations}")
+if status.converged:
+    print(f"IK Solution: {solution}")
+    print(f"Iterations: {status.iterations}")
 else:
     print("IK did not converge")
 
 # Verify solution with FK
-verification_pose = fk.compute(result.solution)
+verification_pose = robot.forward_kinematics(solution)
 position_error = np.linalg.norm(
-    verification_pose.position - target_pose["position"]
+    verification_pose.translation() - target_pose.translation()
 )
 print(f"Position error: {position_error * 1000:.2f} mm")
 ```
@@ -94,10 +92,33 @@ async function main() {
   const urdfResponse = await fetch('path/to/robot.urdf');
   const urdfContent = await urdfResponse.text();
 
-  const robot = kinex.Robot.fromURDFString(urdfContent);
+  // Create robot instance with end-effector
+  const robot = kinex.Robot.fromURDFString(urdfContent, "tool0");
   console.log(`Robot: ${robot.getName()}`);
   console.log(`DOF: ${robot.getDOF()}`);
 
+  // Forward Kinematics
+  const q = new Float64Array([0, -1.57, 1.57, 0, 1.57, 0]);
+  const pose = robot.forwardKinematics(q);
+  console.log("Position:", pose.translation);
+
+  // Inverse Kinematics
+  const target = pose; // Use FK result as target
+  const qInit = new Float64Array(robot.getDOF()).fill(0);
+  
+  const result = robot.inverseKinematics(target, qInit);
+  
+  if (result.status.converged) {
+    console.log("Solution:", result.solution);
+  } else {
+    console.log("Failed to converge");
+  }
+  
+  // Clean up C++ objects
+  robot.delete();
+}
+main();
+```
   // Forward Kinematics
   const fk = new kinex.ForwardKinematics(robot, "tool0");
   const jointAngles = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0];

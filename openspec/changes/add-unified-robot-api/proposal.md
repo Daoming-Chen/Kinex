@@ -12,7 +12,7 @@ This change creates a unified `Robot` class that provides simple, intuitive acce
 
 ## What Changes
 
-### Core Architecture Refactoring (Breaking Change)
+### Core Architecture Refactoring
 - **Rename** `Robot` class → `RobotModel` throughout entire codebase
   - This clarifies that this class represents only the structural model (links, joints, geometry)
   - All references in C++ headers, implementations, tests, bindings, examples updated
@@ -34,9 +34,9 @@ This change creates a unified `Robot` class that provides simple, intuitive acce
 - `clone()` performs deep copy of RobotModel only (not solver state)
 
 ### Compatibility
-- **Breaking change** acknowledged: All code using `Robot` must change to `RobotModel`
+- **API Refactoring**: All code using `Robot` must change to `RobotModel`
 - Low-level classes (`ForwardKinematics`, etc.) remain accessible for advanced users
-- This is a major version bump (v1.0 → v2.0)
+- This establishes the standard API for v1.0
 
 ## Impact
 

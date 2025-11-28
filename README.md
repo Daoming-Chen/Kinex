@@ -8,8 +8,6 @@
 
 A modern C++20 robotics kinematics library with Python and WebAssembly bindings for browser-based robotics applications.
 
-> **⚠️ Note (v2.0 Breaking Change):** The API has been refactored. The class `Robot` is now `RobotModel`. A new `Robot` class provides a unified high-level API. See [Migration Guide](docs/guides/migration-v2.md) for details.
-
 ## ✨ Features
 
 - 🚀 **High Performance**: Analytical Jacobian computation 5-10x faster than automatic differentiation
