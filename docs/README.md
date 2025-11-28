@@ -16,16 +16,16 @@ New to Kinex? Start here:
 
 Detailed API documentation for each language binding:
 
-- **[Python API](api/python.md)** - Python bindings reference
-- **C++ API** - Core library documentation (coming soon)
-- **WebAssembly API** - JavaScript/TypeScript bindings (coming soon)
+- **[C++ API](api/cpp.md)** - Core library documentation with unified Robot class
+- **[Python API](api/python.md)** - Python bindings reference with Robot class
+- **WebAssembly API** - JavaScript/TypeScript bindings documentation (in development)
 
 ## Tutorials
 
 Step-by-step guides for common tasks:
 
-- **C++ Tutorial** - Using Kinex in C++ applications (coming soon)
-- **Python Tutorial** - Python examples and patterns (coming soon)
+- **[C++ Tutorial](tutorials/cpp-tutorial.md)** - Using Kinex unified Robot API in C++ applications
+- **Python Tutorial** - Python examples and patterns with Robot class (coming soon)
 - **Web Application Tutorial** - Building web apps with WASM (coming soon)
 
 ## Performance

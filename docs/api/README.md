@@ -1,8 +1,20 @@
-# C++ API Documentation
+# API Documentation
 
-This directory will contain the generated C++ API documentation using Doxygen.
+This directory contains API documentation for all language bindings.
 
-## Generating Documentation
+## C++ API Documentation
+
+### Core Classes
+- **[`Robot`](cpp.md#robot-class)** - Unified high-level interface (Recommended)
+- **[`RobotModel`](cpp.md#robotmodel-class)** - Low-level robot structure (for advanced users)
+- **[`URDFParser`](cpp.md#urdfparser-class)** - URDF file parsing utility
+
+### Solvers (Low-level)
+- **`ForwardKinematics`** - Forward kinematics computation
+- **`JacobianCalculator`** - Jacobian matrix computation
+- **`SQPIKSolver`** - Sequential Quadratic Programming IK solver
+
+### Generated Documentation
 
 ```bash
 cd docs/api/cpp
@@ -11,15 +23,14 @@ doxygen Doxyfile
 
 The generated HTML documentation will be in `docs/api/cpp/html/`.
 
-## Configuration
+## Language Bindings
 
-`Doxyfile` will be added in a future update. It will extract documentation from:
+- **[Python API Reference](python.md)** - Python bindings documentation
+- **[WebAssembly API](wasm.md)** - JavaScript/TypeScript bindings documentation (coming soon)
 
-- `core/include/kinex/*.h` - Public API headers
-- `core/src/*.cpp` - Implementation files (for internal docs)
+## Examples
 
-## Planned Documentation Sections
-
-- **Modules**: Robot Model, URDF Parser, Kinematics, Inverse Kinematics
-- **Classes**: `RobotModel`, `ForwardKinematics`, `InverseKinematics`
-- **Examples**: Code snippets from `examples/cpp/`
+Code snippets and examples are available in:
+- **[C++ Examples](../../examples/cpp/)** - C++ usage examples
+- **[Python Examples](../../examples/python/)** - Python usage examples
+- **[JavaScript Examples](../../examples/javascript/)** - WebAssembly usage examples

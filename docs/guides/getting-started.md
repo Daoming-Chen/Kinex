@@ -34,6 +34,10 @@ sudo cmake --install build
 
 ## Quick Start Examples
 
+> 💡 Recommendation: For most use cases, prefer the unified `Robot` API (create a `Robot` instance
+> and call `robot.forwardKinematics`, `robot.inverseKinematics`, etc.). Low-level classes `ForwardKinematics`
+> and `SQPIKSolver` are available for advanced scenarios.
+
 ### Python
 
 ```python
@@ -119,39 +123,9 @@ async function main() {
 }
 main();
 ```
-  // Forward Kinematics
-  const fk = new kinex.ForwardKinematics(robot, "tool0");
-  const jointAngles = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0];
-  const pose = fk.compute(jointAngles);
-
-  console.log('Position:', pose.position);
-  console.log('Quaternion:', pose.quaternion);
-
-  // Inverse Kinematics
-  const ik = new kinex.SQPIKSolver(robot, "tool0");
-
-  const targetPose = {
-    position: [0.4, 0.2, 0.5],
-    quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
-  };
-
-  const initialGuess = new Array(robot.getDOF()).fill(0.0);
-  const result = ik.solve(targetPose, initialGuess);
-
-  if (result.converged) {
-    console.log('Solution:', result.solution);
-    console.log('Iterations:', result.iterations);
-  } else {
-    console.log('IK did not converge');
-  }
-
-  // Clean up
-  ik.delete();
-  fk.delete();
-  robot.delete();
-}
-
-main();
+// Note: The unified `Robot` class provides `forwardKinematics` and `inverseKinematics` which are
+// recommended for most applications. The low-level helpers (ForwardKinematics, SQPIKSolver) remain
+// available for advanced use cases where you need direct control over solver configuration.
 ```
 
 ### C++
@@ -274,9 +248,13 @@ for target_pose in trajectory:
 ### Configuring the IK Solver
 
 ```python
-# Python example
-ik = kinex.SQPIKSolver(robot, "tool0")
+# Preferred: Use Robot setters for common configuration
+# e.g. set the tolerance used by the unified IK solver:
+robot.set_ik_tolerance(1e-6)
 
+# Advanced: If you need to directly configure the low-level SQPIKSolver,
+# you can still instantiate it from the RobotModel and use `get_config`.
+ik = kinex.SQPIKSolver(robot, "tool0")
 config = ik.get_config()
 config.max_iterations = 200
 config.tolerance = 1e-6
@@ -287,12 +265,11 @@ ik.set_config(config)
 ### Computing All Link Transforms
 
 ```python
-# Get transforms for all links efficiently
-fk = kinex.ForwardKinematics(robot, "tool0")
-all_transforms = fk.compute_all_link_transforms(joint_angles)
+# Get transforms for all links efficiently (recommended)
+all_transforms = robot.compute_all_link_transforms(joint_angles)
 
 for link_name, transform in all_transforms.items():
-    print(f"{link_name}: {transform.position}")
+    print(f"{link_name}: {transform.translation()}" )
 ```
 
 ## Working with URDF Files

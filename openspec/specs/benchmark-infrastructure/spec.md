@@ -3,6 +3,30 @@
 ## Purpose
 Consolidate and standardize benchmark scenarios and metrics across C++ and Python implementations so results are comparable and reproducible. This document defines the canonical benchmark infrastructure, dataset generation, scenario semantics, metric naming/units, multi-robot support, and expected behavior for both native and binding-based benchmarks.
 ## Requirements
+### Requirement: Benchmarks SHALL use RobotModel for robot structural models
+All benchmark scripts SHALL use RobotModel (previously Robot) when loading robot models from URDF files.
+
+#### Scenario: Tier A benchmarks use RobotModel
+**GIVEN** the run_tier_a_benchmarks.py script
+**WHEN** robots are loaded from URDF files
+**THEN** the script uses `kinex.RobotModel` or the low-level API with RobotModel
+**AND** benchmarks continue to measure performance accurately
+**AND** results are comparable to previous benchmark runs
+
+#### Scenario: Tier B benchmarks generate RobotModel instances
+**GIVEN** the urdf_generator.py script
+**WHEN** synthetic robots are generated
+**THEN** the generated URDF strings are parsed into RobotModel instances
+**AND** benchmark solvers accept RobotModel parameters
+**AND** performance measurements remain valid
+
+#### Scenario: Oracle comparisons use RobotModel
+**GIVEN** the oracle.py script for IK validation
+**WHEN** comparing kinex results against other libraries
+**THEN** the oracle uses RobotModel for loading robots
+**AND** FK/IK/Jacobian computations use the updated API
+**AND** validation logic remains correct
+
 ### Requirement: Benchmark Dataset Generation
 
 The benchmark infrastructure SHALL provide tools to generate ground-truth datasets for IK evaluation.
@@ -71,7 +95,6 @@ The benchmark infrastructure SHALL collect comprehensive metrics for IK solver e
 - **THEN** average, median, min, max iterations per solve are recorded
 - **AND** iteration count is tracked separately for converged and failed attempts
 
-
 #### Scenario: Execution time measurement
 
 - **WHEN** IK solve is executed
@@ -116,24 +139,22 @@ The benchmark infrastructure SHALL evaluate the impact of initial guess quality 
 - **THEN** IK solves reuse previous solution as initial guess
 - **AND** first solve is primed outside measured region
 @@
+
 ### Requirement: Trajectory Tracking Benchmark
 
-The benchmark infrastructure SHALL evaluate IK solver performance on continuous trajectories and SHALL ensure the trajectory semantics match across languages (C++ and Python).
+The benchmark infrastructure SHALL evaluate IK solver performance on continuous trajectories.
 
 #### Scenario: Generate trajectory dataset
 
 - **WHEN** a trajectory dataset is created
-- **THEN** 25 waypoints are sampled along a smooth path in joint space
-- **AND** waypoints are separated by small increments (max 0.08 rad per joint)
-- **AND** waypoints stay within joint limits (clamped if necessary)
-- **AND** same trajectory generation logic is used in C++ and Python
+- **THEN** N waypoints are sampled along a smooth path in joint space
+- **AND** waypoints are separated by small increments (e.g., 0.08 rad per joint)
 
 #### Scenario: Trajectory following benchmark
 
-- **WHEN** user runs `BM_IK_Trajectory` (C++) or `trajectory` scenario (Python)
+- **WHEN** user runs `BM_IK_Trajectory`
 - **THEN** IK is solved sequentially for each waypoint
-- **AND** first waypoint uses zero initialization (cold start)
-- **AND** subsequent waypoints use previous solution as initial guess (warm start)
+- **AND** previous solution is used as initial guess for next waypoint (warm start)
 - **AND** metrics track cumulative error and convergence failure rate
 
 ### Requirement: Multi-Robot Benchmark Support
@@ -363,9 +384,9 @@ The benchmark infrastructure SHALL provide clear documentation of organization a
 
 - **WHEN** developer wants to add a new benchmark
 - **THEN** documentation provides decision criteria:
-  - "Measuring core algorithm performance?" â†?`benchmarks/cpp/` or `benchmarks/python/`
-  - "Measuring binding overhead?" â†?`bindings/python/benchmarks/`
-  - "Creating test infrastructure?" â†?`benchmarks/tools/`
+  - "Measuring core algorithm performance?" ï¿½?`benchmarks/cpp/` or `benchmarks/python/`
+  - "Measuring binding overhead?" ï¿½?`bindings/python/benchmarks/`
+  - "Creating test infrastructure?" ï¿½?`benchmarks/tools/`
 - **AND** includes examples for each category
 
 #### Scenario: Import pattern documentation
@@ -397,4 +418,16 @@ The benchmark tools SHALL be organized as a Python package accessible to all ben
 - **WHEN** benchmark results need visualization
 - **THEN** script imports visualization functions from `benchmarks.tools.visualize`
 - **AND** functions accept standard result JSON formats
+
+### Requirement: Benchmarks SHALL support unified Robot API usage
+Benchmark scripts SHALL be compatible with the new unified Robot class, allowing cleaner, more concise code in example benchmarks while maintaining the option to use low-level API for direct performance measurement.
+
+#### Scenario: Example benchmark uses unified Robot API
+**GIVEN** a benchmark script demonstrating library usage
+**WHEN** the script is updated to use Robot class
+**THEN** the code is more concise and readable
+**AND** performance characteristics are identical to low-level API
+**AND** the benchmark serves as usage example for end users
+
+**Note**: Updating benchmarks to use Robot class is OPTIONAL. Benchmarks can continue using low-level API (ForwardKinematics, SQPIKSolver, etc.) with RobotModel for direct performance measurement.
 
