@@ -3,19 +3,19 @@
 ## Purpose
 TBD - created by archiving change add-python-bindings. Update Purpose after archive.
 ## Requirements
-### Requirement: URDF Parser Binding
+### Requirement: Python bindings SHALL expose RobotModel class
 
-The Python bindings SHALL expose URDF parsing functionality through a `Robot` class with factory methods.
+The Python bindings SHALL expose URDF parsing functionality through a `RobotModel` class with factory methods.
 
 #### Scenario: Parse URDF from file
 
-- **WHEN** user calls `Robot.from_urdf("path/to/robot.urdf")`
+- **WHEN** user calls `RobotModel.from_urdf("path/to/robot.urdf")`
 - **THEN** a Robot instance is returned with parsed robot model
 - **AND** all links, joints, and properties are accessible
 
 #### Scenario: Parse URDF from string
 
-- **WHEN** user calls `Robot.from_urdf_string(urdf_xml_string)`
+- **WHEN** user calls `RobotModel.from_urdf_string(urdf_xml_string)`
 - **THEN** a Robot instance is returned with parsed robot model
 
 #### Scenario: Invalid URDF file
