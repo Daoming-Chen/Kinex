@@ -3,8 +3,8 @@
 ## Purpose
 TBD - created by archiving change add-robotics-kinematics-library. Update Purpose after archive.
 ## Requirements
-### Requirement: System SHALL compute forward kinematics for kinematic chain
-The system SHALL compute the end-effector pose given joint angles using Eigen transformations.
+### Requirement: System SHALL compute forward kinematics for kinematic chain using RobotModel
+The system SHALL compute the end-effector pose given joint angles using a RobotModel and Eigen transformations.
 
 #### Scenario: Compute FK for UR5e at zero configuration
 **Given** a UR5e robot model  
