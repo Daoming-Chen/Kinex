@@ -20,8 +20,8 @@ The system SHALL compile the C++ library to WebAssembly for browser usage.
 **And** all exported functions are accessible  
 **And** no errors appear in browser console
 
-### Requirement: System SHALL expose essential C++ API via Embind
-The system SHALL expose core kinematics functions to JavaScript using Embind.
+### Requirement: WASM bindings SHALL use RobotModel internally
+The WASM bindings SHALL use `RobotModel` internally for all low-level operations while continuing to expose a `Robot` class to JavaScript for convenience and backward compatibility.
 
 #### Scenario: Create Robot from URDF string in JS
 **Given** URDF content as a JavaScript string  
