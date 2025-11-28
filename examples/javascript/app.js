@@ -5,13 +5,13 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 // import createKinexModule from '@daoming.chen/kinex'; // Loaded dynamically
 
 // Configuration
-const URDF_PATH = './models/ur5/ur5e+x.urdf';
-const MESH_BASE_PATH = './models/ur5/'; // Meshes are relative to this
+const URDF_PATH = '../models/ur5/ur5e+x.urdf';
+const MESH_BASE_PATH = '../models/ur5/'; // Meshes are relative to this
 const END_EFFECTOR_LINK = 'wrist_3_link';
 
 // Globals
 let scene, camera, renderer, controls, transformControl;
-let kinex, robot, solver, fk;
+let kinex, robot, robotModel, fk;
 let robotVisuals = {}; // Map<linkName, THREE.Group>
 let currentJoints; // Float64Array
 let targetSphere;
@@ -21,7 +21,7 @@ let isDragging = false;
 window.debug = {
     get scene() { return scene; },
     get robot() { return robot; },
-    get solver() { return solver; },
+    get robotModel() { return robotModel; },
     get currentJoints() { return currentJoints; },
     get targetSphere() { return targetSphere; },
     get fk() { return fk; },
@@ -62,7 +62,7 @@ async function init() {
 
         locateFile = (path, prefix) => {
             if (path.endsWith('.wasm')) {
-                return 'https://unpkg.com/@daoming.chen/kinex@latest/kinex.wasm';
+                return '../../build-wasm/wasm/kinex.wasm';
             }
             return prefix + path;
         };
@@ -103,14 +103,18 @@ async function init() {
 
     // 4. Initialize Robot
     try {
-        robot = kinex.Robot.fromURDFString(urdfContent, "");
+        // Create Unified Robot for kinematics
+        robot = kinex.Robot.fromURDFString(urdfContent, END_EFFECTOR_LINK, "");
+        
+        // Create RobotModel for structure traversal and visual setup
+        // (This is necessary because the unified Robot wrapper in WASM currently hides the structure details)
+        robotModel = kinex.RobotModel.fromURDFString(urdfContent, "");
+        
         const dof = robot.getDOF();
         console.log(`Robot loaded: ${robot.getName()}, DOF: ${dof}`);
         
-        // Initialize joints to 0 (or a home position)
+        // Initialize joints
         currentJoints = new Float64Array(dof);
-        // Set some initial angles to avoid singularity if needed, or just 0
-        // For UR5, maybe a bit of a pose
         if (dof >= 6) {
             currentJoints[1] = -1.57;
             currentJoints[2] = 1.57;
@@ -118,20 +122,17 @@ async function init() {
             currentJoints[4] = -1.57;
         }
 
-        // Initialize Solvers
-        console.log("Initializing SQPIKSolver...");
-        solver = new kinex.SQPIKSolver(robot, END_EFFECTOR_LINK, "");
-        console.log("SQPIKSolver initialized");
-
-        console.log("Initializing ForwardKinematics...");
-        fk = new kinex.ForwardKinematics(robot, END_EFFECTOR_LINK, "");
-        console.log("ForwardKinematics initialized");
-        
-        // Configure Solver
-        const config = solver.getConfig();
+        // Configure Unified Robot Solver
+        const config = robot.getSolverConfig();
         config.max_iterations = 100;
         config.tolerance = 1e-4;
-        solver.setConfig(config);
+        robot.setSolverConfig(config);
+        
+        // Create helper FK for full-body visualization update
+        // (This is necessary because the unified Robot wrapper doesn't expose computeAllLinkTransforms yet)
+        fk = new kinex.ForwardKinematics(robotModel, END_EFFECTOR_LINK, "");
+        
+        console.log("Robot and solvers initialized");
 
     } catch (e) {
         console.error("Failed to initialize Robot:", e);
@@ -195,7 +196,8 @@ function setupThreeJS() {
 }
 
 async function createRobotVisuals() {
-    const links = robot.getLinks();
+    // Use robotModel for structure traversal
+    const links = robotModel.getLinks();
     const numLinks = links.size();
     const loader = new OBJLoader();
 
@@ -222,8 +224,6 @@ async function createRobotVisuals() {
             if (geometry.type === kinex.GeometryType.Mesh) {
                 const meshFilename = geometry.mesh_filename;
                 scale = geometry.mesh_scale;
-                
-                // Construct path
                 const meshPath = MESH_BASE_PATH + meshFilename;
                 
                 try {
@@ -240,7 +240,6 @@ async function createRobotVisuals() {
                 const radius = geometry.cylinder_radius;
                 const length = geometry.cylinder_length;
                 const geo = new THREE.CylinderGeometry(radius, radius, length, 32);
-                // URDF cylinders are Z-aligned, Three.js are Y-aligned. Rotate 90 deg around X.
                 geo.rotateX(Math.PI / 2);
                 object = new THREE.Mesh(geo);
             } else if (geometry.type === kinex.GeometryType.Sphere) {
@@ -250,20 +249,16 @@ async function createRobotVisuals() {
             }
 
             if (object) {
-                // Apply scale if it's a mesh (others are sized by geometry parameters)
                 if (geometry.type === kinex.GeometryType.Mesh) {
                     object.scale.set(scale[0], scale[1], scale[2]);
                 }
 
-                // Determine color
                 let color = 0xeeeeee;
                 let opacity = 1.0;
                 let transparent = false;
                 
-                // Try to get color from visual if available
-                if (visual.color) {
-                     const c = visual.color;
-                     // Assuming Vector4 is exposed as array-like [r, g, b, a]
+                if (visual.getColor()) {
+                     const c = visual.getColor();
                      if (c.length >= 3) {
                          color = new THREE.Color(c[0], c[1], c[2]);
                      }
@@ -281,7 +276,6 @@ async function createRobotVisuals() {
                     opacity: opacity
                 });
 
-                // Apply material and shadows
                 object.traverse((child) => {
                     if (child.isMesh) {
                         child.material = material;
@@ -295,15 +289,14 @@ async function createRobotVisuals() {
                     object.receiveShadow = true;
                 }
 
-                // Apply visual origin
                 const visualGroup = new THREE.Group();
                 visualGroup.add(object);
                 
                 const pos = origin.translation();
-                const quat = origin.asPose().quaternion; // w, x, y, z
+                const quat = origin.asPose().quaternion;
                 
                 visualGroup.position.set(pos[0], pos[1], pos[2]);
-                visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]); // Three.js is x, y, z, w
+                visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]);
                 
                 linkGroup.add(visualGroup);
             }
@@ -318,13 +311,11 @@ function loadMesh(loader, url) {
 }
 
 function setupInteraction() {
-    // Target Sphere
     const geometry = new THREE.SphereGeometry(0.05, 32, 32);
     const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
     targetSphere = new THREE.Mesh(geometry, material);
     scene.add(targetSphere);
 
-    // Transform Controls
     transformControl = new TransformControls(camera, renderer.domElement);
     transformControl.addEventListener('dragging-changed', function (event) {
         controls.enabled = !event.value;
@@ -335,7 +326,6 @@ function setupInteraction() {
     transformControl.attach(targetSphere);
     scene.add(transformControl);
 
-    // Keyboard controls for mode switching
     window.addEventListener('keydown', function (event) {
         switch (event.key) {
             case 't':
@@ -347,18 +337,14 @@ function setupInteraction() {
         }
     });
 
-    // Initial position of target (match end effector)
-    const eePose = fk.compute(currentJoints);
+    // Use Robot API for FK
+    const eePose = robot.forwardKinematics(currentJoints);
     targetSphere.position.set(eePose.position[0], eePose.position[1], eePose.position[2]);
-    // Quaternion
     const q = eePose.quaternion;
     targetSphere.quaternion.set(q[1], q[2], q[3], q[0]);
 }
 
 function onTargetChange() {
-    // Called when user drags the sphere
-    // Perform IK
-    
     const targetPos = targetSphere.position;
     const targetQuat = targetSphere.quaternion;
 
@@ -368,14 +354,12 @@ function onTargetChange() {
 
     const targetPose = {
         position: [targetPos.x, targetPos.y, targetPos.z],
-        quaternion: [targetQuat.w, targetQuat.x, targetQuat.y, targetQuat.z] // w, x, y, z
+        quaternion: [targetQuat.w, targetQuat.x, targetQuat.y, targetQuat.z]
     };
 
-    // Solve IK
-    // Use current joints as seed
-    const result = solver.solve(targetPose, currentJoints);
+    // Use Robot API for IK
+    const result = robot.inverseKinematics(targetPose, currentJoints);
     
-    // Update joints regardless of convergence (best effort)
     const solution = result.solution;
     const dof = robot.getDOF();
     
@@ -389,8 +373,8 @@ function onTargetChange() {
         }
     }
 
-    // Check FK of solution
-    const eePose = fk.compute(currentJoints);
+    // Use Robot API for FK check
+    const eePose = robot.forwardKinematics(currentJoints);
     console.log("--- Solved FK (Kinex Frame) ---");
     console.log(`Pos: [${eePose.position[0].toFixed(4)}, ${eePose.position[1].toFixed(4)}, ${eePose.position[2].toFixed(4)}]`);
     console.log(`Quat (wxyz): [${eePose.quaternion[0].toFixed(4)}, ${eePose.quaternion[1].toFixed(4)}, ${eePose.quaternion[2].toFixed(4)}, ${eePose.quaternion[3].toFixed(4)}]`);
@@ -399,7 +383,7 @@ function onTargetChange() {
 }
 
 function updateRobotPose() {
-    // Get all link transforms in one call (much more efficient!)
+    // Use helper FK for full visualization update (computes all frames efficiently)
     const linkTransforms = fk.computeAllLinkTransforms(currentJoints);
     
     if (linkTransforms.has('base')) {
@@ -407,11 +391,10 @@ function updateRobotPose() {
          console.log(`Base Transform: Pos=[${baseT.position.join(', ')}], Quat=[${baseT.quaternion.join(', ')}]`);
     }
 
-    // Update each link's visual pose
     linkTransforms.forEach((pose, linkName) => {
         if (robotVisuals[linkName]) {
             const pos = pose.position;
-            const quat = pose.quaternion; // w, x, y, z
+            const quat = pose.quaternion;
             
             robotVisuals[linkName].position.set(pos[0], pos[1], pos[2]);
             robotVisuals[linkName].quaternion.set(quat[1], quat[2], quat[3], quat[0]);

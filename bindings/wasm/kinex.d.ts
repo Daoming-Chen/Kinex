@@ -155,8 +155,8 @@ export class Joint {
     getDynamics(): JointDynamics | null;
 }
 
-export class Robot {
-    static fromURDFString(urdf: string, baseDir?: string): Robot;
+export class RobotModel {
+    static fromURDFString(urdf: string, baseDir?: string): RobotModel;
 
     getName(): string;
     getJointNames(): string[] | EmbindVector<string>;
@@ -172,18 +172,49 @@ export class Robot {
     isDisposed(): boolean;
 }
 
+export class Robot {
+    static fromURDFString(urdf: string, endLink: string, baseLink?: string): Robot;
+    clone(): Robot;
+    
+    forwardKinematics(jointAngles: NumericArray | EmbindVector<number>, link?: string): Pose;
+    computePose(jointAngles: NumericArray | EmbindVector<number>, link?: string): Pose;
+    
+    inverseKinematics(target: Pose, q_init: NumericArray | EmbindVector<number>, link?: string): IKResult;
+    solveIK(target: Pose, q_init: NumericArray | EmbindVector<number>, link?: string): IKResult;
+    
+    computeJacobian(jointAngles: NumericArray | EmbindVector<number>, link?: string, type?: JacobianType): Matrix;
+    getManipulability(jointAngles: NumericArray | EmbindVector<number>, link?: string): number;
+    isSingular(jointAngles: NumericArray | EmbindVector<number>, threshold: number, link?: string): boolean;
+    getConditionNumber(jointAngles: NumericArray | EmbindVector<number>, link?: string): number;
+    
+    setIKTolerance(tol: number): void;
+    setPositionOnlyIK(enable: boolean): void;
+    setOrientationOnlyIK(enable: boolean): void;
+    setSolverConfig(config: SolverConfig): void;
+    getSolverConfig(): SolverConfig;
+    
+    getName(): string;
+    getEndLink(): string;
+    getBaseLink(): string;
+    getDOF(): number;
+    
+    dispose(): void;
+    isDisposed(): boolean;
+}
+
 export class ForwardKinematics {
-    constructor(robot: Robot, endLink: string, baseLink?: string);
+    constructor(robot: RobotModel, endLink: string, baseLink?: string);
 
     compute(jointAngles: NumericArray | EmbindVector<number>, checkBounds?: boolean): Pose;
     computeToLink(jointAngles: NumericArray | EmbindVector<number>, targetLink: string, checkBounds?: boolean): Pose;
     computeMatrix(jointAngles: NumericArray, checkBounds?: boolean): Matrix;
+    computeAllLinkTransforms(jointAngles: NumericArray, checkBounds?: boolean): Record<string, Pose>;
     getNumJoints(): number;
     dispose(): void;
 }
 
 export class JacobianCalculator {
-    constructor(robot: Robot, endLink: string, baseLink?: string);
+    constructor(robot: RobotModel, endLink: string, baseLink?: string);
 
     compute(jointAngles: NumericArray | EmbindVector<number>, type?: JacobianType, targetLink?: string): Matrix;
     isSingular(jointAngles: NumericArray | EmbindVector<number>, threshold?: number, type?: JacobianType, targetLink?: string): boolean;
@@ -193,7 +224,7 @@ export class JacobianCalculator {
 }
 
 export class SQPIKSolver {
-    constructor(robot: Robot, endLink: string, baseLink?: string);
+    constructor(robot: RobotModel, endLink: string, baseLink?: string);
 
     setConfig(config: SolverConfig): void;
     getConfig(): SolverConfig;
@@ -205,6 +236,7 @@ export class SQPIKSolver {
 }
 
 export interface KinexModule {
+    RobotModel: typeof RobotModel;
     Robot: typeof Robot;
     ForwardKinematics: typeof ForwardKinematics;
     JacobianCalculator: typeof JacobianCalculator;

@@ -2,7 +2,6 @@ import kinex
 import numpy as np
 import os
 import sys
-# Optional: import matplotlib if available
 try:
     import matplotlib.pyplot as plt
     HAS_MATPLOTLIB = True
@@ -21,8 +20,12 @@ def main():
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
-    robot = kinex.Robot.from_urdf_file(urdf_path)
-    ik = kinex.SQPIKSolver(robot, "wrist_3_link")
+    robot = kinex.Robot.from_urdf(urdf_path, "wrist_3_link")
+    
+    # Configure solver
+    config = robot.get_solver_config()
+    config.enable_warm_start = True
+    robot.set_solver_config(config)
     
     # Generate a simple line trajectory
     start_pos = np.array([0.4, -0.4, 0.2])
@@ -34,7 +37,6 @@ def main():
     
     traj_q = []
     current_q = np.zeros(6) # Initial guess
-    ik.set_warm_start(current_q)
     
     print(f"Generating trajectory with {steps} steps...")
     
@@ -45,11 +47,11 @@ def main():
         # Create target pose with desired position and orientation
         target_pose = kinex.Transform.from_position_rpy(pos, np.array([roll, pitch, yaw]))
         
-        # Use previous solution as guess (warm start)
-        result = ik.solve(target_pose, current_q)
+        # Use previous solution as guess
+        solution, status = robot.inverse_kinematics(target_pose, current_q)
         
-        if result.status.converged:
-            current_q = result.solution
+        if status.converged:
+            current_q = solution
             traj_q.append(current_q)
         else:
             print(f"IK failed at step {i}")
@@ -68,11 +70,10 @@ def main():
         plt.legend()
         plt.grid(True)
         print("Displaying plot...")
-        # plt.show() # Commented out to avoid blocking in non-interactive envs
+        # plt.show()
         print("Plot generation supported but disabled for non-interactive run")
     elif not HAS_MATPLOTLIB:
         print("Install matplotlib to visualize the trajectory")
 
 if __name__ == "__main__":
     main()
-

@@ -63,7 +63,7 @@ describeIf('kinex WASM module (Node)', () => {
   });
 
   test('creates robot from URDF string', () => {
-    const robot = module.Robot.fromURDFString(SIMPLE_URDF);
+    const robot = module.RobotModel.fromURDFString(SIMPLE_URDF);
     expect(robot.getName()).toBe('two_link');
     expect(vectorToArray(robot.getJointNames())).toEqual(['joint_1']);
     expect(robot.getDOF()).toBe(1);
@@ -71,7 +71,7 @@ describeIf('kinex WASM module (Node)', () => {
   });
 
   test('computes forward kinematics at zero angles', () => {
-    const robot = module.Robot.fromURDFString(SIMPLE_URDF);
+    const robot = module.RobotModel.fromURDFString(SIMPLE_URDF);
     const fk = new module.ForwardKinematics(robot, 'link_1', 'base');
     const pose = fk.compute([0.0]);
     const position = vectorToArray(pose.position);
@@ -84,7 +84,7 @@ describeIf('kinex WASM module (Node)', () => {
   });
 
   test('computes Jacobian and solves IK', () => {
-    const robot = module.Robot.fromURDFString(SIMPLE_URDF);
+    const robot = module.RobotModel.fromURDFString(SIMPLE_URDF);
     const jac = new module.JacobianCalculator(robot, 'link_1', 'base');
     const matrix = jac.compute([0.0], module.JacobianType.Analytic);
     expect(matrix.rows).toBe(6);

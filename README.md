@@ -45,20 +45,19 @@ npm install @daoming.chen/kinex
 import kinex
 import numpy as np
 
-# Load robot from URDF
-robot = kinex.Robot.from_urdf("ur5e.urdf")
+# Load robot from URDF (Unified API)
+robot = kinex.Robot.from_urdf("ur5e.urdf", "tool0")
 
 # Forward kinematics
-fk = kinex.ForwardKinematics(robot, "tool0")
 joint_angles = np.array([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
-pose = fk.compute(joint_angles)
-print(f"Position: {pose.position}")
+pose = robot.forward_kinematics(joint_angles)
+print(f"Position: {pose.translation()}")
 
 # Inverse kinematics
-ik = kinex.SQPIKSolver(robot, "tool0")
-target_pose = {...}  # Target position and orientation
-solution = ik.solve(target_pose, initial_guess=np.zeros(6))
-print(f"Joint solution: {solution.solution}")
+target_pose = ... # Transform object
+solution, status = robot.inverse_kinematics(target_pose, q_init=np.zeros(6))
+if status.converged:
+    print(f"Joint solution: {solution}")
 ```
 
 ### JavaScript/WebAssembly Example
@@ -69,21 +68,19 @@ import createKinexModule from '@daoming.chen/kinex';
 // Initialize WASM module
 const kinex = await createKinexModule();
 
-// Load robot from URDF string
-const robot = kinex.Robot.fromURDFString(urdfContent);
+// Load robot from URDF string (Unified API)
+const robot = kinex.Robot.fromURDFString(urdfContent, "tool0");
 
 // Compute forward kinematics
-const fk = new kinex.ForwardKinematics(robot, "tool0");
-const pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
+const pose = robot.forwardKinematics([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
 console.log('Position:', pose.position);
 
 // Solve inverse kinematics
-const ik = new kinex.SQPIKSolver(robot, "tool0");
 const targetPose = {
   position: [0.5, 0.0, 0.5],
-  quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
+  quaternion: [1.0, 0.0, 0.0, 0.0]
 };
-const result = ik.solve(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+const result = robot.inverseKinematics(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
 console.log('Solution:', result.solution);
 ```
 

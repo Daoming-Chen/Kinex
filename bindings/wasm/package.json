@@ -1,37 +1,38 @@
-﻿{
-    "name": "@daoming.chen/kinex",
-    "version": "1.0.0",
-    "description": "WebAssembly bindings for kinex robotics kinematics library",
-    "main": "kinex.js",
-    "types": "kinex.d.ts",
-    "files": [
-        "kinex.js",
-        "kinex.wasm",
-        "kinex.d.ts"
-    ],
-    "scripts": {
-        "test": "jest",
-        "test:node": "jest --testPathPattern=tests/node",
-        "test:browser": "jest --testPathPattern=tests/browser"
-    },
-    "devDependencies": {
-        "jest": "^29.0.0"
-    },
-    "keywords": [
-        "robotics",
-        "kinematics",
-        "wasm",
-        "webassembly",
-        "inverse-kinematics"
-    ],
-    "author": "Kinex Contributors",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Daoming-Chen/Kinex.git",
-        "directory": "bindings/wasm"
-    },
-    "engines": {
-        "node": ">=14.0.0"
-    }
+{
+  "name": "@daoming.chen/kinex",
+  "version": "1.0.0",
+  "description": "WebAssembly bindings for kinex robotics kinematics library",
+  "main": "kinex.js",
+  "types": "kinex.d.ts",
+  "files": [
+    "kinex.js",
+    "kinex.wasm",
+    "kinex.d.ts"
+  ],
+  "scripts": {
+    "test": "jest",
+    "test:node": "jest --testPathPattern=tests/node",
+    "test:browser": "jest --testPathPattern=tests/browser"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "puppeteer": "^22.0.0"
+  },
+  "keywords": [
+    "robotics",
+    "kinematics",
+    "wasm",
+    "webassembly",
+    "inverse-kinematics"
+  ],
+  "author": "Kinex Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daoming-Chen/Kinex.git",
+    "directory": "bindings/wasm"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }

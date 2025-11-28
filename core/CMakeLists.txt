@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.20)
 # Core library sources
 set(KINEX_SOURCES
     src/robot_model.cpp
+    src/robot.cpp
     src/urdf_parser.cpp
     src/kinematics.cpp
     src/inverse_kinematics.cpp
@@ -12,6 +13,7 @@ set(KINEX_SOURCES
 set(KINEX_HEADERS
     include/kinex/logging.h
     include/kinex/robot_model.h
+    include/kinex/robot.h
     include/kinex/urdf_parser.h
     include/kinex/kinematics.h
     include/kinex/inverse_kinematics.h

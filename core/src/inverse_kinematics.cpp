@@ -112,7 +112,7 @@ Eigen::Vector3d orientationError(
 } // namespace
 
 IKSolver::IKSolver(
-    std::shared_ptr<const Robot> robot,
+    std::shared_ptr<const RobotModel> robot,
     std::string end_link,
     std::string base_link)
     : robot_(std::move(robot))
@@ -161,7 +161,7 @@ void IKSolver::setWarmStart(const Eigen::VectorXd& guess) {
 }
 
 SQPIKSolver::SQPIKSolver(
-    std::shared_ptr<const Robot> robot,
+    std::shared_ptr<const RobotModel> robot,
     const std::string& end_link,
     const std::string& base_link)
     : IKSolver(std::move(robot), end_link, base_link)

@@ -68,7 +68,7 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
     
     # Load robot
     print(f"Loading robot from {urdf_path}...")
-    robot = kinex.Robot.from_urdf_file(urdf_path)
+    robot = kinex.RobotModel.from_urdf_file(urdf_path)
     dof = robot.dof
     print(f"  DOF: {dof}")
     print(f"  Test samples: {num_samples}")

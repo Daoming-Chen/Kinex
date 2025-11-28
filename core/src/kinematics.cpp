@@ -18,7 +18,7 @@ namespace kinex {
 // ============================================================================
 
 KinematicChain::KinematicChain(
-    std::shared_ptr<const Robot> robot,
+    std::shared_ptr<const RobotModel> robot,
     const std::string& end_link,
     const std::string& base_link)
     : robot_(robot)
@@ -110,7 +110,7 @@ std::vector<std::shared_ptr<Joint>> KinematicChain::findPath(
 // ============================================================================
 
 ForwardKinematics::ForwardKinematics(
-    std::shared_ptr<const Robot> robot,
+    std::shared_ptr<const RobotModel> robot,
     const std::string& end_link,
     const std::string& base_link)
     : robot_(robot)
@@ -431,7 +431,7 @@ Eigen::Matrix<double, 6, 6> adjointInverseMatrix(const Transform& T) {
 // ============================================================================
 
 JacobianCalculator::JacobianCalculator(
-    std::shared_ptr<const Robot> robot,
+    std::shared_ptr<const RobotModel> robot,
     const std::string& end_link,
     const std::string& base_link)
     : robot_(std::move(robot))

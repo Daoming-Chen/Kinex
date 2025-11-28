@@ -105,15 +105,15 @@ Transform Joint::getTransform(double value) const {
 }
 
 // ============================================================================
-// Robot Implementation
+// RobotModel Implementation
 // ============================================================================
 
-void Robot::addLink(std::shared_ptr<Link> link) {
+void RobotModel::addLink(std::shared_ptr<Link> link) {
     links_.push_back(link);
     maps_built_ = false;
 }
 
-std::shared_ptr<Link> Robot::getLink(const std::string& name) const {
+std::shared_ptr<Link> RobotModel::getLink(const std::string& name) const {
     if (!maps_built_) {
         buildMaps();
     }
@@ -125,12 +125,12 @@ std::shared_ptr<Link> Robot::getLink(const std::string& name) const {
     return nullptr;
 }
 
-void Robot::addJoint(std::shared_ptr<Joint> joint) {
+void RobotModel::addJoint(std::shared_ptr<Joint> joint) {
     joints_.push_back(joint);
     maps_built_ = false;
 }
 
-std::shared_ptr<Joint> Robot::getJoint(const std::string& name) const {
+std::shared_ptr<Joint> RobotModel::getJoint(const std::string& name) const {
     if (!maps_built_) {
         buildMaps();
     }
@@ -142,7 +142,7 @@ std::shared_ptr<Joint> Robot::getJoint(const std::string& name) const {
     return nullptr;
 }
 
-std::vector<std::shared_ptr<Joint>> Robot::getActuatedJoints() const {
+std::vector<std::shared_ptr<Joint>> RobotModel::getActuatedJoints() const {
     std::vector<std::shared_ptr<Joint>> actuated;
     for (const auto& joint : joints_) {
         if (joint->isActuated()) {
@@ -152,7 +152,7 @@ std::vector<std::shared_ptr<Joint>> Robot::getActuatedJoints() const {
     return actuated;
 }
 
-std::vector<std::shared_ptr<Joint>> Robot::getChildJoints(const std::string& link_name) const {
+std::vector<std::shared_ptr<Joint>> RobotModel::getChildJoints(const std::string& link_name) const {
     std::vector<std::shared_ptr<Joint>> children;
     for (const auto& joint : joints_) {
         if (joint->getParentLink() == link_name) {
@@ -162,7 +162,7 @@ std::vector<std::shared_ptr<Joint>> Robot::getChildJoints(const std::string& lin
     return children;
 }
 
-std::shared_ptr<Joint> Robot::getParentJoint(const std::string& link_name) const {
+std::shared_ptr<Joint> RobotModel::getParentJoint(const std::string& link_name) const {
     for (const auto& joint : joints_) {
         if (joint->getChildLink() == link_name) {
             return joint;
@@ -171,7 +171,7 @@ std::shared_ptr<Joint> Robot::getParentJoint(const std::string& link_name) const
     return nullptr;
 }
 
-bool Robot::validate() const {
+bool RobotModel::validate() const {
     if (links_.empty()) {
         KINEX_ERROR("Robot has no links");
         return false;
@@ -244,7 +244,7 @@ bool Robot::validate() const {
     return true;
 }
 
-void Robot::buildMaps() const {
+void RobotModel::buildMaps() const {
     link_map_.clear();
     joint_map_.clear();
     

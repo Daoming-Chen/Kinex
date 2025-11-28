@@ -48,7 +48,7 @@ struct SolverStatus {
 class KINEX_API IKSolver {
 public:
     IKSolver(
-        std::shared_ptr<const Robot> robot,
+        std::shared_ptr<const RobotModel> robot,
         std::string end_link,
         std::string base_link = "");
     virtual ~IKSolver() = default;
@@ -61,7 +61,7 @@ public:
     void setSolverConfig(const SolverConfig& config);
     const SolverConfig& getSolverConfig() const { return config_; }
 
-    std::shared_ptr<const Robot> getRobot() const { return robot_; }
+    std::shared_ptr<const RobotModel> getRobot() const { return robot_; }
     const std::string& getEndLink() const { return end_link_; }
     const std::string& getBaseLink() const { return base_link_; }
 
@@ -72,7 +72,7 @@ public:
     std::optional<Eigen::VectorXd> getWarmStart() const { return warm_start_; }
 
 protected:
-    std::shared_ptr<const Robot> robot_;
+    std::shared_ptr<const RobotModel> robot_;
     std::string end_link_;
     std::string base_link_;
     SolverConfig config_;
@@ -84,7 +84,7 @@ protected:
 class KINEX_API SQPIKSolver final : public IKSolver {
 public:
     SQPIKSolver(
-        std::shared_ptr<const Robot> robot,
+        std::shared_ptr<const RobotModel> robot,
         const std::string& end_link,
         const std::string& base_link = "");
 
