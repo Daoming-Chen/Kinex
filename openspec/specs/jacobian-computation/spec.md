@@ -3,8 +3,8 @@
 ## Purpose
 TBD - created by archiving change add-robotics-kinematics-library. Update Purpose after archive.
 ## Requirements
-### Requirement: System SHALL compute geometric Jacobian using analytical methods
-The system SHALL compute the geometric Jacobian matrix using analytical geometric methods.
+### Requirement: JacobianCalculator SHALL compute Jacobian matrices using RobotModel
+The JacobianCalculator SHALL compute analytical and geometric Jacobians using a RobotModel (previously called Robot) and Eigen linear algebra.
 
 #### Scenario: Compute Jacobian for UR5e at zero configuration
 **Given** a UR5e robot model at q = [0, 0, 0, 0, 0, 0]  
