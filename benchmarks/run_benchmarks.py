@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Unified Benchmark Runner for kinex IK Solvers.
 
@@ -57,10 +58,10 @@ def run_tier_a_benchmarks(args_dict):
     elapsed = time.time() - start_time
     
     if result.returncode != 0:
-        print(f"\nâœ?Tier A benchmarks failed with exit code {result.returncode}")
+        print(f"\nï¿½?Tier A benchmarks failed with exit code {result.returncode}")
         return False
     
-    print(f"\nâœ?Tier A benchmarks completed in {elapsed:.2f}s")
+    print(f"\nï¿½?Tier A benchmarks completed in {elapsed:.2f}s")
     return True
 
 
@@ -95,10 +96,10 @@ def run_tier_b_benchmarks(args_dict):
     elapsed = time.time() - start_time
     
     if result.returncode != 0:
-        print(f"\nâœ?Tier B benchmarks failed with exit code {result.returncode}")
+        print(f"\nï¿½?Tier B benchmarks failed with exit code {result.returncode}")
         return False
     
-    print(f"\nâœ?Tier B benchmarks completed in {elapsed:.2f}s")
+    print(f"\nï¿½?Tier B benchmarks completed in {elapsed:.2f}s")
     return True
 
 
@@ -202,9 +203,9 @@ def main():
     # Final summary
     print("\n" + "="*70)
     if success:
-        print("âœ?ALL BENCHMARKS COMPLETED SUCCESSFULLY")
+        print("ï¿½?ALL BENCHMARKS COMPLETED SUCCESSFULLY")
     else:
-        print("âœ?SOME BENCHMARKS FAILED")
+        print("ï¿½?SOME BENCHMARKS FAILED")
     print(f"Total time: {overall_elapsed:.2f}s")
     print("="*70)
     
@@ -222,9 +223,9 @@ def main():
         viz_result = subprocess.run(viz_cmd, cwd=current_dir)
         
         if viz_result.returncode == 0:
-            print("\nâœ?Visualizations generated successfully")
+            print("\nï¿½?Visualizations generated successfully")
         else:
-            print("\nâœ?Visualization generation failed")
+            print("\nï¿½?Visualization generation failed")
     
     return 0 if success else 1
 

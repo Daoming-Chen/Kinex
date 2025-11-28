@@ -224,7 +224,7 @@ JointType parseJointType(const std::string& type_str) {
 
 class URDFParser::Impl {
 public:
-    std::shared_ptr<Robot> parse(const std::string& content, [[maybe_unused]] const std::string& source, const std::string& base_dir) {
+    std::shared_ptr<RobotModel> parse(const std::string& content, [[maybe_unused]] const std::string& source, const std::string& base_dir) {
         pugi::xml_document doc;
         pugi::xml_parse_result result = doc.load_string(content.c_str());
         
@@ -246,7 +246,7 @@ public:
         }
         
         KINEX_INFO("Parsing robot '{}'", robot_name);
-        auto robot = std::make_shared<Robot>(robot_name);
+        auto robot = std::make_shared<RobotModel>(robot_name);
         
         // Parse all links
         for (pugi::xml_node link_node : robot_node.children("link")) {
@@ -273,7 +273,7 @@ public:
     }
 
 private:
-    void parseLink(const pugi::xml_node& link_node, std::shared_ptr<Robot> robot, const std::string& base_dir) {
+    void parseLink(const pugi::xml_node& link_node, std::shared_ptr<RobotModel> robot, const std::string& base_dir) {
         std::string link_name = getAttribute(link_node, "name");
         if (link_name.empty()) {
             throw URDFParseException("Link missing 'name' attribute");
@@ -313,7 +313,7 @@ private:
         robot->addLink(link);
     }
     
-    void parseJoint(const pugi::xml_node& joint_node, std::shared_ptr<Robot> robot) {
+    void parseJoint(const pugi::xml_node& joint_node, std::shared_ptr<RobotModel> robot) {
         std::string joint_name = getAttribute(joint_node, "name");
         if (joint_name.empty()) {
             throw URDFParseException("Joint missing 'name' attribute");
@@ -390,7 +390,7 @@ private:
         robot->addJoint(joint);
     }
     
-    void findRootLink(std::shared_ptr<Robot> robot) {
+    void findRootLink(std::shared_ptr<RobotModel> robot) {
         // Find link that is not a child of any joint
         std::unordered_set<std::string> child_links;
         for (const auto& joint : robot->getJoints()) {
@@ -417,7 +417,7 @@ private:
 URDFParser::URDFParser() = default;
 URDFParser::~URDFParser() = default;
 
-std::shared_ptr<Robot> URDFParser::parseFile(const std::string& filepath) {
+std::shared_ptr<RobotModel> URDFParser::parseFile(const std::string& filepath) {
     KINEX_INFO("Parsing URDF file: {}", filepath);
     
     // Read file content
@@ -439,12 +439,12 @@ std::shared_ptr<Robot> URDFParser::parseFile(const std::string& filepath) {
     return parseDocument(content, filepath);
 }
 
-std::shared_ptr<Robot> URDFParser::parseString(const std::string& urdf_string) {
+std::shared_ptr<RobotModel> URDFParser::parseString(const std::string& urdf_string) {
     KINEX_INFO("Parsing URDF from string ({} bytes)", urdf_string.size());
     return parseDocument(urdf_string, "<string>");
 }
 
-std::shared_ptr<Robot> URDFParser::parseDocument(const std::string& content, const std::string& source) {
+std::shared_ptr<RobotModel> URDFParser::parseDocument(const std::string& content, const std::string& source) {
     if (!impl_) {
         impl_ = std::make_unique<Impl>();
     }

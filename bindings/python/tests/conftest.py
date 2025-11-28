@@ -26,5 +26,5 @@ def ur5_urdf_path(test_data_dir):
 
 @pytest.fixture
 def ur5_robot(ur5_urdf_path):
-    return kinex.Robot.from_urdf_file(ur5_urdf_path)
+    return kinex.RobotModel.from_urdf_file(ur5_urdf_path)
 

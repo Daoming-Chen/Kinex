@@ -24,6 +24,7 @@ __all__ = [
     "Inertial",
     "Link",
     "Joint",
+    "RobotModel",
     "Robot",
     "URDFParser",
     "KinematicChain",

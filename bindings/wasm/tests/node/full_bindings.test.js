@@ -90,33 +90,33 @@ describeIf('kinex WASM Full Bindings (Node)', () => {
     module = undefined;
   });
 
-  test('Robot traversal', () => {
-    const robot = module.Robot.fromURDFString(TEST_URDF);
-    expect(robot.getName()).toBe('test_robot');
-    expect(robot.getRootLink()).toBe('base_link');
+  test('RobotModel traversal', () => {
+    const model = module.RobotModel.fromURDFString(TEST_URDF);
+    expect(model.getName()).toBe('test_robot');
+    expect(model.getRootLink()).toBe('base_link');
 
-    const links = vectorToArray(robot.getLinks());
+    const links = vectorToArray(model.getLinks());
     expect(links.length).toBe(2);
     expect(links.map(l => l.getName()).sort()).toEqual(['base_link', 'child_link']);
 
-    const joints = vectorToArray(robot.getJoints());
+    const joints = vectorToArray(model.getJoints());
     expect(joints.length).toBe(1);
     expect(joints[0].getName()).toBe('joint1');
 
-    const baseLink = robot.getLink('base_link');
+    const baseLink = model.getLink('base_link');
     expect(baseLink).toBeDefined();
     expect(baseLink.getName()).toBe('base_link');
 
-    const joint1 = robot.getJoint('joint1');
+    const joint1 = model.getJoint('joint1');
     expect(joint1).toBeDefined();
     expect(joint1.getName()).toBe('joint1');
 
-    robot.dispose();
+    model.dispose();
   });
 
   test('Link properties', () => {
-    const robot = module.Robot.fromURDFString(TEST_URDF);
-    const baseLink = robot.getLink('base_link');
+    const model = module.RobotModel.fromURDFString(TEST_URDF);
+    const baseLink = model.getLink('base_link');
 
     // Inertial
     const inertial = baseLink.getInertial();
@@ -150,12 +150,12 @@ describeIf('kinex WASM Full Bindings (Node)', () => {
     expect(collision.geometry.cylinder_radius).toBe(0.5);
     expect(collision.geometry.cylinder_length).toBe(1.0);
 
-    robot.dispose();
+    model.dispose();
   });
 
   test('Joint properties', () => {
-    const robot = module.Robot.fromURDFString(TEST_URDF);
-    const joint = robot.getJoint('joint1');
+    const model = module.RobotModel.fromURDFString(TEST_URDF);
+    const joint = model.getJoint('joint1');
 
     expect(joint.getType()).toBe(module.JointType.Revolute);
     expect(joint.getParentLink()).toBe('base_link');
@@ -180,7 +180,7 @@ describeIf('kinex WASM Full Bindings (Node)', () => {
     const translation = vectorToArray(origin.translation());
     expect(translation).toEqual([0, 0, 1]);
 
-    robot.dispose();
+    model.dispose();
   });
 
   test('Transform class', () => {
@@ -199,5 +199,33 @@ describeIf('kinex WASM Full Bindings (Node)', () => {
     const matrix = t2.asMatrix();
     expect(matrix.rows).toBe(4);
     expect(matrix.cols).toBe(4);
+  });
+  
+  test('Unified Robot class', () => {
+    // Unified Robot
+    const robot = module.Robot.fromURDFString(TEST_URDF, "child_link", "base_link");
+    expect(robot.getName()).toBe('test_robot');
+    expect(robot.getDOF()).toBe(1);
+    
+    // FK
+    const q = [0.0];
+    const pose = robot.forwardKinematics(q);
+    expect(pose.position[2]).toBeCloseTo(1.0);
+    
+    // Clone
+    const cloned = robot.clone();
+    expect(cloned.getName()).toBe('test_robot');
+    
+    // Jacobian
+    const jac = robot.computeJacobian(q);
+    expect(jac.rows).toBe(6);
+    expect(jac.cols).toBe(1);
+    
+    // IK
+    const res = robot.inverseKinematics(pose, [0.0]);
+    expect(res.converged).toBe(true);
+    
+    robot.delete();
+    cloned.delete();
   });
 });

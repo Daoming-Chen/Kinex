@@ -15,17 +15,13 @@ def main():
         print(f"URDF file not found: {urdf_path}")
         sys.exit(1)
 
-    # Load robot
-    robot = kinex.Robot.from_urdf_file(urdf_path)
-    
-    # Create IK solver (use wrist_3_link as end effector)
-    ik = kinex.SQPIKSolver(robot, "wrist_3_link")
-    fk = kinex.ForwardKinematics(robot, "wrist_3_link")
+    # Load robot with unified API
+    robot = kinex.Robot.from_urdf(urdf_path, "wrist_3_link")
     
     # Define target
     # Let's use FK to generate a reachable target
     target_q = np.array([0.5, -1.0, 1.5, -1.0, 0.5, 0.0])
-    target_pose = fk.compute(target_q)
+    target_pose = robot.forward_kinematics(target_q)
     
     print("Target configuration (joint angles):")
     print(target_q)
@@ -35,23 +31,26 @@ def main():
     # Solve IK
     initial_guess = np.zeros(6)
     print("\nSolving IK...")
-    result = ik.solve(target_pose, initial_guess)
     
-    if result.status.converged:
+    # Configure IK if needed
+    robot.set_ik_tolerance(1e-4)
+    
+    solution, status = robot.inverse_kinematics(target_pose, initial_guess)
+    
+    if status.converged:
         print("IK Converged!")
         print("Solution (joint angles):")
-        print(result.solution)
-        print(f"Iterations: {result.status.iterations}")
-        print(f"Error: {result.status.final_error_norm}")
+        print(solution)
+        print(f"Iterations: {status.iterations}")
+        print(f"Error: {status.final_error_norm}")
         
         # Verify
-        pose_sol = fk.compute(result.solution)
+        pose_sol = robot.forward_kinematics(solution)
         diff_pos = np.linalg.norm(pose_sol.translation() - target_pose.translation())
         print(f"\nPosition Error: {diff_pos:.6f}")
     else:
         print("IK Failed to converge")
-        print(result.status.message)
+        print(status.message)
 
 if __name__ == "__main__":
     main()
-

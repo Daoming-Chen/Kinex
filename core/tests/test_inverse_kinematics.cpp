@@ -18,7 +18,7 @@ using namespace kinex;
 
 namespace {
 
-std::string resolveEndLink(const std::shared_ptr<Robot>& robot) {
+std::string resolveEndLink(const std::shared_ptr<RobotModel>& robot) {
     std::vector<std::string> candidates = {"tool0", "ee_link", "wrist_3_link"};
     for (const auto& name : candidates) {
         if (robot->getLink(name)) {
@@ -106,7 +106,7 @@ protected:
         return Eigen::VectorXd::Zero(static_cast<Eigen::Index>(dof_));
     }
 
-    std::shared_ptr<Robot> robot_;
+    std::shared_ptr<RobotModel> robot_;
     std::unique_ptr<ForwardKinematics> fk_;
     std::string base_link_;
     std::string end_link_;

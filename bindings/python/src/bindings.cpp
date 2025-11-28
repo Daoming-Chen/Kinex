@@ -9,6 +9,7 @@
 #include <nanobind/stl/unordered_map.h>
 
 #include "kinex/robot_model.h"
+#include "kinex/robot.h"
 #include "kinex/kinematics.h"
 #include "kinex/urdf_parser.h"
 #include "kinex/inverse_kinematics.h"
@@ -162,31 +163,31 @@ NB_MODULE(_kinex, m) {
         .def("is_actuated", &Joint::isActuated)
         .def("get_transform", &Joint::getTransform, "Get transformation for given joint value");
 
-    // 3.3 Robot
-    nb::class_<Robot>(m, "Robot")
+    // 3.3 RobotModel (formerly Robot)
+    nb::class_<RobotModel>(m, "RobotModel")
         .def(nb::init<const std::string&>())
-        .def("get_name", &Robot::getName)
-        .def("get_root_link", &Robot::getRootLink)
-        .def("set_root_link", &Robot::setRootLink)
-        .def("add_link", &Robot::addLink)
-        .def("get_link", &Robot::getLink)
-        .def("get_links", &Robot::getLinks)
-        .def("add_joint", &Robot::addJoint)
-        .def("get_joint", &Robot::getJoint)
-        .def("get_joints", &Robot::getJoints)
-        .def("get_actuated_joints", &Robot::getActuatedJoints)
-        .def("get_child_joints", &Robot::getChildJoints)
-        .def("get_parent_joint", &Robot::getParentJoint)
-        .def("validate", &Robot::validate)
-        .def_prop_ro("dof", [](const Robot& r) { return r.getActuatedJoints().size(); })
-        .def("get_joint_names", [](const Robot& r) {
+        .def("get_name", &RobotModel::getName)
+        .def("get_root_link", &RobotModel::getRootLink)
+        .def("set_root_link", &RobotModel::setRootLink)
+        .def("add_link", &RobotModel::addLink)
+        .def("get_link", &RobotModel::getLink)
+        .def("get_links", &RobotModel::getLinks)
+        .def("add_joint", &RobotModel::addJoint)
+        .def("get_joint", &RobotModel::getJoint)
+        .def("get_joints", &RobotModel::getJoints)
+        .def("get_actuated_joints", &RobotModel::getActuatedJoints)
+        .def("get_child_joints", &RobotModel::getChildJoints)
+        .def("get_parent_joint", &RobotModel::getParentJoint)
+        .def("validate", &RobotModel::validate)
+        .def_prop_ro("dof", [](const RobotModel& r) { return r.getActuatedJoints().size(); })
+        .def("get_joint_names", [](const RobotModel& r) {
             std::vector<std::string> names;
             for (const auto& j : r.getActuatedJoints()) {
                 names.push_back(j->getName());
             }
             return names;
         })
-        .def("get_joint_limits", [](const Robot& r) {
+        .def("get_joint_limits", [](const RobotModel& r) {
             auto joints = r.getActuatedJoints();
             Eigen::MatrixXd limits(joints.size(), 2);
             for (size_t i = 0; i < joints.size(); ++i) {
@@ -203,11 +204,11 @@ NB_MODULE(_kinex, m) {
         .def_static("from_urdf_file", [](const std::string& path) {
              URDFParser parser;
              return parser.parseFile(path);
-        }, "Parse robot from URDF file")
+        }, "Parse robot model from URDF file")
         .def_static("from_urdf_string", [](const std::string& xml) {
              URDFParser parser;
              return parser.parseString(xml);
-        }, "Parse robot from URDF string");
+        }, "Parse robot model from URDF string");
 
     // 3.4 URDFParser
     nb::class_<URDFParser>(m, "URDFParser")
@@ -218,7 +219,7 @@ NB_MODULE(_kinex, m) {
 
     // 4. Kinematics
     nb::class_<KinematicChain>(m, "KinematicChain")
-        .def(nb::init<std::shared_ptr<const Robot>, const std::string&, const std::string&>(),
+        .def(nb::init<std::shared_ptr<const RobotModel>, const std::string&, const std::string&>(),
              nb::arg("robot"), nb::arg("end_link"), nb::arg("base_link") = "")
         .def("get_num_joints", &KinematicChain::getNumJoints)
         .def("get_joints", &KinematicChain::getJoints)
@@ -229,7 +230,7 @@ NB_MODULE(_kinex, m) {
         .def("get_all_joints", &KinematicChain::getAllJoints);
 
     nb::class_<ForwardKinematics>(m, "ForwardKinematics")
-        .def(nb::init<std::shared_ptr<const Robot>, const std::string&, const std::string&>(),
+        .def(nb::init<std::shared_ptr<const RobotModel>, const std::string&, const std::string&>(),
              nb::arg("robot"), nb::arg("end_link"), nb::arg("base_link") = "")
         .def("compute", &ForwardKinematics::compute,
              nb::arg("joint_angles"), nb::arg("check_bounds") = false)
@@ -242,7 +243,7 @@ NB_MODULE(_kinex, m) {
         .def_prop_ro("num_joints", &ForwardKinematics::getNumJoints);
 
     nb::class_<JacobianCalculator>(m, "JacobianCalculator")
-        .def(nb::init<std::shared_ptr<const Robot>, const std::string&, const std::string&>(),
+        .def(nb::init<std::shared_ptr<const RobotModel>, const std::string&, const std::string&>(),
              nb::arg("robot"), nb::arg("end_link"), nb::arg("base_link") = "")
         .def("compute", &JacobianCalculator::compute,
              nb::arg("joint_angles"), nb::arg("type") = JacobianType::Analytic, 
@@ -327,11 +328,53 @@ NB_MODULE(_kinex, m) {
             });
 
     nb::class_<SQPIKSolver, IKSolver>(m, "SQPIKSolver")
-        .def(nb::init<std::shared_ptr<const Robot>, const std::string&, const std::string&>(),
+        .def(nb::init<std::shared_ptr<const RobotModel>, const std::string&, const std::string&>(),
              nb::arg("robot"), nb::arg("end_link"), nb::arg("base_link") = "")
         .def("solve", [](SQPIKSolver& self, const Transform& target_pose, const Eigen::VectorXd& initial_guess) {
              Eigen::VectorXd solution;
              SolverStatus status = self.solve(target_pose, initial_guess, solution);
              return IKResult{status, solution};
         }, nb::arg("target_pose"), nb::arg("initial_guess"));
+
+    // 6. New Unified Robot API
+    nb::class_<Robot>(m, "Robot")
+        .def_static("from_urdf", &Robot::fromURDF, 
+            nb::arg("filepath"), nb::arg("end_link"), nb::arg("base_link") = "",
+            nb::call_guard<nb::gil_scoped_release>())
+        .def_static("from_urdf_string", &Robot::fromURDFString,
+            nb::arg("urdf_string"), nb::arg("end_link"), nb::arg("base_link") = "",
+            nb::call_guard<nb::gil_scoped_release>())
+        .def("clone", &Robot::clone)
+        .def("forward_kinematics", &Robot::forwardKinematics,
+            nb::arg("q"), nb::arg("link") = "")
+        .def("compute_pose", &Robot::computePose,
+            nb::arg("q"), nb::arg("link") = "")
+        .def("inverse_kinematics", [](Robot& self, const Transform& target, const Eigen::VectorXd& q_init, const std::string& link) {
+             auto [solution, status] = self.inverseKinematics(target, q_init, link);
+             return std::make_pair(solution, status);
+        }, nb::arg("target"), nb::arg("q_init"), nb::arg("link") = "",
+           nb::call_guard<nb::gil_scoped_release>())
+        .def("solve_ik", [](Robot& self, const Transform& target, const Eigen::VectorXd& q_init, const std::string& link) {
+             auto [solution, status] = self.solveIK(target, q_init, link);
+             return std::make_pair(solution, status);
+        }, nb::arg("target"), nb::arg("q_init"), nb::arg("link") = "",
+           nb::call_guard<nb::gil_scoped_release>())
+        .def("compute_jacobian", &Robot::computeJacobian,
+            nb::arg("q"), nb::arg("link") = "", nb::arg("type") = JacobianType::Analytic)
+        .def("get_manipulability", &Robot::getManipulability,
+            nb::arg("q"), nb::arg("link") = "")
+        .def("is_singular", &Robot::isSingular,
+            nb::arg("q"), nb::arg("threshold") = 1e-6, nb::arg("link") = "")
+        .def("get_condition_number", &Robot::getConditionNumber,
+            nb::arg("q"), nb::arg("link") = "")
+        .def("set_ik_tolerance", &Robot::setIKTolerance, nb::arg("tol"))
+        .def("set_position_only_ik", &Robot::setPositionOnlyIK, nb::arg("enable"))
+        .def("set_orientation_only_ik", &Robot::setOrientationOnlyIK, nb::arg("enable"))
+        .def("set_solver_config", &Robot::setSolverConfig, nb::arg("config"))
+        .def("get_solver_config", &Robot::getSolverConfig)
+        .def_prop_ro("name", &Robot::getName)
+        .def_prop_ro("end_link", &Robot::getEndLink)
+        .def_prop_ro("base_link", &Robot::getBaseLink)
+        .def_prop_ro("dof", &Robot::getDOF)
+        .def_prop_ro("model", &Robot::getRobotModel);
 }

@@ -255,9 +255,9 @@ private:
 /**
  * @brief Complete robot model with links and joints
  */
-class KINEX_API Robot {
+class KINEX_API RobotModel {
 public:
-    explicit Robot(const std::string& name) : name_(name) {}
+    explicit RobotModel(const std::string& name) : name_(name) {}
     
     const std::string& getName() const { return name_; }
     

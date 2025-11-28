@@ -1,6 +1,6 @@
 {
   "context": {
-    "date": "2025-11-24T14:29:51",
+    "date": "2025-11-28T18:50:10",
     "host_name": "FAITDT0589",
     "executable": "/usr/bin/python",
     "num_cpus": 20,
@@ -18,12 +18,12 @@
       "repetition_index": 0,
       "threads": 1,
       "iterations": 1000,
-      "real_time": 19.841276991883205,
-      "cpu_time": 19.841276991883205,
+      "real_time": 22.950331622269005,
+      "cpu_time": 22.950331622269005,
       "time_unit": "us",
-      "avg_position_error_mm": 0.033521077885006474,
-      "avg_rotation_error_deg": 0.003188730160660166,
-      "iterations_per_solve": 8.895895895895896,
+      "avg_position_error_mm": 0.028797171655958142,
+      "avg_rotation_error_deg": 0.002968011274851112,
+      "iterations_per_solve": 8.901901901901901,
       "success_rate": 99.9
     },
     {
@@ -34,13 +34,13 @@
       "repetition_index": 0,
       "threads": 1,
       "iterations": 1000,
-      "real_time": 20.354354993742163,
-      "cpu_time": 20.354354993742163,
+      "real_time": 24.33316595852375,
+      "cpu_time": 24.33316595852375,
       "time_unit": "us",
-      "avg_position_error_mm": 0.02614639849539334,
-      "avg_rotation_error_deg": 0.0033117186095216033,
-      "iterations_per_solve": 9.102,
-      "success_rate": 100.0
+      "avg_position_error_mm": 0.02492056079629967,
+      "avg_rotation_error_deg": 0.0030450264539501615,
+      "iterations_per_solve": 9.167167167167166,
+      "success_rate": 99.9
     },
     {
       "name": "BM_IK_WarmStart/ur5e+xyz",
@@ -50,12 +50,12 @@
       "repetition_index": 0,
       "threads": 1,
       "iterations": 1000,
-      "real_time": 6.307420999291935,
-      "cpu_time": 6.307420999291935,
+      "real_time": 7.189552008640021,
+      "cpu_time": 7.189552008640021,
       "time_unit": "us",
-      "avg_position_error_mm": 0.013254036735274666,
-      "avg_rotation_error_deg": 0.001824475198483914,
-      "iterations_per_solve": 3.011,
+      "avg_position_error_mm": 0.011861331103531542,
+      "avg_rotation_error_deg": 0.0017902646745102586,
+      "iterations_per_solve": 3.01,
       "success_rate": 100.0
     },
     {
@@ -66,12 +66,12 @@
       "repetition_index": 0,
       "threads": 1,
       "iterations": 1000,
-      "real_time": 4.830080003102921,
-      "cpu_time": 4.830080003102921,
+      "real_time": 5.238433077465743,
+      "cpu_time": 5.238433077465743,
       "time_unit": "us",
-      "avg_position_error_mm": 0.06438041884747511,
-      "avg_rotation_error_deg": 0.005683365913552554,
-      "iterations_per_solve": 2.556,
+      "avg_position_error_mm": 0.0667298067429101,
+      "avg_rotation_error_deg": 0.006058678478130749,
+      "iterations_per_solve": 2.465,
       "success_rate": 100.0
     }
   ]

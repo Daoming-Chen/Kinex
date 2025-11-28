@@ -30,7 +30,7 @@ public:
      * @param base_link Name of the base link (defaults to robot root)
      */
     KinematicChain(
-        std::shared_ptr<const Robot> robot,
+        std::shared_ptr<const RobotModel> robot,
         const std::string& end_link,
         const std::string& base_link = "");
     
@@ -72,7 +72,7 @@ public:
     const std::vector<std::shared_ptr<Joint>>& getAllJoints() const { return all_joints_; }
 
 private:
-    std::shared_ptr<const Robot> robot_;
+    std::shared_ptr<const RobotModel> robot_;
     std::string base_link_;
     std::string end_link_;
     
@@ -117,7 +117,7 @@ public:
      * @param base_link Name of the base link (defaults to robot root)
      */
     ForwardKinematics(
-        std::shared_ptr<const Robot> robot,
+        std::shared_ptr<const RobotModel> robot,
         const std::string& end_link,
         const std::string& base_link = "");
     
@@ -172,7 +172,7 @@ public:
     size_t getNumJoints() const { return chain_.getNumJoints(); }
 
 private:
-    std::shared_ptr<const Robot> robot_;
+    std::shared_ptr<const RobotModel> robot_;
     KinematicChain chain_;
     
     /**
@@ -206,7 +206,7 @@ enum class JacobianType {
 class KINEX_API JacobianCalculator {
 public:
     JacobianCalculator(
-        std::shared_ptr<const Robot> robot,
+        std::shared_ptr<const RobotModel> robot,
         const std::string& end_link,
         const std::string& base_link = "");
 
@@ -275,7 +275,7 @@ private:
         JointFrameCache& cache,
         Eigen::MatrixXd& J_out) const;
 
-    std::shared_ptr<const Robot> robot_;
+    std::shared_ptr<const RobotModel> robot_;
     std::string base_link_;
     std::string default_end_link_;
 

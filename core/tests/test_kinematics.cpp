@@ -66,8 +66,8 @@ protected:
     
     std::filesystem::path ur5e_urdf_path_;
     std::string simple_urdf_;
-    std::shared_ptr<Robot> simple_robot_;
-    std::shared_ptr<Robot> ur5e_robot_;
+    std::shared_ptr<RobotModel> simple_robot_;
+    std::shared_ptr<RobotModel> ur5e_robot_;
 };
 
 namespace {

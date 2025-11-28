@@ -47,7 +47,7 @@ public:
      * @return Parsed robot model
      * @throws URDFParseException on parse error
      */
-    std::shared_ptr<Robot> parseFile(const std::string& filepath);
+    std::shared_ptr<RobotModel> parseFile(const std::string& filepath);
     
     /**
      * @brief Parse URDF from string
@@ -55,7 +55,7 @@ public:
      * @return Parsed robot model
      * @throws URDFParseException on parse error
      */
-    std::shared_ptr<Robot> parseString(const std::string& urdf_string);
+    std::shared_ptr<RobotModel> parseString(const std::string& urdf_string);
     
     /**
      * @brief Set base directory for resolving relative mesh paths
@@ -76,7 +76,7 @@ private:
     class Impl;
     std::unique_ptr<Impl> impl_;
     
-    std::shared_ptr<Robot> parseDocument(const std::string& content, const std::string& source);
+    std::shared_ptr<RobotModel> parseDocument(const std::string& content, const std::string& source);
 };
 
 } // namespace kinex

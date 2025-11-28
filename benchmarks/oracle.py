@@ -6,7 +6,7 @@ class FKOracle:
     """
     Wrapper around kinex Forward Kinematics for benchmarking.
     """
-    def __init__(self, robot: kinex.Robot, end_link: Optional[str] = None):
+    def __init__(self, robot: kinex.RobotModel, end_link: Optional[str] = None):
         self.robot = robot
         self.end_link = end_link or self._find_leaf_link(robot)
         
