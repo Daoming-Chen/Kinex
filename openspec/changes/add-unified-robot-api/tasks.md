@@ -382,7 +382,12 @@
   - [x] Update examples to use `Robot::fromURDF()`
   - [x] Show both high-level and low-level API usage
 
-- [ ] 6.3.2 Update other tutorials as needed
+- [x] 6.3.2 Update other tutorials as needed
+  - [x] Created comprehensive C++ API documentation (docs/api/cpp.md) prioritizing Robot class
+  - [x] Updated docs/api/README.md to reflect new unified API structure
+  - [x] Updated docs/README.md to remove "coming soon" for implemented features
+  - [x] Verified Python API documentation already prioritizes Robot class
+  - [x] Verified getting started guide already uses Robot class
 
 ### 6.4 Guides
 - [x] 6.4.1 `docs/guides/getting-started.md`

@@ -28,7 +28,9 @@ mat = t.as_matrix()
 
 ### Robot (Unified API)
 
-The `Robot` class provides a high-level unified interface for all robot operations.
+The `Robot` class provides a high-level unified interface for all robot operations and is the recommended
+entry point for most workflows (FK, IK, Jacobian, etc.). Use low-level classes (RobotModel, ForwardKinematics,
+SQPIKSolver) only for advanced or specialized scenarios.
 
 ```python
 # Initialize from URDF
@@ -61,10 +63,18 @@ print(model.get_name())
 
 ## Kinematics
 
-### ForwardKinematics
+### ForwardKinematics (Advanced)
 
-Computes end-effector or link poses given joint angles. Use this for fine-grained control.
+Computes end-effector or link poses given joint angles. For common use, prefer the `Robot` unified API
+which provides `forward_kinematics` as a single-line convenience method.
 
+Recommended:
+```python
+# Using Robot unified API
+pose = robot.forward_kinematics(np.zeros(robot.dof))
+```
+
+Advanced (low-level helper using `RobotModel`):
 ```python
 # Takes RobotModel
 fk = kinex.ForwardKinematics(model, "tool0")
@@ -83,14 +93,21 @@ manip = jac_calc.get_manipulability(np.zeros(6))
 
 ## Inverse Kinematics
 
-### SQPIKSolver
+### SQPIKSolver (Advanced)
 
-Solves inverse kinematics using Sequential Quadratic Programming.
+Solves inverse kinematics using Sequential Quadratic Programming. For most uses, prefer the `Robot`
+API and `robot.inverse_kinematics(...)` which provides a high-level interface and built-in configuration
+methods. `SQPIKSolver` can be instantiated directly for fine-grained control over solver options.
 
 ```python
+# Recommended
+solution, status = robot.inverse_kinematics(target_pose, q_init)
+if status.converged:
+    print(solution)
+
+# Advanced
 solver = kinex.SQPIKSolver(model, "tool0")
 result = solver.solve(target_pose, initial_guess)
-
 if result.status.converged:
     print(result.solution)
 ```

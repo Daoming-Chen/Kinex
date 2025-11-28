@@ -48,17 +48,20 @@ import numpy as np
 # 从 URDF 加载机器人
 robot = kinex.Robot.from_urdf("ur5e.urdf")
 
-# 正运动学
-fk = kinex.ForwardKinematics(robot, "tool0")
+# 正运动学 (推荐用法: 统一 Robot API)
+# 使用 `Robot` 类直接计算正运动学是推荐做法，这样代码更简洁且易于维护。
 joint_angles = np.array([0.0, -1.57, 0.0, 0.0, 0.0, 0.0])
-pose = fk.compute(joint_angles)
-print(f"位置: {pose.position}")
+pose = robot.forward_kinematics(joint_angles)
+print(f"位置: {pose.translation()}")
 
-# 逆运动学
-ik = kinex.SQPIKSolver(robot, "tool0")
-target_pose = {...}  # 目标位置和姿态
-solution = ik.solve(target_pose, initial_guess=np.zeros(6))
-print(f"关节解: {solution.solution}")
+# 逆运动学 (推荐用法)
+# 使用 `Robot` 的方法来求解 IK，返回 (solution, status) 元组
+target_pose = {...}  # 目标位置和姿态，使用 kinex.Transform 或类似数据结构
+solution, status = robot.inverse_kinematics(target_pose, q_init=np.zeros(6))
+if status.converged:
+  print(f"关节解: {solution}")
+else:
+  print("IK 未收敛")
 ```
 
 ### JavaScript/WebAssembly 示例
@@ -72,18 +75,16 @@ const kinex = await createKinexModule();
 // 从 URDF 字符串加载机器人
 const robot = kinex.Robot.fromURDFString(urdfContent);
 
-// 计算正运动学
-const fk = new kinex.ForwardKinematics(robot, "tool0");
-const pose = fk.compute([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
+// 计算正运动学（推荐）
+const pose = robot.forwardKinematics([0.0, -1.57, 0.0, 0.0, 0.0, 0.0]);
 console.log('位置:', pose.position);
 
-// 求解逆运动学
-const ik = new kinex.SQPIKSolver(robot, "tool0");
+// 求解逆运动学（推荐）
 const targetPose = {
   position: [0.5, 0.0, 0.5],
   quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
 };
-const result = ik.solve(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+const result = robot.inverseKinematics(targetPose, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
 console.log('解:', result.solution);
 ```
 

@@ -22,22 +22,21 @@ pip install .
 import kinex
 import numpy as np
 
-# Load robot
-robot = kinex.Robot.from_urdf_file("ur5.urdf")
+# Load robot (unified Robot API)
+robot = kinex.Robot.from_urdf("ur5.urdf", "tool0")
 
-# Forward Kinematics
-fk = kinex.ForwardKinematics(robot, "tool0")
-q = np.zeros(6)
-pose = fk.compute(q)
+# Forward Kinematics (recommended)
+# Use the unified `Robot` API directly for common workflows. For advanced users, low-level classes are still available.
+q = np.zeros(robot.dof)
+pose = robot.forward_kinematics(q)
 print(f"Position: {pose.translation()}")
 
-# Inverse Kinematics
-solver = kinex.SQPIKSolver(robot, "tool0")
-result = solver.solve(pose, np.zeros(6))
-if result.status.converged:
-    print("IK Solution:", result.solution)
+# Inverse Kinematics (recommended)
+solution, status = robot.inverse_kinematics(pose, q_init=np.zeros(robot.dof))
+if status.converged:
+    print("IK Solution:", solution)
 else:
-    print("IK Failed:", result.status.message)
+    print("IK Failed:", status.message)
 ```
 
 ## Development

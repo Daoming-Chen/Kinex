@@ -34,6 +34,9 @@ sudo cmake --install build
 
 ## 快速开始示例
 
+> 💡 建议: 对于大多数用例, 首选统一的 `Robot` API（创建 `Robot` 实例并调用 `robot.forward_kinematics`, `robot.inverse_kinematics` 等）。
+> 底层类 `ForwardKinematics` 和 `SQPIKSolver` 仍可用于高级场景。
+
 ### Python
 
 ```python
@@ -47,31 +50,23 @@ robot = kinex.Robot.from_urdf("path/to/robot.urdf")
 print(f"机器人: {robot.name}")
 print(f"自由度: {robot.dof}")
 
-# 正运动学
-fk = kinex.ForwardKinematics(robot, end_link="tool0")
+# 正运动学 (推荐)
+# 推荐通过 `Robot` 直接调用统一 API 以保持简洁：
 joint_angles = np.array([0.0, -1.57, 1.57, 0.0, 1.57, 0.0])
-pose = fk.compute(joint_angles)
+pose = robot.forward_kinematics(joint_angles)
 
-print(f"末端执行器位置: {pose.position}")
-print(f"末端执行器姿态 (四元数): {pose.quaternion}")
+print(f"末端执行器位置: {pose.translation()}")
+print(f"末端执行器旋转矩阵:\n{pose.rotation()}")
 
-# 逆运动学
-ik = kinex.SQPIKSolver(robot, end_link="tool0")
-
-# 定义目标位姿
-target_pose = {
-    "position": [0.4, 0.2, 0.5],
-    "quaternion": [1.0, 0.0, 0.0, 0.0]  # w, x, y, z
-}
-
-# 从零初始值求解 IK
-result = ik.solve(target_pose, initial_guess=np.zeros(robot.dof))
-
-if result.converged:
-    print(f"IK 解: {result.solution}")
-    print(f"迭代次数: {result.iterations}")
+# 逆运动学 (推荐)
+# 使用 `Robot` 的 `inverse_kinematics` 方法 (返回 solution, status)
+target_pose = kinex.Transform.from_position_quaternion([0.4, 0.2, 0.5], [0, 0, 0, 1])
+solution, status = robot.inverse_kinematics(target_pose, q_init=np.zeros(robot.dof))
+if status.converged:
+  print(f"IK 解: {solution}")
+  print(f"迭代次数: {status.iterations}")
 else:
-    print("IK 未收敛")
+  print("IK 未收敛")
 
 # 用正运动学验证解
 verification_pose = fk.compute(result.solution)
@@ -99,35 +94,26 @@ async function main() {
   console.log(`自由度: ${robot.getDOF()}`);
 
   // 正运动学
-  const fk = new kinex.ForwardKinematics(robot, "tool0");
-  const jointAngles = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0];
-  const pose = fk.compute(jointAngles);
-
-  console.log('位置:', pose.position);
-  console.log('四元数:', pose.quaternion);
+  const q = new Float64Array([0.0, -1.57, 1.57, 0.0, 1.57, 0.0]);
+  const pose = robot.forwardKinematics(q);
+  console.log('位置:', pose.translation);
+  console.log('旋转矩阵:', pose.rotation);
 
   // 逆运动学
-  const ik = new kinex.SQPIKSolver(robot, "tool0");
-
   const targetPose = {
     position: [0.4, 0.2, 0.5],
-    quaternion: [1.0, 0.0, 0.0, 0.0]  // w, x, y, z
+    quaternion: [1.0, 0.0, 0.0, 0.0]
   };
 
   const initialGuess = new Array(robot.getDOF()).fill(0.0);
-  const result = ik.solve(targetPose, initialGuess);
+  const result = robot.inverseKinematics(targetPose, initialGuess);
 
-  if (result.converged) {
+  if (result.status.converged) {
     console.log('解:', result.solution);
-    console.log('迭代次数:', result.iterations);
+    console.log('迭代次数:', result.status.iterations);
   } else {
     console.log('IK 未收敛');
   }
-
-  // 清理资源
-  ik.delete();
-  fk.delete();
-  robot.delete();
 }
 
 main();
@@ -266,9 +252,8 @@ ik.set_config(config)
 ### 计算所有连杆变换
 
 ```python
-# 高效获取所有连杆的变换
-fk = kinex.ForwardKinematics(robot, "tool0")
-all_transforms = fk.compute_all_link_transforms(joint_angles)
+# 高效获取所有连杆的变换（推荐）
+all_transforms = robot.compute_all_link_transforms(joint_angles)
 
 for link_name, transform in all_transforms.items():
     print(f"{link_name}: {transform.position}")
