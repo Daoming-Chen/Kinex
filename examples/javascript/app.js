@@ -48,20 +48,28 @@ async function init() {
     };
 
     try {
-        // Try loading from npm via import map
+        // Try loading from npm via import map. On GitHub Pages we switch to a
+        // local wasm build under ./wasm/kinex.js. If the import does not expose a
+        // `default` factory function, attempt to load the local script file and
+        // consume the `window.createKinexModule` global that Emscripten sets.
         const module = await import('@daoming.chen/kinex');
         createKinexModule = module.default;
 
         if (typeof createKinexModule !== 'function') {
-            console.log("Import failed to provide function, trying script tag for npm...");
-            await loadScript('https://unpkg.com/@daoming.chen/kinex@latest/kinex.js');
+            console.log("Import didn't expose a factory. Loading local wasm script instead...");
+            // Compute path relative to this module so the example works when
+            // hosted from different locations (e.g. GitHub Pages). This assumes
+            // the wasm artifacts are served from './wasm/'.
+            const scriptURL = new URL('./wasm/kinex.js', import.meta.url).toString();
+            await loadScript(scriptURL);
             createKinexModule = window.createKinexModule;
         }
 
-        console.log("Loaded Kinex from npm");
+        console.log("Loaded Kinex module");
 
-        locateFile = (path, prefix) => {
-            return prefix + path;
+        // Ensure locateFile loads WASM from ./wasm/ relative to this app file.
+        locateFile = (file, prefix) => {
+            return new URL(`./wasm/${file}`, import.meta.url).toString();
         };
     } catch (e) {
         console.error("Failed to load Kinex:", e);
@@ -77,6 +85,33 @@ async function init() {
             printErr: (text) => console.error("[Kinex stderr]: " + text),
         });
         console.log("Kinex initialized");
+        // Defensive: platform shims and import forms may return wrapper objects.
+        // Verify we have the expected exports and report helpful diagnostic info.
+        if (!kinex || typeof kinex.Robot !== 'function') {
+            console.warn('Kinex module did not expose Robot on the returned module.');
+            // Some module forms might attach the exports to the global scope or
+            // to `kinex` nested under `Module`. Detect alternatives and adopt
+            // them so the rest of the example can continue to work.
+            if (window.kinex && typeof window.kinex.Robot === 'function') {
+                kinex = window.kinex;
+                console.log('Using global window.kinex exports');
+            } else if (window.createKinexModule && window.createKinexModule.instance) {
+                // A few modularization strategies attach the actual runtime under
+                // Module.instance or expose an already-instantiated wrapper.
+                const attempt = window.createKinexModule.instance;
+                if (attempt && typeof attempt.Robot === 'function') {
+                    kinex = attempt;
+                    console.log('Using createKinexModule.instance exports');
+                }
+            } else {
+                // Log module shape to help diagnose remote/debugging cases.
+                try {
+                    console.warn('Kinex module keys:', Object.keys(kinex || {}).join(', '));
+                } catch (e) {
+                    console.warn('Unable to enumerate Kinex module keys', e);
+                }
+            }
+        }
     } catch (e) {
         console.error("Failed to initialize Kinex:", e);
         if (typeof e === 'object') {
