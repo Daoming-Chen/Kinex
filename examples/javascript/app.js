@@ -61,9 +61,6 @@ async function init() {
         console.log("Loaded Kinex from npm");
 
         locateFile = (path, prefix) => {
-            if (path.endsWith('.wasm')) {
-                return '../../build-wasm/wasm/kinex.wasm';
-            }
             return prefix + path;
         };
     } catch (e) {
@@ -83,7 +80,7 @@ async function init() {
     } catch (e) {
         console.error("Failed to initialize Kinex:", e);
         if (typeof e === 'object') {
-             console.error("Error details:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
+            console.error("Error details:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
         }
         document.getElementById('loading').innerText = "Failed to initialize Kinex: " + e;
         return;
@@ -105,14 +102,14 @@ async function init() {
     try {
         // Create Unified Robot for kinematics
         robot = kinex.Robot.fromURDFString(urdfContent, END_EFFECTOR_LINK, "");
-        
+
         // Create RobotModel for structure traversal and visual setup
         // (This is necessary because the unified Robot wrapper in WASM currently hides the structure details)
         robotModel = kinex.RobotModel.fromURDFString(urdfContent, "");
-        
+
         const dof = robot.getDOF();
         console.log(`Robot loaded: ${robot.getName()}, DOF: ${dof}`);
-        
+
         // Initialize joints
         currentJoints = new Float64Array(dof);
         if (dof >= 6) {
@@ -127,11 +124,11 @@ async function init() {
         config.max_iterations = 100;
         config.tolerance = 1e-4;
         robot.setSolverConfig(config);
-        
+
         // Create helper FK for full-body visualization update
         // (This is necessary because the unified Robot wrapper doesn't expose computeAllLinkTransforms yet)
         fk = new kinex.ForwardKinematics(robotModel, END_EFFECTOR_LINK, "");
-        
+
         console.log("Robot and solvers initialized");
 
     } catch (e) {
@@ -158,10 +155,10 @@ async function init() {
 
 function setupThreeJS() {
     const container = document.getElementById('container');
-    
+
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x2e8b57);
-    
+
     // Camera
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(2, 2, 2);
@@ -216,7 +213,7 @@ async function createRobotVisuals() {
             const visual = visuals.get(j);
             const geometry = visual.geometry;
             const origin = visual.origin;
-            
+
             let object = null;
             let scale = [1, 1, 1];
 
@@ -225,7 +222,7 @@ async function createRobotVisuals() {
                 const meshFilename = geometry.mesh_filename;
                 scale = geometry.mesh_scale;
                 const meshPath = MESH_BASE_PATH + meshFilename;
-                
+
                 try {
                     object = await loadMesh(loader, meshPath);
                 } catch (e) {
@@ -256,16 +253,16 @@ async function createRobotVisuals() {
                 let color = 0xeeeeee;
                 let opacity = 1.0;
                 let transparent = false;
-                
+
                 if (visual.getColor()) {
-                     const c = visual.getColor();
-                     if (c.length >= 3) {
-                         color = new THREE.Color(c[0], c[1], c[2]);
-                     }
-                     if (c.length >= 4) {
-                         opacity = c[3];
-                         if (opacity < 1.0) transparent = true;
-                     }
+                    const c = visual.getColor();
+                    if (c.length >= 3) {
+                        color = new THREE.Color(c[0], c[1], c[2]);
+                    }
+                    if (c.length >= 4) {
+                        opacity = c[3];
+                        if (opacity < 1.0) transparent = true;
+                    }
                 }
 
                 const material = new THREE.MeshStandardMaterial({
@@ -291,13 +288,13 @@ async function createRobotVisuals() {
 
                 const visualGroup = new THREE.Group();
                 visualGroup.add(object);
-                
+
                 const pos = origin.translation();
                 const quat = origin.asPose().quaternion;
-                
+
                 visualGroup.position.set(pos[0], pos[1], pos[2]);
                 visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]);
-                
+
                 linkGroup.add(visualGroup);
             }
         }
@@ -322,7 +319,7 @@ function setupInteraction() {
         isDragging = event.value;
     });
     transformControl.addEventListener('change', onTargetChange);
-    
+
     transformControl.attach(targetSphere);
     scene.add(transformControl);
 
@@ -359,10 +356,10 @@ function onTargetChange() {
 
     // Use Robot API for IK
     const result = robot.inverseKinematics(targetPose, currentJoints);
-    
+
     const solution = result.solution;
     const dof = robot.getDOF();
-    
+
     if (solution.get) {
         for (let i = 0; i < dof; i++) {
             currentJoints[i] = solution.get(i);
@@ -385,17 +382,17 @@ function onTargetChange() {
 function updateRobotPose() {
     // Use helper FK for full visualization update (computes all frames efficiently)
     const linkTransforms = fk.computeAllLinkTransforms(currentJoints);
-    
+
     if (linkTransforms.has('base')) {
-         const baseT = linkTransforms.get('base');
-         console.log(`Base Transform: Pos=[${baseT.position.join(', ')}], Quat=[${baseT.quaternion.join(', ')}]`);
+        const baseT = linkTransforms.get('base');
+        console.log(`Base Transform: Pos=[${baseT.position.join(', ')}], Quat=[${baseT.quaternion.join(', ')}]`);
     }
 
     linkTransforms.forEach((pose, linkName) => {
         if (robotVisuals[linkName]) {
             const pos = pose.position;
             const quat = pose.quaternion;
-            
+
             robotVisuals[linkName].position.set(pos[0], pos[1], pos[2]);
             robotVisuals[linkName].quaternion.set(quat[1], quat[2], quat[3], quat[0]);
         }
