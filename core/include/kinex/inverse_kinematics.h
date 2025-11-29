@@ -8,110 +8,129 @@
 #include <string>
 #include <vector>
 
-namespace kinex {
+namespace kinex
+{
 
-class DaQPSolver;
+    class DaQPSolver;
 
-struct SolverConfig {
-    size_t max_iterations = 64;
-    double tolerance = 1e-4;
-    double regularization = 1e-5;
-    double max_step_size = 0.5;
-    size_t max_line_search_steps = 6;
-    double line_search_shrink = 0.5;
-    double line_search_min_alpha = 0.05;
-    double line_search_improvement = 1e-6;
-    double position_weight = 1.0;
-    double orientation_weight = 1.0;
-    double position_anchor_weight = 1e-2;
-    double orientation_anchor_weight = 1e-6;
-    double joint_limit_margin = 1e-4;
-    double unbounded_joint_limit = 50.0;
-    bool enable_warm_start = true;
-    
-    // Adaptive damping (DLS) parameters
-    bool enable_adaptive_damping = true;
-    double damping_threshold = 0.1; // Manipulability threshold below which damping increases
-    double max_damping = 0.1;       // Maximum damping factor added at singularity
-};
+    struct SolverConfig
+    {
+        size_t max_iterations = 64;
+        double tolerance = 1e-4;
+        double regularization = 1e-5;
+        double max_step_size = 0.5;
+        size_t max_line_search_steps = 6;
+        double line_search_shrink = 0.5;
+        double line_search_min_alpha = 0.05;
+        double line_search_improvement = 1e-6;
+        double position_weight = 1.0;
+        double orientation_weight = 1.0;
+        double position_anchor_weight = 1e-2;
+        double orientation_anchor_weight = 1e-6;
+        double joint_limit_margin = 1e-4;
+        double unbounded_joint_limit = 50.0;
+        bool enable_warm_start = true;
 
-struct SolverStatus {
-    bool converged = false;
-    size_t iterations = 0;
-    double final_error_norm = 0.0;
-    double final_step_norm = 0.0;
-    int qp_status = 0;
-    std::string message;
-    std::vector<double> error_history;
-};
+        // Adaptive damping (DLS) parameters
+        bool enable_adaptive_damping = true;
+        double damping_threshold = 0.1; // Manipulability threshold below which damping increases
+        double max_damping = 0.1;       // Maximum damping factor added at singularity
+    };
 
-class KINEX_API IKSolver {
-public:
-    IKSolver(
-        std::shared_ptr<const RobotModel> robot,
-        std::string end_link,
-        std::string base_link = "");
-    virtual ~IKSolver() = default;
+    struct SolverStatus
+    {
+        bool converged = false;
+        size_t iterations = 0;
+        double final_error_norm = 0.0;
+        double final_step_norm = 0.0;
+        int qp_status = 0;
+        std::string message;
+        std::vector<double> error_history;
+    };
 
-    virtual SolverStatus solve(
-        const Transform& target_pose,
-        const Eigen::VectorXd& initial_guess,
-        Eigen::VectorXd& solution) = 0;
+    class KINEX_API IKSolver
+    {
+    public:
+        IKSolver(
+            std::shared_ptr<const RobotModel> robot,
+            std::string end_link,
+            std::string base_link = "");
+        virtual ~IKSolver() = default;
 
-    void setSolverConfig(const SolverConfig& config);
-    const SolverConfig& getSolverConfig() const { return config_; }
+        virtual SolverStatus solve(
+            const Transform &target_pose,
+            const Eigen::VectorXd &initial_guess,
+            Eigen::VectorXd &solution) = 0;
 
-    std::shared_ptr<const RobotModel> getRobot() const { return robot_; }
-    const std::string& getEndLink() const { return end_link_; }
-    const std::string& getBaseLink() const { return base_link_; }
+        void setSolverConfig(const SolverConfig &config);
+        const SolverConfig &getSolverConfig() const { return config_; }
 
-    void setPositionOnly(bool enable);
-    void setOrientationOnly(bool enable);
+        std::shared_ptr<const RobotModel> getRobot() const { return robot_; }
+        const std::string &getEndLink() const { return end_link_; }
+        const std::string &getBaseLink() const { return base_link_; }
 
-    void setWarmStart(const Eigen::VectorXd& guess);
-    std::optional<Eigen::VectorXd> getWarmStart() const { return warm_start_; }
+        void setPositionOnly(bool enable);
+        void setOrientationOnly(bool enable);
 
-protected:
-    std::shared_ptr<const RobotModel> robot_;
-    std::string end_link_;
-    std::string base_link_;
-    SolverConfig config_;
-    bool position_only_ = false;
-    bool orientation_only_ = false;
-    std::optional<Eigen::VectorXd> warm_start_;
-};
+        void setWarmStart(const Eigen::VectorXd &guess);
+        std::optional<Eigen::VectorXd> getWarmStart() const { return warm_start_; }
 
-class KINEX_API SQPIKSolver final : public IKSolver {
-public:
-    SQPIKSolver(
-        std::shared_ptr<const RobotModel> robot,
-        const std::string& end_link,
-        const std::string& base_link = "");
+    protected:
+        std::shared_ptr<const RobotModel> robot_;
+        std::string end_link_;
+        std::string base_link_;
+        SolverConfig config_;
+        bool position_only_ = false;
+        bool orientation_only_ = false;
+        std::optional<Eigen::VectorXd> warm_start_;
+    };
 
-    ~SQPIKSolver() override;
+    class KINEX_API SQPIKSolver final : public IKSolver
+    {
+    public:
+        SQPIKSolver(
+            std::shared_ptr<const RobotModel> robot,
+            const std::string &end_link,
+            const std::string &base_link = "");
 
-    SolverStatus solve(
-        const Transform& target_pose,
-        const Eigen::VectorXd& initial_guess,
-        Eigen::VectorXd& solution) override;
+        ~SQPIKSolver() override;
 
-private:
-    ForwardKinematics fk_;
-    JacobianCalculator jacobian_;
-    std::unique_ptr<class DaQPSolver> qp_solver_;
+        SolverStatus solve(
+            const Transform &target_pose,
+            const Eigen::VectorXd &initial_guess,
+            Eigen::VectorXd &solution) override;
 
-    Eigen::VectorXd buildTaskError(
-        const Transform& current_pose,
-        const Transform& target_pose) const;
+    private:
+        ForwardKinematics fk_;
+        JacobianCalculator jacobian_;
+        std::unique_ptr<class DaQPSolver> qp_solver_;
 
-    Eigen::VectorXd weightError(const Eigen::VectorXd& full_error) const;
-    Eigen::MatrixXd weightJacobian(const Eigen::MatrixXd& full_jacobian) const;
+        // Pre-allocated working arrays for zero-allocation solve loop
+        mutable RobotState robot_state_;
+        mutable Eigen::VectorXd weighted_error_;
+        mutable Eigen::VectorXd delta_;
+        mutable Eigen::VectorXd q_current_;
+        mutable Eigen::VectorXd lower_bounds_;
+        mutable Eigen::VectorXd upper_bounds_;
+        mutable Eigen::VectorXd lower_delta_;
+        mutable Eigen::VectorXd upper_delta_;
+        mutable Eigen::MatrixXd H_;
+        mutable Eigen::VectorXd g_;
+        mutable Eigen::MatrixXd J_;
+        mutable Eigen::MatrixXd weighted_jac_;
 
-    void computeJointBounds(
-        Eigen::VectorXd& lower,
-        Eigen::VectorXd& upper) const;
+        Eigen::VectorXd buildTaskError(
+            const Transform &current_pose,
+            const Transform &target_pose) const;
 
-    void clampToJointLimits(Eigen::VectorXd& joints) const;
-};
+        Eigen::VectorXd weightError(const Eigen::VectorXd &full_error) const;
+        Eigen::MatrixXd weightJacobian(const Eigen::MatrixXd &full_jacobian) const;
+
+        void computeJointBounds(
+            Eigen::VectorXd &lower,
+            Eigen::VectorXd &upper) const;
+
+        void clampToJointLimits(Eigen::VectorXd &joints) const;
+    };
 
 } // namespace kinex
