@@ -58,5 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wasm-package
-          path: bindings/wasm/
+          path: |
+            bindings/wasm/kinex.js
+            bindings/wasm/kinex.wasm
           retention-days: 5

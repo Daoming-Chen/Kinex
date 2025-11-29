@@ -47,6 +47,14 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Diagnostics - list downloaded artifact
+        if: github.event_name == 'workflow_run'
+        run: |
+          echo "Contents of downloaded-wasm:"
+          ls -la downloaded-wasm || true
+          echo "Walk tree of downloaded-wasm:"
+          find downloaded-wasm -maxdepth 3 -type f -print || true
+
       - name: Setup Emscripten
         if: github.event_name != 'workflow_run'
         uses: mymindstorm/setup-emsdk@v14
@@ -78,8 +86,22 @@ jobs:
           mkdir -p _site/wasm
           if [ -d "downloaded-wasm" ]; then
             echo "Using downloaded artifacts"
-            cp downloaded-wasm/kinex.js _site/wasm/
-            cp downloaded-wasm/kinex.wasm _site/wasm/
+            # Support both artifact layouts: flat root (kinex.js) or nested (bindings/wasm/kinex.js)
+            if [ -f downloaded-wasm/kinex.js ]; then
+              cp downloaded-wasm/kinex.js _site/wasm/
+              cp downloaded-wasm/kinex.wasm _site/wasm/
+            elif [ -f downloaded-wasm/bindings/wasm/kinex.js ]; then
+              cp downloaded-wasm/bindings/wasm/kinex.js _site/wasm/
+              cp downloaded-wasm/bindings/wasm/kinex.wasm _site/wasm/
+            elif [ -f downloaded-wasm/wasm/kinex.js ]; then
+              cp downloaded-wasm/wasm/kinex.js _site/wasm/
+              cp downloaded-wasm/wasm/kinex.wasm _site/wasm/
+            else
+              echo "downloaded-wasm does not contain kinex.js or kinex.wasm"
+              ls -la downloaded-wasm || true
+              find downloaded-wasm -maxdepth 3 -type f -print || true
+              exit 1
+            fi
           elif [ -d "build-wasm" ]; then
              echo "Using built artifacts"
              cp build-wasm/wasm/* _site/wasm/
