@@ -1,8 +1,11 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types:
+      - completed
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -21,6 +24,7 @@ jobs:
   deploy:
     name: Deploy JavaScript Example to GitHub Pages
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,6 +38,30 @@ jobs:
         with:
           enablement: true
 
+      - name: Download WASM artifact
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-package
+          path: downloaded-wasm
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Emscripten
+        if: github.event_name != 'workflow_run'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Build WASM
+        if: github.event_name != 'workflow_run'
+        run: |
+          emcmake cmake -B build-wasm -DBUILD_WASM=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-wasm --config Release
+
+      - name: Install dependencies
+        run: npm install three@0.160.0
+
       - name: Prepare deployment files
         run: |
           # Create a directory for the GitHub Pages deployment
@@ -45,6 +73,34 @@ jobs:
           # Copy the UR5 models (needed for the demo)
           mkdir -p _site/models
           cp -r examples/models/ur5 _site/models/
+
+          # Copy WASM files
+          mkdir -p _site/wasm
+          if [ -d "downloaded-wasm" ]; then
+            echo "Using downloaded artifacts"
+            cp downloaded-wasm/kinex.js _site/wasm/
+            cp downloaded-wasm/kinex.wasm _site/wasm/
+          elif [ -d "build-wasm" ]; then
+             echo "Using built artifacts"
+             cp build-wasm/wasm/* _site/wasm/
+          else
+             echo "No WASM found"
+             exit 1
+          fi
+
+          # Copy Three.js
+          mkdir -p _site/vendor/three/build
+          mkdir -p _site/vendor/three/examples
+          cp node_modules/three/build/three.module.js _site/vendor/three/build/
+          cp -r node_modules/three/examples/jsm _site/vendor/three/examples/
+
+          # Update import map in index.html to point to local files
+          sed -i 's|../../build-wasm/wasm/kinex.js|./wasm/kinex.js|g' _site/index.html
+          sed -i 's|https://unpkg.com/three@0.160.0/build/three.module.js|./vendor/three/build/three.module.js|g' _site/index.html
+          sed -i 's|https://unpkg.com/three@0.160.0/examples/jsm/|./vendor/three/examples/jsm/|g' _site/index.html
+
+          # Update paths in app.js for deployment structure
+          sed -i 's|\.\./models|./models|g' _site/app.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

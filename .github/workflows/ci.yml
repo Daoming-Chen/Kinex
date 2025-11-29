@@ -89,4 +89,4 @@ jobs:
     name: WASM Build & Test
     uses: ./.github/workflows/reusable-build-wasm.yml
     with:
-      upload_artifacts: false
+      upload_artifacts: true
