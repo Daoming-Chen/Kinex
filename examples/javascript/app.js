@@ -34,6 +34,19 @@ async function init() {
     setupThreeJS();
 
     // 2. Load Kinex from npm
+    // Optimization: Prefetch WASM binary in parallel with module loading
+    // This avoids the serial dependency chain and allows passing the binary directly to Emscripten
+    const wasmUrl = new URL('./wasm/kinex.wasm', import.meta.url).toString();
+    const wasmPromise = fetch(wasmUrl)
+        .then(r => {
+            if (!r.ok) throw new Error(`Failed to fetch WASM: ${r.statusText}`);
+            return r.arrayBuffer();
+        })
+        .catch(e => {
+            console.warn("WASM prefetch failed (this is expected in dev if artifacts are missing), falling back:", e);
+            return undefined;
+        });
+
     let createKinexModule;
     let locateFile = undefined;
 
@@ -79,8 +92,10 @@ async function init() {
 
     try {
         console.log("Calling createKinexModule...");
+        const wasmBinary = await wasmPromise;
         kinex = await createKinexModule({
             locateFile: locateFile,
+            wasmBinary: wasmBinary,
             print: (text) => console.log("[Kinex stdout]: " + text),
             printErr: (text) => console.error("[Kinex stderr]: " + text),
         });
@@ -232,6 +247,7 @@ async function createRobotVisuals() {
     const links = robotModel.getLinks();
     const numLinks = links.size();
     const loader = new OBJLoader();
+    const loadPromises = [];
 
     for (let i = 0; i < numLinks; i++) {
         const link = links.get(i);
@@ -249,38 +265,8 @@ async function createRobotVisuals() {
             const geometry = visual.geometry;
             const origin = visual.origin;
 
-            let object = null;
-            let scale = [1, 1, 1];
-
-            // Handle different geometry types
-            if (geometry.type === kinex.GeometryType.Mesh) {
-                const meshFilename = geometry.mesh_filename;
-                scale = geometry.mesh_scale;
-                const meshPath = MESH_BASE_PATH + meshFilename;
-
-                try {
-                    object = await loadMesh(loader, meshPath);
-                } catch (e) {
-                    console.warn(`Failed to load mesh ${meshPath}:`, e);
-                    continue;
-                }
-            } else if (geometry.type === kinex.GeometryType.Box) {
-                const size = geometry.box_size;
-                const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
-                object = new THREE.Mesh(geo);
-            } else if (geometry.type === kinex.GeometryType.Cylinder) {
-                const radius = geometry.cylinder_radius;
-                const length = geometry.cylinder_length;
-                const geo = new THREE.CylinderGeometry(radius, radius, length, 32);
-                geo.rotateX(Math.PI / 2);
-                object = new THREE.Mesh(geo);
-            } else if (geometry.type === kinex.GeometryType.Sphere) {
-                const radius = geometry.sphere_radius;
-                const geo = new THREE.SphereGeometry(radius, 32, 32);
-                object = new THREE.Mesh(geo);
-            }
-
-            if (object) {
+            // Helper to setup and add object
+            const setupAndAdd = (object, scale = [1, 1, 1]) => {
                 if (geometry.type === kinex.GeometryType.Mesh) {
                     object.scale.set(scale[0], scale[1], scale[2]);
                 }
@@ -331,9 +317,46 @@ async function createRobotVisuals() {
                 visualGroup.quaternion.set(quat[1], quat[2], quat[3], quat[0]);
 
                 linkGroup.add(visualGroup);
+            };
+
+            // Handle different geometry types
+            if (geometry.type === kinex.GeometryType.Mesh) {
+                const meshFilename = geometry.mesh_filename;
+                const scale = geometry.mesh_scale;
+                const meshPath = MESH_BASE_PATH + meshFilename;
+
+                // Parallel load
+                const p = loadMesh(loader, meshPath)
+                    .then(object => setupAndAdd(object, scale))
+                    .catch(e => console.warn(`Failed to load mesh ${meshPath}:`, e));
+                loadPromises.push(p);
+
+            } else {
+                let object = null;
+                if (geometry.type === kinex.GeometryType.Box) {
+                    const size = geometry.box_size;
+                    const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+                    object = new THREE.Mesh(geo);
+                } else if (geometry.type === kinex.GeometryType.Cylinder) {
+                    const radius = geometry.cylinder_radius;
+                    const length = geometry.cylinder_length;
+                    const geo = new THREE.CylinderGeometry(radius, radius, length, 32);
+                    geo.rotateX(Math.PI / 2);
+                    object = new THREE.Mesh(geo);
+                } else if (geometry.type === kinex.GeometryType.Sphere) {
+                    const radius = geometry.sphere_radius;
+                    const geo = new THREE.SphereGeometry(radius, 32, 32);
+                    object = new THREE.Mesh(geo);
+                }
+
+                if (object) {
+                    setupAndAdd(object);
+                }
             }
         }
     }
+    
+    await Promise.all(loadPromises);
 }
 
 function loadMesh(loader, url) {
