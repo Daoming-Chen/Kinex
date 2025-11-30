@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook: format staged C/C++ files using clang-format and re-add them
+CLANG_FORMAT="clang-format"
+if command -v clang-format-14 >/dev/null 2>&1; then
+  CLANG_FORMAT=clang-format-14
+fi
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM || true)
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+FILES_TO_FORMAT=$(printf "%s\n" "$STAGED_FILES" | grep -E '\.(cpp|cc|c|h|hpp|hh|cxx|hxx)$' || true)
+if [ -z "$FILES_TO_FORMAT" ]; then
+  # Nothing to do
+  exit 0
+fi
+
+echo "Formatting staged C/C++ files with $CLANG_FORMAT..."
+printf "%s\n" "$FILES_TO_FORMAT" | while IFS= read -r f; do
+  # Only format files that exist on disk (they may be deleted/renamed)
+  if [ -f "$f" ]; then
+    "$CLANG_FORMAT" -i -style=file "$f"
+    git add "$f"
+  fi
+done
+
+exit 0

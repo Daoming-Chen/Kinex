@@ -142,6 +142,25 @@ For platform-specific instructions, see the [build guide](docs/guides/building.m
 - 🔜 Cartesian path tracking ([RelaxedIK](https://github.com/uwgraphics/relaxed_ik_core)-inspired)
 - 🔜 ROS2 integration
 
+## 🧹 Code Formatting
+
+Kinex uses clang-format (Google style) for C/C++ files. A `.clang-format` file is included at the repo root.
+
+To format all files locally, run:
+
+```bash
+./scripts/format.sh
+```
+
+To enable a local pre-commit hook that formats staged files:
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit
+```
+
+CI: The repository contains a GitHub Actions workflow which validates code formatting and fails the check if changes are needed.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

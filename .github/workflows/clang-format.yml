@@ -1,0 +1,36 @@
+name: 'clang-format'
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - refactor/**
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install clang-format-14
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-14
+          # verify it exists
+          clang-format-14 --version
+      - name: Run clang-format check
+        run: |
+          set -euo pipefail
+          # Prefer clang-format-14 on CI
+          sudo ln -sf $(command -v clang-format-14) /usr/bin/clang-format
+          ./scripts/format.sh
+          # If there are any changes after formatting, fail
+          if ! git diff --quiet; then
+            echo "Formatting changes detected. Please run './scripts/format.sh' and re-run your commit or update the PR.";
+            git --no-pager diff --name-only
+            exit 1
+          fi
+      - name: Report clang-format version
+        run: clang-format --version

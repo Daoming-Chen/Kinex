@@ -3,8 +3,8 @@
 
 #include "kinex/inverse_kinematics.h"
 #include "kinex/kinematics.h"
-#include "kinex/robot_model.h"
 #include "kinex/robot.h"
+#include "kinex/robot_model.h"
 #include "kinex/urdf_parser.h"
 
 #include <Eigen/Dense>
@@ -22,913 +22,1085 @@ using namespace emscripten;
 
 namespace {
 
-bool isNullish(const val& value) {
-    return value.isNull() || value.isUndefined();
+bool isNullish(const val &value) {
+  return value.isNull() || value.isUndefined();
 }
 
-bool isLengthBasedArrayLike(const val& value) {
-    return !value["length"].isUndefined();
+bool isLengthBasedArrayLike(const val &value) {
+  return !value["length"].isUndefined();
 }
 
-std::vector<double> toVectorDouble(const val& value, std::size_t expected_size, const char* context) {
-    if (isNullish(value)) {
-        throw std::invalid_argument(std::string("Expected ") + context + " to be array-like.");
+std::vector<double> toVectorDouble(const val &value, std::size_t expected_size,
+                                   const char *context) {
+  if (isNullish(value)) {
+    throw std::invalid_argument(std::string("Expected ") + context +
+                                " to be array-like.");
+  }
+
+  std::vector<double> result;
+
+  if (isLengthBasedArrayLike(value)) {
+    const auto length = value["length"].as<std::size_t>();
+    result.reserve(length);
+    for (std::size_t i = 0; i < length; ++i) {
+      result.push_back(value[i].as<double>());
     }
-
-    std::vector<double> result;
-
-    if (isLengthBasedArrayLike(value)) {
-        const auto length = value["length"].as<std::size_t>();
-        result.reserve(length);
-        for (std::size_t i = 0; i < length; ++i) {
-            result.push_back(value[i].as<double>());
-        }
-    } else if (!value["size"].isUndefined() && !value["get"].isUndefined()) {
-        const auto length = value.call<std::size_t>("size");
-        result.reserve(length);
-        for (std::size_t i = 0; i < length; ++i) {
-            result.push_back(value.call<double>("get", i));
-        }
-    } else {
-        throw std::invalid_argument(std::string("Expected ") + context + " to be array-like.");
+  } else if (!value["size"].isUndefined() && !value["get"].isUndefined()) {
+    const auto length = value.call<std::size_t>("size");
+    result.reserve(length);
+    for (std::size_t i = 0; i < length; ++i) {
+      result.push_back(value.call<double>("get", i));
     }
+  } else {
+    throw std::invalid_argument(std::string("Expected ") + context +
+                                " to be array-like.");
+  }
 
-    if (expected_size != 0 && result.size() != expected_size) {
-        throw std::invalid_argument(std::string(context) + " must contain exactly " + std::to_string(expected_size) + " elements.");
-    }
+  if (expected_size != 0 && result.size() != expected_size) {
+    throw std::invalid_argument(std::string(context) +
+                                " must contain exactly " +
+                                std::to_string(expected_size) + " elements.");
+  }
 
-    return result;
+  return result;
 }
 
-bool toBoolOrDefault(const val& maybe_value, bool default_value) {
-    return isNullish(maybe_value) ? default_value : maybe_value.as<bool>();
+bool toBoolOrDefault(const val &maybe_value, bool default_value) {
+  return isNullish(maybe_value) ? default_value : maybe_value.as<bool>();
 }
 
-double toDoubleOrDefault(const val& maybe_value, double default_value) {
-    return isNullish(maybe_value) ? default_value : maybe_value.as<double>();
+double toDoubleOrDefault(const val &maybe_value, double default_value) {
+  return isNullish(maybe_value) ? default_value : maybe_value.as<double>();
 }
 
-std::string toStringOrDefault(const val& maybe_value, const std::string& default_value) {
-    return isNullish(maybe_value) ? default_value : maybe_value.as<std::string>();
+std::string toStringOrDefault(const val &maybe_value,
+                              const std::string &default_value) {
+  return isNullish(maybe_value) ? default_value : maybe_value.as<std::string>();
 }
 
 template <typename TEnum>
-TEnum toEnumOrDefault(const val& maybe_value, TEnum default_value) {
-    return isNullish(maybe_value) ? default_value : maybe_value.as<TEnum>();
+TEnum toEnumOrDefault(const val &maybe_value, TEnum default_value) {
+  return isNullish(maybe_value) ? default_value : maybe_value.as<TEnum>();
 }
 
 constexpr std::size_t kMaxPosePositionSize = 3;
 constexpr std::size_t kMaxPoseQuaternionSize = 4;
 
 struct PoseData {
-    std::array<double, kMaxPosePositionSize> position{};
-    std::array<double, kMaxPoseQuaternionSize> quaternion{}; // w, x, y, z
+  std::array<double, kMaxPosePositionSize> position{};
+  std::array<double, kMaxPoseQuaternionSize> quaternion{}; // w, x, y, z
 };
 
 struct MatrixData {
-    std::vector<double> data;
-    int rows = 0;
-    int cols = 0;
+  std::vector<double> data;
+  int rows = 0;
+  int cols = 0;
 };
 
 struct SolverConfigData {
-    std::size_t max_iterations = 64;
-    double tolerance = 1e-4;
-    double regularization = 1e-5;
-    double max_step_size = 0.5;
-    std::size_t max_line_search_steps = 6;
-    double line_search_shrink = 0.5;
-    double line_search_min_alpha = 0.05;
-    double line_search_improvement = 1e-6;
-    double position_weight = 1.0;
-    double orientation_weight = 1.0;
-    double position_anchor_weight = 1e-2;
-    double orientation_anchor_weight = 1e-6;
-    double joint_limit_margin = 1e-4;
-    double unbounded_joint_limit = 50.0;
-    bool enable_warm_start = true;
+  std::size_t max_iterations = 64;
+  double tolerance = 1e-4;
+  double regularization = 1e-5;
+  double max_step_size = 0.5;
+  std::size_t max_line_search_steps = 6;
+  double line_search_shrink = 0.5;
+  double line_search_min_alpha = 0.05;
+  double line_search_improvement = 1e-6;
+  double position_weight = 1.0;
+  double orientation_weight = 1.0;
+  double position_anchor_weight = 1e-2;
+  double orientation_anchor_weight = 1e-6;
+  double joint_limit_margin = 1e-4;
+  double unbounded_joint_limit = 50.0;
+  bool enable_warm_start = true;
 };
 
 struct IKResultData {
-    bool converged = false;
-    std::size_t iterations = 0;
-    double final_error_norm = 0.0;
-    double final_step_norm = 0.0;
-    int qp_status = 0;
-    std::string message;
-    std::vector<double> solution;
-    std::vector<double> error_history;
+  bool converged = false;
+  std::size_t iterations = 0;
+  double final_error_norm = 0.0;
+  double final_step_norm = 0.0;
+  int qp_status = 0;
+  std::string message;
+  std::vector<double> solution;
+  std::vector<double> error_history;
 };
 
 // Helper conversion functions
-static kinex::Transform toTransform(const PoseData& pose) {
-    const Eigen::Vector3d position(pose.position[0], pose.position[1], pose.position[2]);
-    const Eigen::Quaterniond quaternion(pose.quaternion[0], pose.quaternion[1], pose.quaternion[2], pose.quaternion[3]);
-    return kinex::Transform::fromPositionQuaternion(position, quaternion);
+static kinex::Transform toTransform(const PoseData &pose) {
+  const Eigen::Vector3d position(pose.position[0], pose.position[1],
+                                 pose.position[2]);
+  const Eigen::Quaterniond quaternion(pose.quaternion[0], pose.quaternion[1],
+                                      pose.quaternion[2], pose.quaternion[3]);
+  return kinex::Transform::fromPositionQuaternion(position, quaternion);
 }
 
-static PoseData toPoseData(const kinex::Transform& transform) {
-    PoseData data;
-    const auto [position, quaternion] = transform.asPositionQuaternion();
-    data.position = {position.x(), position.y(), position.z()};
-    data.quaternion = {quaternion.w(), quaternion.x(), quaternion.y(), quaternion.z()};
-    return data;
+static PoseData toPoseData(const kinex::Transform &transform) {
+  PoseData data;
+  const auto [position, quaternion] = transform.asPositionQuaternion();
+  data.position = {position.x(), position.y(), position.z()};
+  data.quaternion = {quaternion.w(), quaternion.x(), quaternion.y(),
+                     quaternion.z()};
+  return data;
 }
 
-static MatrixData toMatrixData(const Eigen::MatrixXd& matrix) {
-    MatrixData data;
-    data.rows = static_cast<int>(matrix.rows());
-    data.cols = static_cast<int>(matrix.cols());
-    data.data.resize(static_cast<std::size_t>(matrix.size()));
-    std::size_t index = 0;
-    for (int r = 0; r < matrix.rows(); ++r) {
-        for (int c = 0; c < matrix.cols(); ++c) {
-            data.data[index++] = matrix(r, c);
-        }
+static MatrixData toMatrixData(const Eigen::MatrixXd &matrix) {
+  MatrixData data;
+  data.rows = static_cast<int>(matrix.rows());
+  data.cols = static_cast<int>(matrix.cols());
+  data.data.resize(static_cast<std::size_t>(matrix.size()));
+  std::size_t index = 0;
+  for (int r = 0; r < matrix.rows(); ++r) {
+    for (int c = 0; c < matrix.cols(); ++c) {
+      data.data[index++] = matrix(r, c);
     }
-    return data;
+  }
+  return data;
 }
 
-static SolverConfigData fromSolverConfig(const kinex::SolverConfig& config) {
-    SolverConfigData data;
-    data.max_iterations = config.max_iterations;
-    data.tolerance = config.tolerance;
-    data.regularization = config.regularization;
-    data.max_step_size = config.max_step_size;
-    data.max_line_search_steps = config.max_line_search_steps;
-    data.line_search_shrink = config.line_search_shrink;
-    data.line_search_min_alpha = config.line_search_min_alpha;
-    data.line_search_improvement = config.line_search_improvement;
-    data.position_weight = config.position_weight;
-    data.orientation_weight = config.orientation_weight;
-    data.position_anchor_weight = config.position_anchor_weight;
-    data.orientation_anchor_weight = config.orientation_anchor_weight;
-    data.joint_limit_margin = config.joint_limit_margin;
-    data.unbounded_joint_limit = config.unbounded_joint_limit;
-    data.enable_warm_start = config.enable_warm_start;
-    return data;
+static SolverConfigData fromSolverConfig(const kinex::SolverConfig &config) {
+  SolverConfigData data;
+  data.max_iterations = config.max_iterations;
+  data.tolerance = config.tolerance;
+  data.regularization = config.regularization;
+  data.max_step_size = config.max_step_size;
+  data.max_line_search_steps = config.max_line_search_steps;
+  data.line_search_shrink = config.line_search_shrink;
+  data.line_search_min_alpha = config.line_search_min_alpha;
+  data.line_search_improvement = config.line_search_improvement;
+  data.position_weight = config.position_weight;
+  data.orientation_weight = config.orientation_weight;
+  data.position_anchor_weight = config.position_anchor_weight;
+  data.orientation_anchor_weight = config.orientation_anchor_weight;
+  data.joint_limit_margin = config.joint_limit_margin;
+  data.unbounded_joint_limit = config.unbounded_joint_limit;
+  data.enable_warm_start = config.enable_warm_start;
+  return data;
 }
 
-static kinex::SolverConfig toSolverConfig(const SolverConfigData& data) {
-    kinex::SolverConfig config;
-    config.max_iterations = data.max_iterations;
-    config.tolerance = data.tolerance;
-    config.regularization = data.regularization;
-    config.max_step_size = data.max_step_size;
-    config.max_line_search_steps = data.max_line_search_steps;
-    config.line_search_shrink = data.line_search_shrink;
-    config.line_search_min_alpha = data.line_search_min_alpha;
-    config.line_search_improvement = data.line_search_improvement;
-    config.position_weight = data.position_weight;
-    config.orientation_weight = data.orientation_weight;
-    config.position_anchor_weight = data.position_anchor_weight;
-    config.orientation_anchor_weight = data.orientation_anchor_weight;
-    config.joint_limit_margin = data.joint_limit_margin;
-    config.unbounded_joint_limit = data.unbounded_joint_limit;
-    config.enable_warm_start = data.enable_warm_start;
-    return config;
+static kinex::SolverConfig toSolverConfig(const SolverConfigData &data) {
+  kinex::SolverConfig config;
+  config.max_iterations = data.max_iterations;
+  config.tolerance = data.tolerance;
+  config.regularization = data.regularization;
+  config.max_step_size = data.max_step_size;
+  config.max_line_search_steps = data.max_line_search_steps;
+  config.line_search_shrink = data.line_search_shrink;
+  config.line_search_min_alpha = data.line_search_min_alpha;
+  config.line_search_improvement = data.line_search_improvement;
+  config.position_weight = data.position_weight;
+  config.orientation_weight = data.orientation_weight;
+  config.position_anchor_weight = data.position_anchor_weight;
+  config.orientation_anchor_weight = data.orientation_anchor_weight;
+  config.joint_limit_margin = data.joint_limit_margin;
+  config.unbounded_joint_limit = data.unbounded_joint_limit;
+  config.enable_warm_start = data.enable_warm_start;
+  return config;
 }
 
-static Eigen::VectorXd toEigenVector(const std::vector<double>& values) {
-    Eigen::VectorXd vec(static_cast<Eigen::Index>(values.size()));
-    for (Eigen::Index i = 0; i < vec.size(); ++i) {
-        vec[i] = values[static_cast<std::size_t>(i)];
-    }
-    return vec;
+static Eigen::VectorXd toEigenVector(const std::vector<double> &values) {
+  Eigen::VectorXd vec(static_cast<Eigen::Index>(values.size()));
+  for (Eigen::Index i = 0; i < vec.size(); ++i) {
+    vec[i] = values[static_cast<std::size_t>(i)];
+  }
+  return vec;
 }
 
 // RobotModel wrapper (renamed from RobotHandle)
 class RobotModelHandle {
 public:
-    static std::shared_ptr<RobotModelHandle> fromURDFString(const std::string& urdf_string, const std::string& base_dir = "") {
-        kinex::URDFParser parser;
-        if (!base_dir.empty()) {
-            parser.setBaseDirectory(base_dir);
-        }
-        auto model = parser.parseString(urdf_string);
-        if (!model) {
-            throw std::runtime_error("Failed to parse URDF string.");
-        }
-        return std::shared_ptr<RobotModelHandle>(new RobotModelHandle(std::move(model)));
+  static std::shared_ptr<RobotModelHandle>
+  fromURDFString(const std::string &urdf_string,
+                 const std::string &base_dir = "") {
+    kinex::URDFParser parser;
+    if (!base_dir.empty()) {
+      parser.setBaseDirectory(base_dir);
     }
-
-    explicit RobotModelHandle(std::shared_ptr<kinex::RobotModel> model)
-        : model_(std::move(model)) {}
-
-    void ensureAlive() const {
-        if (!model_) {
-            throw std::runtime_error("RobotModelHandle has been disposed.");
-        }
+    auto model = parser.parseString(urdf_string);
+    if (!model) {
+      throw std::runtime_error("Failed to parse URDF string.");
     }
+    return std::shared_ptr<RobotModelHandle>(
+        new RobotModelHandle(std::move(model)));
+  }
 
-    const std::string& getName() const {
-        ensureAlive();
-        return model_->getName();
-    }
+  explicit RobotModelHandle(std::shared_ptr<kinex::RobotModel> model)
+      : model_(std::move(model)) {}
 
-    std::vector<std::string> getJointNames() const {
-        ensureAlive();
-        std::vector<std::string> names;
-        auto joints = model_->getActuatedJoints();
-        names.reserve(joints.size());
-        for (const auto& joint : joints) {
-            names.push_back(joint->getName());
-        }
-        return names;
+  void ensureAlive() const {
+    if (!model_) {
+      throw std::runtime_error("RobotModelHandle has been disposed.");
     }
+  }
 
-    std::size_t getDOF() const {
-        ensureAlive();
-        return model_->getActuatedJoints().size();
-    }
+  const std::string &getName() const {
+    ensureAlive();
+    return model_->getName();
+  }
 
-    std::vector<double> getLowerLimits() const {
-        ensureAlive();
-        std::vector<double> limits;
-        auto joints = model_->getActuatedJoints();
-        limits.reserve(joints.size());
-        for (const auto& joint : joints) {
-            const auto& joint_limits = joint->getLimits();
-            if (joint_limits.has_value()) {
-                limits.push_back(joint_limits->lower);
-            } else {
-                limits.push_back(-std::numeric_limits<double>::infinity());
-            }
-        }
-        return limits;
+  std::vector<std::string> getJointNames() const {
+    ensureAlive();
+    std::vector<std::string> names;
+    auto joints = model_->getActuatedJoints();
+    names.reserve(joints.size());
+    for (const auto &joint : joints) {
+      names.push_back(joint->getName());
     }
+    return names;
+  }
 
-    std::vector<double> getUpperLimits() const {
-        ensureAlive();
-        std::vector<double> limits;
-        auto joints = model_->getActuatedJoints();
-        limits.reserve(joints.size());
-        for (const auto& joint : joints) {
-            const auto& joint_limits = joint->getLimits();
-            if (joint_limits.has_value()) {
-                limits.push_back(joint_limits->upper);
-            } else {
-                limits.push_back(std::numeric_limits<double>::infinity());
-            }
-        }
-        return limits;
-    }
+  std::size_t getDOF() const {
+    ensureAlive();
+    return model_->getActuatedJoints().size();
+  }
 
-    void dispose() {
-        model_.reset();
+  std::vector<double> getLowerLimits() const {
+    ensureAlive();
+    std::vector<double> limits;
+    auto joints = model_->getActuatedJoints();
+    limits.reserve(joints.size());
+    for (const auto &joint : joints) {
+      const auto &joint_limits = joint->getLimits();
+      if (joint_limits.has_value()) {
+        limits.push_back(joint_limits->lower);
+      } else {
+        limits.push_back(-std::numeric_limits<double>::infinity());
+      }
     }
+    return limits;
+  }
 
-    bool isDisposed() const {
-        return model_ == nullptr;
+  std::vector<double> getUpperLimits() const {
+    ensureAlive();
+    std::vector<double> limits;
+    auto joints = model_->getActuatedJoints();
+    limits.reserve(joints.size());
+    for (const auto &joint : joints) {
+      const auto &joint_limits = joint->getLimits();
+      if (joint_limits.has_value()) {
+        limits.push_back(joint_limits->upper);
+      } else {
+        limits.push_back(std::numeric_limits<double>::infinity());
+      }
     }
+    return limits;
+  }
 
-    std::shared_ptr<const kinex::RobotModel> getModel() const {
-        ensureAlive();
-        return model_;
-    }
+  void dispose() { model_.reset(); }
+
+  bool isDisposed() const { return model_ == nullptr; }
+
+  std::shared_ptr<const kinex::RobotModel> getModel() const {
+    ensureAlive();
+    return model_;
+  }
 
 private:
-    std::shared_ptr<kinex::RobotModel> model_;
+  std::shared_ptr<kinex::RobotModel> model_;
 };
 
 // Unified Robot wrapper (New)
 class RobotWrapper {
 public:
-    static std::shared_ptr<RobotWrapper> fromURDFString(const std::string& urdf, const std::string& end_link, const std::string& base_link) {
-        return std::make_shared<RobotWrapper>(kinex::Robot::fromURDFString(urdf, end_link, base_link));
-    }
+  static std::shared_ptr<RobotWrapper>
+  fromURDFString(const std::string &urdf, const std::string &end_link,
+                 const std::string &base_link) {
+    return std::make_shared<RobotWrapper>(
+        kinex::Robot::fromURDFString(urdf, end_link, base_link));
+  }
 
-    explicit RobotWrapper(kinex::Robot robot) : robot_(std::move(robot)) {}
+  explicit RobotWrapper(kinex::Robot robot) : robot_(std::move(robot)) {}
 
-    std::shared_ptr<RobotWrapper> clone() const {
-        return std::make_shared<RobotWrapper>(robot_.clone());
-    }
+  std::shared_ptr<RobotWrapper> clone() const {
+    return std::make_shared<RobotWrapper>(robot_.clone());
+  }
 
-    PoseData forwardKinematics(const std::vector<double>& q, const std::string& link = "") const {
-        auto vec = toEigenVector(q);
-        return toPoseData(robot_.forwardKinematics(vec, link));
-    }
+  PoseData forwardKinematics(const std::vector<double> &q,
+                             const std::string &link = "") const {
+    auto vec = toEigenVector(q);
+    return toPoseData(robot_.forwardKinematics(vec, link));
+  }
 
-    PoseData computePose(const std::vector<double>& q, const std::string& link = "") const {
-        auto vec = toEigenVector(q);
-        return toPoseData(robot_.computePose(vec, link));
-    }
+  PoseData computePose(const std::vector<double> &q,
+                       const std::string &link = "") const {
+    auto vec = toEigenVector(q);
+    return toPoseData(robot_.computePose(vec, link));
+  }
 
-    IKResultData inverseKinematics(const PoseData& target, const std::vector<double>& q_init, const std::string& link = "") {
-        auto t = toTransform(target);
-        auto q0 = toEigenVector(q_init);
-        auto [sol, status] = robot_.inverseKinematics(t, q0, link);
-        
-        IKResultData result;
-        result.converged = status.converged;
-        result.iterations = status.iterations;
-        result.final_error_norm = status.final_error_norm;
-        result.solution.assign(sol.data(), sol.data() + sol.size());
-        return result;
-    }
-    
-    IKResultData solveIK(const PoseData& target, const std::vector<double>& q_init, const std::string& link = "") {
-        return inverseKinematics(target, q_init, link);
-    }
+  IKResultData inverseKinematics(const PoseData &target,
+                                 const std::vector<double> &q_init,
+                                 const std::string &link = "") {
+    auto t = toTransform(target);
+    auto q0 = toEigenVector(q_init);
+    auto [sol, status] = robot_.inverseKinematics(t, q0, link);
 
-    MatrixData computeJacobian(const std::vector<double>& q, const std::string& link = "", kinex::JacobianType type = kinex::JacobianType::Analytic) const {
-        auto vec = toEigenVector(q);
-        return toMatrixData(robot_.computeJacobian(vec, link, type));
-    }
+    IKResultData result;
+    result.converged = status.converged;
+    result.iterations = status.iterations;
+    result.final_error_norm = status.final_error_norm;
+    result.solution.assign(sol.data(), sol.data() + sol.size());
+    return result;
+  }
 
-    double getManipulability(const std::vector<double>& q, const std::string& link = "") const {
-        auto vec = toEigenVector(q);
-        return robot_.getManipulability(vec, link);
-    }
+  IKResultData solveIK(const PoseData &target,
+                       const std::vector<double> &q_init,
+                       const std::string &link = "") {
+    return inverseKinematics(target, q_init, link);
+  }
 
-    bool isSingular(const std::vector<double>& q, double threshold, const std::string& link = "") const {
-        auto vec = toEigenVector(q);
-        return robot_.isSingular(vec, threshold, link);
-    }
+  MatrixData computeJacobian(
+      const std::vector<double> &q, const std::string &link = "",
+      kinex::JacobianType type = kinex::JacobianType::Analytic) const {
+    auto vec = toEigenVector(q);
+    return toMatrixData(robot_.computeJacobian(vec, link, type));
+  }
 
-    double getConditionNumber(const std::vector<double>& q, const std::string& link = "") const {
-        auto vec = toEigenVector(q);
-        return robot_.getConditionNumber(vec, link);
-    }
-    
-    void setIKTolerance(double tol) { robot_.setIKTolerance(tol); }
-    void setPositionOnlyIK(bool enable) { robot_.setPositionOnlyIK(enable); }
-    void setOrientationOnlyIK(bool enable) { robot_.setOrientationOnlyIK(enable); }
-    
-    void setSolverConfig(const SolverConfigData& data) {
-        robot_.setSolverConfig(toSolverConfig(data));
-    }
-    
-    SolverConfigData getSolverConfig() const {
-        return fromSolverConfig(robot_.getSolverConfig());
-    }
+  double getManipulability(const std::vector<double> &q,
+                           const std::string &link = "") const {
+    auto vec = toEigenVector(q);
+    return robot_.getManipulability(vec, link);
+  }
 
-    std::string getName() const { return robot_.getName(); }
-    std::string getEndLink() const { return robot_.getEndLink(); }
-    std::string getBaseLink() const { return robot_.getBaseLink(); }
-    std::size_t getDOF() const { return robot_.getDOF(); }
+  bool isSingular(const std::vector<double> &q, double threshold,
+                  const std::string &link = "") const {
+    auto vec = toEigenVector(q);
+    return robot_.isSingular(vec, threshold, link);
+  }
+
+  double getConditionNumber(const std::vector<double> &q,
+                            const std::string &link = "") const {
+    auto vec = toEigenVector(q);
+    return robot_.getConditionNumber(vec, link);
+  }
+
+  void setIKTolerance(double tol) { robot_.setIKTolerance(tol); }
+  void setPositionOnlyIK(bool enable) { robot_.setPositionOnlyIK(enable); }
+  void setOrientationOnlyIK(bool enable) {
+    robot_.setOrientationOnlyIK(enable);
+  }
+
+  void setSolverConfig(const SolverConfigData &data) {
+    robot_.setSolverConfig(toSolverConfig(data));
+  }
+
+  SolverConfigData getSolverConfig() const {
+    return fromSolverConfig(robot_.getSolverConfig());
+  }
+
+  std::string getName() const { return robot_.getName(); }
+  std::string getEndLink() const { return robot_.getEndLink(); }
+  std::string getBaseLink() const { return robot_.getBaseLink(); }
+  std::size_t getDOF() const { return robot_.getDOF(); }
 
 private:
-    kinex::Robot robot_;
+  kinex::Robot robot_;
 };
-
 
 class ForwardKinematicsHandle {
 public:
-    ForwardKinematicsHandle(std::shared_ptr<RobotModelHandle> robot, const std::string& end_link, const std::string& base_link = "")
-        : robot_(std::move(robot))
-        , fk_(std::make_unique<kinex::ForwardKinematics>(robot_->getModel(), end_link, base_link)) {}
+  ForwardKinematicsHandle(std::shared_ptr<RobotModelHandle> robot,
+                          const std::string &end_link,
+                          const std::string &base_link = "")
+      : robot_(std::move(robot)),
+        fk_(std::make_unique<kinex::ForwardKinematics>(robot_->getModel(),
+                                                       end_link, base_link)) {}
 
-    PoseData compute(const std::vector<double>& joint_angles, bool check_bounds = false) const {
-        ensureAlive();
-        auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
-        auto transform = fk_->compute(q, check_bounds);
-        return toPoseData(transform);
-    }
+  PoseData compute(const std::vector<double> &joint_angles,
+                   bool check_bounds = false) const {
+    ensureAlive();
+    auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
+    auto transform = fk_->compute(q, check_bounds);
+    return toPoseData(transform);
+  }
 
-    PoseData computeToLink(const std::vector<double>& joint_angles, const std::string& target_link, bool check_bounds = false) const {
-        ensureAlive();
-        auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
-        auto transform = fk_->computeToLink(q, target_link, check_bounds);
-        return toPoseData(transform);
-    }
+  PoseData computeToLink(const std::vector<double> &joint_angles,
+                         const std::string &target_link,
+                         bool check_bounds = false) const {
+    ensureAlive();
+    auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
+    auto transform = fk_->computeToLink(q, target_link, check_bounds);
+    return toPoseData(transform);
+  }
 
-    MatrixData computeMatrix(const std::vector<double>& joint_angles, bool check_bounds = false) const {
-        ensureAlive();
-        auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
-        auto transform = fk_->compute(q, check_bounds);
-        return toMatrixData(transform.asMatrix());
-    }
+  MatrixData computeMatrix(const std::vector<double> &joint_angles,
+                           bool check_bounds = false) const {
+    ensureAlive();
+    auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
+    auto transform = fk_->compute(q, check_bounds);
+    return toMatrixData(transform.asMatrix());
+  }
 
-    std::size_t getNumJoints() const {
-        ensureAlive();
-        return fk_->getNumJoints();
-    }
+  std::size_t getNumJoints() const {
+    ensureAlive();
+    return fk_->getNumJoints();
+  }
 
-    val computeAllLinkTransforms(const std::vector<double>& joint_angles, bool check_bounds = false) const {
-        ensureAlive();
-        auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
-        auto transforms = fk_->computeAllLinkTransforms(q, check_bounds);
-        
-        val result = val::global("Map").new_();
-        
-        for (const auto& [link_name, transform] : transforms) {
-            PoseData pose = toPoseData(transform);
-            val pose_obj = val::object();
-            pose_obj.set("position", val::array(pose.position.begin(), pose.position.end()));
-            pose_obj.set("quaternion", val::array(pose.quaternion.begin(), pose.quaternion.end()));
-            result.call<void>("set", link_name, pose_obj);
-        }
-        return result;
-    }
+  val computeAllLinkTransforms(const std::vector<double> &joint_angles,
+                               bool check_bounds = false) const {
+    ensureAlive();
+    auto q = toEigenVectorCheckSize(joint_angles, fk_->getNumJoints());
+    auto transforms = fk_->computeAllLinkTransforms(q, check_bounds);
 
-    void dispose() {
-        fk_.reset();
-        robot_.reset();
+    val result = val::global("Map").new_();
+
+    for (const auto &[link_name, transform] : transforms) {
+      PoseData pose = toPoseData(transform);
+      val pose_obj = val::object();
+      pose_obj.set("position",
+                   val::array(pose.position.begin(), pose.position.end()));
+      pose_obj.set("quaternion",
+                   val::array(pose.quaternion.begin(), pose.quaternion.end()));
+      result.call<void>("set", link_name, pose_obj);
     }
+    return result;
+  }
+
+  void dispose() {
+    fk_.reset();
+    robot_.reset();
+  }
 
 private:
-    void ensureAlive() const {
-        if (!fk_) {
-            throw std::runtime_error("ForwardKinematicsHandle has been disposed.");
-        }
-        if (!robot_ || robot_->isDisposed()) {
-            throw std::runtime_error("Associated RobotModelHandle has been disposed.");
-        }
+  void ensureAlive() const {
+    if (!fk_) {
+      throw std::runtime_error("ForwardKinematicsHandle has been disposed.");
     }
-
-    static Eigen::VectorXd toEigenVectorCheckSize(const std::vector<double>& values, std::size_t expected_size) {
-        if (values.size() != expected_size) {
-            throw std::invalid_argument("Joint angle vector size does not match chain degrees of freedom.");
-        }
-        return toEigenVector(values);
+    if (!robot_ || robot_->isDisposed()) {
+      throw std::runtime_error(
+          "Associated RobotModelHandle has been disposed.");
     }
+  }
 
-    std::shared_ptr<RobotModelHandle> robot_;
-    std::unique_ptr<kinex::ForwardKinematics> fk_;
+  static Eigen::VectorXd
+  toEigenVectorCheckSize(const std::vector<double> &values,
+                         std::size_t expected_size) {
+    if (values.size() != expected_size) {
+      throw std::invalid_argument(
+          "Joint angle vector size does not match chain degrees of freedom.");
+    }
+    return toEigenVector(values);
+  }
+
+  std::shared_ptr<RobotModelHandle> robot_;
+  std::unique_ptr<kinex::ForwardKinematics> fk_;
 };
 
 class JacobianCalculatorHandle {
 public:
-    JacobianCalculatorHandle(std::shared_ptr<RobotModelHandle> robot, const std::string& end_link, const std::string& base_link = "")
-        : robot_(std::move(robot))
-        , calculator_(std::make_unique<kinex::JacobianCalculator>(robot_->getModel(), end_link, base_link)) {}
+  JacobianCalculatorHandle(std::shared_ptr<RobotModelHandle> robot,
+                           const std::string &end_link,
+                           const std::string &base_link = "")
+      : robot_(std::move(robot)),
+        calculator_(std::make_unique<kinex::JacobianCalculator>(
+            robot_->getModel(), end_link, base_link)) {}
 
-    MatrixData compute(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
-        ensureAlive();
-        auto q = toEigenVector(joint_angles);
-        auto matrix = calculator_->compute(q, type, target_link);
-        return toMatrixData(matrix);
-    }
+  MatrixData compute(const std::vector<double> &joint_angles,
+                     kinex::JacobianType type = kinex::JacobianType::Analytic,
+                     const std::string &target_link = "") const {
+    ensureAlive();
+    auto q = toEigenVector(joint_angles);
+    auto matrix = calculator_->compute(q, type, target_link);
+    return toMatrixData(matrix);
+  }
 
-    bool isSingular(const std::vector<double>& joint_angles, double threshold = 1e-6, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
-        ensureAlive();
-        auto q = toEigenVector(joint_angles);
-        return calculator_->isSingular(q, threshold, type, target_link);
-    }
+  bool isSingular(const std::vector<double> &joint_angles,
+                  double threshold = 1e-6,
+                  kinex::JacobianType type = kinex::JacobianType::Analytic,
+                  const std::string &target_link = "") const {
+    ensureAlive();
+    auto q = toEigenVector(joint_angles);
+    return calculator_->isSingular(q, threshold, type, target_link);
+  }
 
-    double getManipulability(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
-        ensureAlive();
-        auto q = toEigenVector(joint_angles);
-        return calculator_->getManipulability(q, type, target_link);
-    }
+  double
+  getManipulability(const std::vector<double> &joint_angles,
+                    kinex::JacobianType type = kinex::JacobianType::Analytic,
+                    const std::string &target_link = "") const {
+    ensureAlive();
+    auto q = toEigenVector(joint_angles);
+    return calculator_->getManipulability(q, type, target_link);
+  }
 
-    double getConditionNumber(const std::vector<double>& joint_angles, kinex::JacobianType type = kinex::JacobianType::Analytic, const std::string& target_link = "") const {
-        ensureAlive();
-        auto q = toEigenVector(joint_angles);
-        return calculator_->getConditionNumber(q, type, target_link);
-    }
+  double
+  getConditionNumber(const std::vector<double> &joint_angles,
+                     kinex::JacobianType type = kinex::JacobianType::Analytic,
+                     const std::string &target_link = "") const {
+    ensureAlive();
+    auto q = toEigenVector(joint_angles);
+    return calculator_->getConditionNumber(q, type, target_link);
+  }
 
-    void dispose() {
-        calculator_.reset();
-        robot_.reset();
-    }
+  void dispose() {
+    calculator_.reset();
+    robot_.reset();
+  }
 
 private:
-    void ensureAlive() const {
-        if (!calculator_) {
-            throw std::runtime_error("JacobianCalculatorHandle has been disposed.");
-        }
-        if (!robot_ || robot_->isDisposed()) {
-            throw std::runtime_error("Associated RobotModelHandle has been disposed.");
-        }
+  void ensureAlive() const {
+    if (!calculator_) {
+      throw std::runtime_error("JacobianCalculatorHandle has been disposed.");
     }
+    if (!robot_ || robot_->isDisposed()) {
+      throw std::runtime_error(
+          "Associated RobotModelHandle has been disposed.");
+    }
+  }
 
-    std::shared_ptr<RobotModelHandle> robot_;
-    std::unique_ptr<kinex::JacobianCalculator> calculator_;
+  std::shared_ptr<RobotModelHandle> robot_;
+  std::unique_ptr<kinex::JacobianCalculator> calculator_;
 };
 
 class SQPIKSolverHandle {
 public:
-    SQPIKSolverHandle(std::shared_ptr<RobotModelHandle> robot, const std::string& end_link, const std::string& base_link = "")
-        : robot_(std::move(robot))
-        , solver_(std::make_unique<kinex::SQPIKSolver>(robot_->getModel(), end_link, base_link)) {}
+  SQPIKSolverHandle(std::shared_ptr<RobotModelHandle> robot,
+                    const std::string &end_link,
+                    const std::string &base_link = "")
+      : robot_(std::move(robot)),
+        solver_(std::make_unique<kinex::SQPIKSolver>(robot_->getModel(),
+                                                     end_link, base_link)) {}
 
-    void setConfig(const SolverConfigData& config) {
-        ensureAlive();
-        solver_->setSolverConfig(toSolverConfig(config));
-    }
+  void setConfig(const SolverConfigData &config) {
+    ensureAlive();
+    solver_->setSolverConfig(toSolverConfig(config));
+  }
 
-    SolverConfigData getConfig() const {
-        ensureAlive();
-        return fromSolverConfig(solver_->getSolverConfig());
-    }
+  SolverConfigData getConfig() const {
+    ensureAlive();
+    return fromSolverConfig(solver_->getSolverConfig());
+  }
 
-    void setPositionOnly(bool enable) {
-        ensureAlive();
-        solver_->setPositionOnly(enable);
-    }
+  void setPositionOnly(bool enable) {
+    ensureAlive();
+    solver_->setPositionOnly(enable);
+  }
 
-    void setOrientationOnly(bool enable) {
-        ensureAlive();
-        solver_->setOrientationOnly(enable);
-    }
+  void setOrientationOnly(bool enable) {
+    ensureAlive();
+    solver_->setOrientationOnly(enable);
+  }
 
-    void setWarmStart(const std::vector<double>& guess) {
-        ensureAlive();
-        auto eigen_guess = toEigenVector(guess);
-        solver_->setWarmStart(eigen_guess);
-    }
+  void setWarmStart(const std::vector<double> &guess) {
+    ensureAlive();
+    auto eigen_guess = toEigenVector(guess);
+    solver_->setWarmStart(eigen_guess);
+  }
 
-    IKResultData solve(const PoseData& target_pose, const std::vector<double>& initial_guess) {
-        ensureAlive();
-        const auto q0 = toEigenVector(initial_guess);
-        Eigen::VectorXd solution = q0;
-        const kinex::Transform target = toTransform(target_pose);
-        auto status = solver_->solve(target, q0, solution);
+  IKResultData solve(const PoseData &target_pose,
+                     const std::vector<double> &initial_guess) {
+    ensureAlive();
+    const auto q0 = toEigenVector(initial_guess);
+    Eigen::VectorXd solution = q0;
+    const kinex::Transform target = toTransform(target_pose);
+    auto status = solver_->solve(target, q0, solution);
 
-        IKResultData result;
-        result.converged = status.converged;
-        result.iterations = status.iterations;
-        result.final_error_norm = status.final_error_norm;
-        result.final_step_norm = status.final_step_norm;
-        result.qp_status = status.qp_status;
-        result.message = status.message;
-        result.solution.assign(solution.data(), solution.data() + solution.size());
-        result.error_history = status.error_history;
-        return result;
-    }
+    IKResultData result;
+    result.converged = status.converged;
+    result.iterations = status.iterations;
+    result.final_error_norm = status.final_error_norm;
+    result.final_step_norm = status.final_step_norm;
+    result.qp_status = status.qp_status;
+    result.message = status.message;
+    result.solution.assign(solution.data(), solution.data() + solution.size());
+    result.error_history = status.error_history;
+    return result;
+  }
 
-    void dispose() {
-        solver_.reset();
-        robot_.reset();
-    }
+  void dispose() {
+    solver_.reset();
+    robot_.reset();
+  }
 
 private:
-    void ensureAlive() const {
-        if (!solver_) {
-            throw std::runtime_error("SQPIKSolverHandle has been disposed.");
-        }
-        if (!robot_ || robot_->isDisposed()) {
-            throw std::runtime_error("Associated RobotModelHandle has been disposed.");
-        }
+  void ensureAlive() const {
+    if (!solver_) {
+      throw std::runtime_error("SQPIKSolverHandle has been disposed.");
     }
+    if (!robot_ || robot_->isDisposed()) {
+      throw std::runtime_error(
+          "Associated RobotModelHandle has been disposed.");
+    }
+  }
 
-    std::shared_ptr<RobotModelHandle> robot_;
-    std::unique_ptr<kinex::SQPIKSolver> solver_;
+  std::shared_ptr<RobotModelHandle> robot_;
+  std::unique_ptr<kinex::SQPIKSolver> solver_;
 };
 
 } // namespace
 
-val getBoxSize(const kinex::Geometry& g) {
-    return val(std::array<double, 3>{g.box_size.x(), g.box_size.y(), g.box_size.z()});
+val getBoxSize(const kinex::Geometry &g) {
+  return val(
+      std::array<double, 3>{g.box_size.x(), g.box_size.y(), g.box_size.z()});
 }
-void setBoxSize(kinex::Geometry& g, val v) {
-    auto arr = toVectorDouble(v, 3, "box_size");
-    g.box_size = Eigen::Vector3d(arr[0], arr[1], arr[2]);
+void setBoxSize(kinex::Geometry &g, val v) {
+  auto arr = toVectorDouble(v, 3, "box_size");
+  g.box_size = Eigen::Vector3d(arr[0], arr[1], arr[2]);
 }
-val getMeshScale(const kinex::Geometry& g) {
-    return val(std::array<double, 3>{g.mesh_scale.x(), g.mesh_scale.y(), g.mesh_scale.z()});
+val getMeshScale(const kinex::Geometry &g) {
+  return val(std::array<double, 3>{g.mesh_scale.x(), g.mesh_scale.y(),
+                                   g.mesh_scale.z()});
 }
-void setMeshScale(kinex::Geometry& g, val v) {
-    auto arr = toVectorDouble(v, 3, "mesh_scale");
-    g.mesh_scale = Eigen::Vector3d(arr[0], arr[1], arr[2]);
+void setMeshScale(kinex::Geometry &g, val v) {
+  auto arr = toVectorDouble(v, 3, "mesh_scale");
+  g.mesh_scale = Eigen::Vector3d(arr[0], arr[1], arr[2]);
 }
 
 EMSCRIPTEN_BINDINGS(KINEX_wasm_bindings) {
-    value_array<std::array<double, kMaxPosePositionSize>>("Vec3")
-        .element(emscripten::index<0>())
-        .element(emscripten::index<1>())
-        .element(emscripten::index<2>());
+  value_array<std::array<double, kMaxPosePositionSize>>("Vec3")
+      .element(emscripten::index<0>())
+      .element(emscripten::index<1>())
+      .element(emscripten::index<2>());
 
-    value_array<std::array<double, kMaxPoseQuaternionSize>>("Quat")
-        .element(emscripten::index<0>())
-        .element(emscripten::index<1>())
-        .element(emscripten::index<2>())
-        .element(emscripten::index<3>());
+  value_array<std::array<double, kMaxPoseQuaternionSize>>("Quat")
+      .element(emscripten::index<0>())
+      .element(emscripten::index<1>())
+      .element(emscripten::index<2>())
+      .element(emscripten::index<3>());
 
-    value_object<PoseData>("Pose")
-        .field("position", &PoseData::position)
-        .field("quaternion", &PoseData::quaternion);
+  value_object<PoseData>("Pose")
+      .field("position", &PoseData::position)
+      .field("quaternion", &PoseData::quaternion);
 
-    value_object<MatrixData>("Matrix")
-        .field("data", &MatrixData::data)
-        .field("rows", &MatrixData::rows)
-        .field("cols", &MatrixData::cols);
+  value_object<MatrixData>("Matrix")
+      .field("data", &MatrixData::data)
+      .field("rows", &MatrixData::rows)
+      .field("cols", &MatrixData::cols);
 
-    value_object<SolverConfigData>("SolverConfig")
-        .field("max_iterations", &SolverConfigData::max_iterations)
-        .field("tolerance", &SolverConfigData::tolerance)
-        .field("regularization", &SolverConfigData::regularization)
-        .field("max_step_size", &SolverConfigData::max_step_size)
-        .field("max_line_search_steps", &SolverConfigData::max_line_search_steps)
-        .field("line_search_shrink", &SolverConfigData::line_search_shrink)
-        .field("line_search_min_alpha", &SolverConfigData::line_search_min_alpha)
-        .field("line_search_improvement", &SolverConfigData::line_search_improvement)
-        .field("position_weight", &SolverConfigData::position_weight)
-        .field("orientation_weight", &SolverConfigData::orientation_weight)
-        .field("position_anchor_weight", &SolverConfigData::position_anchor_weight)
-        .field("orientation_anchor_weight", &SolverConfigData::orientation_anchor_weight)
-        .field("joint_limit_margin", &SolverConfigData::joint_limit_margin)
-        .field("unbounded_joint_limit", &SolverConfigData::unbounded_joint_limit)
-        .field("enable_warm_start", &SolverConfigData::enable_warm_start);
+  value_object<SolverConfigData>("SolverConfig")
+      .field("max_iterations", &SolverConfigData::max_iterations)
+      .field("tolerance", &SolverConfigData::tolerance)
+      .field("regularization", &SolverConfigData::regularization)
+      .field("max_step_size", &SolverConfigData::max_step_size)
+      .field("max_line_search_steps", &SolverConfigData::max_line_search_steps)
+      .field("line_search_shrink", &SolverConfigData::line_search_shrink)
+      .field("line_search_min_alpha", &SolverConfigData::line_search_min_alpha)
+      .field("line_search_improvement",
+             &SolverConfigData::line_search_improvement)
+      .field("position_weight", &SolverConfigData::position_weight)
+      .field("orientation_weight", &SolverConfigData::orientation_weight)
+      .field("position_anchor_weight",
+             &SolverConfigData::position_anchor_weight)
+      .field("orientation_anchor_weight",
+             &SolverConfigData::orientation_anchor_weight)
+      .field("joint_limit_margin", &SolverConfigData::joint_limit_margin)
+      .field("unbounded_joint_limit", &SolverConfigData::unbounded_joint_limit)
+      .field("enable_warm_start", &SolverConfigData::enable_warm_start);
 
-    value_object<IKResultData>("IKResult")
-        .field("converged", &IKResultData::converged)
-        .field("iterations", &IKResultData::iterations)
-        .field("final_error_norm", &IKResultData::final_error_norm)
-        .field("final_step_norm", &IKResultData::final_step_norm)
-        .field("qp_status", &IKResultData::qp_status)
-        .field("message", &IKResultData::message)
-        .field("solution", &IKResultData::solution)
-        .field("error_history", &IKResultData::error_history);
+  value_object<IKResultData>("IKResult")
+      .field("converged", &IKResultData::converged)
+      .field("iterations", &IKResultData::iterations)
+      .field("final_error_norm", &IKResultData::final_error_norm)
+      .field("final_step_norm", &IKResultData::final_step_norm)
+      .field("qp_status", &IKResultData::qp_status)
+      .field("message", &IKResultData::message)
+      .field("solution", &IKResultData::solution)
+      .field("error_history", &IKResultData::error_history);
 
-    value_object<kinex::JointLimits>("JointLimits")
-        .field("lower", &kinex::JointLimits::lower)
-        .field("upper", &kinex::JointLimits::upper)
-        .field("effort", &kinex::JointLimits::effort)
-        .field("velocity", &kinex::JointLimits::velocity);
+  value_object<kinex::JointLimits>("JointLimits")
+      .field("lower", &kinex::JointLimits::lower)
+      .field("upper", &kinex::JointLimits::upper)
+      .field("effort", &kinex::JointLimits::effort)
+      .field("velocity", &kinex::JointLimits::velocity);
 
-    value_object<kinex::JointDynamics>("JointDynamics")
-        .field("damping", &kinex::JointDynamics::damping)
-        .field("friction", &kinex::JointDynamics::friction);
+  value_object<kinex::JointDynamics>("JointDynamics")
+      .field("damping", &kinex::JointDynamics::damping)
+      .field("friction", &kinex::JointDynamics::friction);
 
-    value_object<kinex::Geometry>("Geometry")
-        .field("type", &kinex::Geometry::type)
-        .field("box_size", 
-            std::function<val(const kinex::Geometry&)>(getBoxSize), 
-            std::function<void(kinex::Geometry&, val)>(setBoxSize))
-        .field("cylinder_radius", &kinex::Geometry::cylinder_radius)
-        .field("cylinder_length", &kinex::Geometry::cylinder_length)
-        .field("sphere_radius", &kinex::Geometry::sphere_radius)
-        .field("mesh_filename", &kinex::Geometry::mesh_filename)
-        .field("mesh_scale", 
-            std::function<val(const kinex::Geometry&)>(getMeshScale), 
-            std::function<void(kinex::Geometry&, val)>(setMeshScale));
+  value_object<kinex::Geometry>("Geometry")
+      .field("type", &kinex::Geometry::type)
+      .field("box_size",
+             std::function<val(const kinex::Geometry &)>(getBoxSize),
+             std::function<void(kinex::Geometry &, val)>(setBoxSize))
+      .field("cylinder_radius", &kinex::Geometry::cylinder_radius)
+      .field("cylinder_length", &kinex::Geometry::cylinder_length)
+      .field("sphere_radius", &kinex::Geometry::sphere_radius)
+      .field("mesh_filename", &kinex::Geometry::mesh_filename)
+      .field("mesh_scale",
+             std::function<val(const kinex::Geometry &)>(getMeshScale),
+             std::function<void(kinex::Geometry &, val)>(setMeshScale));
 
-    enum_<kinex::JacobianType>("JacobianType")
-        .value("Analytic", kinex::JacobianType::Analytic)
-        .value("Geometric", kinex::JacobianType::Geometric);
+  enum_<kinex::JacobianType>("JacobianType")
+      .value("Analytic", kinex::JacobianType::Analytic)
+      .value("Geometric", kinex::JacobianType::Geometric);
 
-    enum_<kinex::GeometryType>("GeometryType")
-        .value("Box", kinex::GeometryType::Box)
-        .value("Cylinder", kinex::GeometryType::Cylinder)
-        .value("Sphere", kinex::GeometryType::Sphere)
-        .value("Mesh", kinex::GeometryType::Mesh);
+  enum_<kinex::GeometryType>("GeometryType")
+      .value("Box", kinex::GeometryType::Box)
+      .value("Cylinder", kinex::GeometryType::Cylinder)
+      .value("Sphere", kinex::GeometryType::Sphere)
+      .value("Mesh", kinex::GeometryType::Mesh);
 
-    enum_<kinex::JointType>("JointType")
-        .value("Fixed", kinex::JointType::Fixed)
-        .value("Revolute", kinex::JointType::Revolute)
-        .value("Continuous", kinex::JointType::Continuous)
-        .value("Prismatic", kinex::JointType::Prismatic)
-        .value("Floating", kinex::JointType::Floating)
-        .value("Planar", kinex::JointType::Planar);
+  enum_<kinex::JointType>("JointType")
+      .value("Fixed", kinex::JointType::Fixed)
+      .value("Revolute", kinex::JointType::Revolute)
+      .value("Continuous", kinex::JointType::Continuous)
+      .value("Prismatic", kinex::JointType::Prismatic)
+      .value("Floating", kinex::JointType::Floating)
+      .value("Planar", kinex::JointType::Planar);
 
-    class_<kinex::Transform>("Transform")
-        .constructor<>()
-        .class_function("fromPositionQuaternion", emscripten::optional_override([](const std::array<double, 3>& pos, const std::array<double, 4>& quat) {
+  class_<kinex::Transform>("Transform")
+      .constructor<>()
+      .class_function(
+          "fromPositionQuaternion",
+          emscripten::optional_override([](const std::array<double, 3> &pos,
+                                           const std::array<double, 4> &quat) {
             return kinex::Transform::fromPositionQuaternion(
                 Eigen::Vector3d(pos[0], pos[1], pos[2]),
                 Eigen::Quaterniond(quat[0], quat[1], quat[2], quat[3]));
-        }))
-        .function("asMatrix", emscripten::optional_override([](const kinex::Transform& self) {
-            MatrixData md;
-            md.rows = 4;
-            md.cols = 4;
-            Eigen::Matrix4d m = self.asMatrix();
-            md.data.assign(m.data(), m.data() + 16);
-            return md;
-        }))
-        .function("asPose", emscripten::optional_override([](const kinex::Transform& self) {
-            auto [pos, quat] = self.asPositionQuaternion();
-            PoseData pd;
-            pd.position = {pos.x(), pos.y(), pos.z()};
-            pd.quaternion = {quat.w(), quat.x(), quat.y(), quat.z()};
-            return pd;
-        }))
-        .function("translation", emscripten::optional_override([](const kinex::Transform& self) {
-            Eigen::Vector3d t = self.translation();
-            return std::array<double, 3>{t.x(), t.y(), t.z()};
-        }));
+          }))
+      .function("asMatrix",
+                emscripten::optional_override([](const kinex::Transform &self) {
+                  MatrixData md;
+                  md.rows = 4;
+                  md.cols = 4;
+                  Eigen::Matrix4d m = self.asMatrix();
+                  md.data.assign(m.data(), m.data() + 16);
+                  return md;
+                }))
+      .function("asPose",
+                emscripten::optional_override([](const kinex::Transform &self) {
+                  auto [pos, quat] = self.asPositionQuaternion();
+                  PoseData pd;
+                  pd.position = {pos.x(), pos.y(), pos.z()};
+                  pd.quaternion = {quat.w(), quat.x(), quat.y(), quat.z()};
+                  return pd;
+                }))
+      .function("translation",
+                emscripten::optional_override([](const kinex::Transform &self) {
+                  Eigen::Vector3d t = self.translation();
+                  return std::array<double, 3>{t.x(), t.y(), t.z()};
+                }));
 
-    class_<kinex::Visual>("Visual")
-        .property("name", &kinex::Visual::name)
-        .property("origin", &kinex::Visual::origin)
-        .property("geometry", &kinex::Visual::geometry)
-        .function("getColor", emscripten::optional_override([](const kinex::Visual& v) { 
-            if (v.color) return val(std::array<double, 4>{v.color->x(), v.color->y(), v.color->z(), v.color->w()});
+  class_<kinex::Visual>("Visual")
+      .property("name", &kinex::Visual::name)
+      .property("origin", &kinex::Visual::origin)
+      .property("geometry", &kinex::Visual::geometry)
+      .function(
+          "getColor", emscripten::optional_override([](const kinex::Visual &v) {
+            if (v.color)
+              return val(std::array<double, 4>{v.color->x(), v.color->y(),
+                                               v.color->z(), v.color->w()});
             return val::null();
-        }))
-        .function("getMaterialName", emscripten::optional_override([](const kinex::Visual& v) {
-            if (v.material_name) return val(*v.material_name);
-            return val::null();
-        }));
+          }))
+      .function("getMaterialName",
+                emscripten::optional_override([](const kinex::Visual &v) {
+                  if (v.material_name)
+                    return val(*v.material_name);
+                  return val::null();
+                }));
 
-    class_<kinex::Collision>("Collision")
-        .property("name", &kinex::Collision::name)
-        .property("origin", &kinex::Collision::origin)
-        .property("geometry", &kinex::Collision::geometry);
+  class_<kinex::Collision>("Collision")
+      .property("name", &kinex::Collision::name)
+      .property("origin", &kinex::Collision::origin)
+      .property("geometry", &kinex::Collision::geometry);
 
-    class_<kinex::Inertial>("Inertial")
-        .property("origin", &kinex::Inertial::origin)
-        .property("mass", &kinex::Inertial::mass)
-        .function("getInertia", emscripten::optional_override([](const kinex::Inertial& i) {
-            MatrixData md; md.rows = 3; md.cols = 3;
-            md.data.assign(i.inertia.data(), i.inertia.data() + 9);
-            return md;
-        }));
+  class_<kinex::Inertial>("Inertial")
+      .property("origin", &kinex::Inertial::origin)
+      .property("mass", &kinex::Inertial::mass)
+      .function("getInertia",
+                emscripten::optional_override([](const kinex::Inertial &i) {
+                  MatrixData md;
+                  md.rows = 3;
+                  md.cols = 3;
+                  md.data.assign(i.inertia.data(), i.inertia.data() + 9);
+                  return md;
+                }));
 
-    class_<kinex::Link>("Link")
-        .smart_ptr<std::shared_ptr<kinex::Link>>("Link")
-        .function("getName", &kinex::Link::getName)
-        .function("getInertial", emscripten::optional_override([](const kinex::Link& self) {
-            if (self.getInertial()) return val(*self.getInertial());
-            return val::null();
-        }))
-        .function("getVisuals", &kinex::Link::getVisuals)
-        .function("getCollisions", &kinex::Link::getCollisions);
+  class_<kinex::Link>("Link")
+      .smart_ptr<std::shared_ptr<kinex::Link>>("Link")
+      .function("getName", &kinex::Link::getName)
+      .function("getInertial",
+                emscripten::optional_override([](const kinex::Link &self) {
+                  if (self.getInertial())
+                    return val(*self.getInertial());
+                  return val::null();
+                }))
+      .function("getVisuals", &kinex::Link::getVisuals)
+      .function("getCollisions", &kinex::Link::getCollisions);
 
-    class_<kinex::Joint>("Joint")
-        .smart_ptr<std::shared_ptr<kinex::Joint>>("Joint")
-        .function("getName", &kinex::Joint::getName)
-        .function("getType", &kinex::Joint::getType)
-        .function("getParentLink", &kinex::Joint::getParentLink)
-        .function("getChildLink", &kinex::Joint::getChildLink)
-        .function("getOrigin", &kinex::Joint::getOrigin)
-        .function("getAxis", emscripten::optional_override([](const kinex::Joint& self) {
-            Eigen::Vector3d a = self.getAxis();
-            return std::array<double, 3>{a.x(), a.y(), a.z()};
-        }))
-        .function("getLimits", emscripten::optional_override([](const kinex::Joint& self) {
-            if (self.getLimits()) return val(*self.getLimits());
-            return val::null();
-        }))
-        .function("getDynamics", emscripten::optional_override([](const kinex::Joint& self) {
-            if (self.getDynamics()) return val(*self.getDynamics());
-            return val::null();
-        }));
+  class_<kinex::Joint>("Joint")
+      .smart_ptr<std::shared_ptr<kinex::Joint>>("Joint")
+      .function("getName", &kinex::Joint::getName)
+      .function("getType", &kinex::Joint::getType)
+      .function("getParentLink", &kinex::Joint::getParentLink)
+      .function("getChildLink", &kinex::Joint::getChildLink)
+      .function("getOrigin", &kinex::Joint::getOrigin)
+      .function("getAxis",
+                emscripten::optional_override([](const kinex::Joint &self) {
+                  Eigen::Vector3d a = self.getAxis();
+                  return std::array<double, 3>{a.x(), a.y(), a.z()};
+                }))
+      .function("getLimits",
+                emscripten::optional_override([](const kinex::Joint &self) {
+                  if (self.getLimits())
+                    return val(*self.getLimits());
+                  return val::null();
+                }))
+      .function("getDynamics",
+                emscripten::optional_override([](const kinex::Joint &self) {
+                  if (self.getDynamics())
+                    return val(*self.getDynamics());
+                  return val::null();
+                }));
 
-    class_<RobotModelHandle>("RobotModel")
-        .smart_ptr<std::shared_ptr<RobotModelHandle>>("RobotModel")
-        .class_function("fromURDFString", emscripten::optional_override([](const std::string& urdf, emscripten::val maybe_base_dir) {
-            if (maybe_base_dir.isNull() || maybe_base_dir.isUndefined()) {
-                return RobotModelHandle::fromURDFString(urdf);
-            }
-            return RobotModelHandle::fromURDFString(urdf, maybe_base_dir.as<std::string>());
-        }))
-        .function("getName", &RobotModelHandle::getName)
-        .function("getJointNames", &RobotModelHandle::getJointNames)
-        .function("getDOF", &RobotModelHandle::getDOF)
-        .function("getLowerLimits", &RobotModelHandle::getLowerLimits)
-        .function("getUpperLimits", &RobotModelHandle::getUpperLimits)
-        .function("getRootLink", emscripten::optional_override([](const RobotModelHandle& self) {
-            self.ensureAlive();
-            return self.getModel()->getRootLink();
-        }))
-        .function("getLinks", emscripten::optional_override([](const RobotModelHandle& self) {
-            self.ensureAlive();
-            return self.getModel()->getLinks();
-        }))
-        .function("getJoints", emscripten::optional_override([](const RobotModelHandle& self) {
-            self.ensureAlive();
-            return self.getModel()->getJoints();
-        }))
-        .function("getLink", emscripten::optional_override([](const RobotModelHandle& self, const std::string& name) {
-            self.ensureAlive();
-            return self.getModel()->getLink(name);
-        }))
-        .function("getJoint", emscripten::optional_override([](const RobotModelHandle& self, const std::string& name) {
-            self.ensureAlive();
-            return self.getModel()->getJoint(name);
-        }))
-        .function("dispose", &RobotModelHandle::dispose)
-        .function("isDisposed", &RobotModelHandle::isDisposed);
+  class_<RobotModelHandle>("RobotModel")
+      .smart_ptr<std::shared_ptr<RobotModelHandle>>("RobotModel")
+      .class_function(
+          "fromURDFString",
+          emscripten::optional_override(
+              [](const std::string &urdf, emscripten::val maybe_base_dir) {
+                if (maybe_base_dir.isNull() || maybe_base_dir.isUndefined()) {
+                  return RobotModelHandle::fromURDFString(urdf);
+                }
+                return RobotModelHandle::fromURDFString(
+                    urdf, maybe_base_dir.as<std::string>());
+              }))
+      .function("getName", &RobotModelHandle::getName)
+      .function("getJointNames", &RobotModelHandle::getJointNames)
+      .function("getDOF", &RobotModelHandle::getDOF)
+      .function("getLowerLimits", &RobotModelHandle::getLowerLimits)
+      .function("getUpperLimits", &RobotModelHandle::getUpperLimits)
+      .function("getRootLink",
+                emscripten::optional_override([](const RobotModelHandle &self) {
+                  self.ensureAlive();
+                  return self.getModel()->getRootLink();
+                }))
+      .function("getLinks",
+                emscripten::optional_override([](const RobotModelHandle &self) {
+                  self.ensureAlive();
+                  return self.getModel()->getLinks();
+                }))
+      .function("getJoints",
+                emscripten::optional_override([](const RobotModelHandle &self) {
+                  self.ensureAlive();
+                  return self.getModel()->getJoints();
+                }))
+      .function("getLink",
+                emscripten::optional_override(
+                    [](const RobotModelHandle &self, const std::string &name) {
+                      self.ensureAlive();
+                      return self.getModel()->getLink(name);
+                    }))
+      .function("getJoint",
+                emscripten::optional_override(
+                    [](const RobotModelHandle &self, const std::string &name) {
+                      self.ensureAlive();
+                      return self.getModel()->getJoint(name);
+                    }))
+      .function("dispose", &RobotModelHandle::dispose)
+      .function("isDisposed", &RobotModelHandle::isDisposed);
 
-    class_<RobotWrapper>("Robot")
-        .smart_ptr<std::shared_ptr<RobotWrapper>>("Robot")
-        .class_function("fromURDFString", &RobotWrapper::fromURDFString)
-        .function("clone", &RobotWrapper::clone)
-        .function("forwardKinematics", emscripten::optional_override([](const RobotWrapper& self, val q, val link) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto link_name = toStringOrDefault(link, "");
-            return self.forwardKinematics(vec, link_name);
-        }))
-        .function("computePose", emscripten::optional_override([](const RobotWrapper& self, val q, val link) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto link_name = toStringOrDefault(link, "");
-            return self.computePose(vec, link_name);
-        }))
-        .function("inverseKinematics", emscripten::optional_override([](RobotWrapper& self, const PoseData& target, val q_init, val link) {
-            auto vec_init = toVectorDouble(q_init, 0, "q_init");
-            auto link_name = toStringOrDefault(link, "");
-            return self.inverseKinematics(target, vec_init, link_name);
-        }))
-        .function("solveIK", emscripten::optional_override([](RobotWrapper& self, const PoseData& target, val q_init, val link) {
-            auto vec_init = toVectorDouble(q_init, 0, "q_init");
-            auto link_name = toStringOrDefault(link, "");
-            return self.solveIK(target, vec_init, link_name);
-        }))
-        .function("computeJacobian", emscripten::optional_override([](const RobotWrapper& self, val q, val link, val type) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto link_name = toStringOrDefault(link, "");
-            auto jac_type = toEnumOrDefault(type, kinex::JacobianType::Analytic);
-            return self.computeJacobian(vec, link_name, jac_type);
-        }))
-        .function("getManipulability", emscripten::optional_override([](const RobotWrapper& self, val q, val link) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto link_name = toStringOrDefault(link, "");
-            return self.getManipulability(vec, link_name);
-        }))
-        .function("isSingular", emscripten::optional_override([](const RobotWrapper& self, val q, val threshold, val link) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto thres = toDoubleOrDefault(threshold, 1e-6);
-            auto link_name = toStringOrDefault(link, "");
-            return self.isSingular(vec, thres, link_name);
-        }))
-        .function("getConditionNumber", emscripten::optional_override([](const RobotWrapper& self, val q, val link) {
-            auto vec = toVectorDouble(q, 0, "q");
-            auto link_name = toStringOrDefault(link, "");
-            return self.getConditionNumber(vec, link_name);
-        }))
-        .function("setIKTolerance", &RobotWrapper::setIKTolerance)
-        .function("setPositionOnlyIK", &RobotWrapper::setPositionOnlyIK)
-        .function("setOrientationOnlyIK", &RobotWrapper::setOrientationOnlyIK)
-        .function("setSolverConfig", emscripten::optional_override([](RobotWrapper& self, const SolverConfigData& data) {
-            self.setSolverConfig(data);
-        }))
-        .function("getSolverConfig", &RobotWrapper::getSolverConfig)
-        .function("getName", &RobotWrapper::getName)
-        .function("getEndLink", &RobotWrapper::getEndLink)
-        .function("getBaseLink", &RobotWrapper::getBaseLink)
-        .function("getDOF", &RobotWrapper::getDOF);
+  class_<RobotWrapper>("Robot")
+      .smart_ptr<std::shared_ptr<RobotWrapper>>("Robot")
+      .class_function("fromURDFString", &RobotWrapper::fromURDFString)
+      .function("clone", &RobotWrapper::clone)
+      .function("forwardKinematics",
+                emscripten::optional_override(
+                    [](const RobotWrapper &self, val q, val link) {
+                      auto vec = toVectorDouble(q, 0, "q");
+                      auto link_name = toStringOrDefault(link, "");
+                      return self.forwardKinematics(vec, link_name);
+                    }))
+      .function("computePose",
+                emscripten::optional_override(
+                    [](const RobotWrapper &self, val q, val link) {
+                      auto vec = toVectorDouble(q, 0, "q");
+                      auto link_name = toStringOrDefault(link, "");
+                      return self.computePose(vec, link_name);
+                    }))
+      .function("inverseKinematics",
+                emscripten::optional_override([](RobotWrapper &self,
+                                                 const PoseData &target,
+                                                 val q_init, val link) {
+                  auto vec_init = toVectorDouble(q_init, 0, "q_init");
+                  auto link_name = toStringOrDefault(link, "");
+                  return self.inverseKinematics(target, vec_init, link_name);
+                }))
+      .function("solveIK",
+                emscripten::optional_override([](RobotWrapper &self,
+                                                 const PoseData &target,
+                                                 val q_init, val link) {
+                  auto vec_init = toVectorDouble(q_init, 0, "q_init");
+                  auto link_name = toStringOrDefault(link, "");
+                  return self.solveIK(target, vec_init, link_name);
+                }))
+      .function("computeJacobian",
+                emscripten::optional_override(
+                    [](const RobotWrapper &self, val q, val link, val type) {
+                      auto vec = toVectorDouble(q, 0, "q");
+                      auto link_name = toStringOrDefault(link, "");
+                      auto jac_type =
+                          toEnumOrDefault(type, kinex::JacobianType::Analytic);
+                      return self.computeJacobian(vec, link_name, jac_type);
+                    }))
+      .function("getManipulability",
+                emscripten::optional_override(
+                    [](const RobotWrapper &self, val q, val link) {
+                      auto vec = toVectorDouble(q, 0, "q");
+                      auto link_name = toStringOrDefault(link, "");
+                      return self.getManipulability(vec, link_name);
+                    }))
+      .function(
+          "isSingular",
+          emscripten::optional_override(
+              [](const RobotWrapper &self, val q, val threshold, val link) {
+                auto vec = toVectorDouble(q, 0, "q");
+                auto thres = toDoubleOrDefault(threshold, 1e-6);
+                auto link_name = toStringOrDefault(link, "");
+                return self.isSingular(vec, thres, link_name);
+              }))
+      .function("getConditionNumber",
+                emscripten::optional_override(
+                    [](const RobotWrapper &self, val q, val link) {
+                      auto vec = toVectorDouble(q, 0, "q");
+                      auto link_name = toStringOrDefault(link, "");
+                      return self.getConditionNumber(vec, link_name);
+                    }))
+      .function("setIKTolerance", &RobotWrapper::setIKTolerance)
+      .function("setPositionOnlyIK", &RobotWrapper::setPositionOnlyIK)
+      .function("setOrientationOnlyIK", &RobotWrapper::setOrientationOnlyIK)
+      .function("setSolverConfig",
+                emscripten::optional_override(
+                    [](RobotWrapper &self, const SolverConfigData &data) {
+                      self.setSolverConfig(data);
+                    }))
+      .function("getSolverConfig", &RobotWrapper::getSolverConfig)
+      .function("getName", &RobotWrapper::getName)
+      .function("getEndLink", &RobotWrapper::getEndLink)
+      .function("getBaseLink", &RobotWrapper::getBaseLink)
+      .function("getDOF", &RobotWrapper::getDOF);
 
-    class_<ForwardKinematicsHandle>("ForwardKinematics")
-        .smart_ptr<std::shared_ptr<ForwardKinematicsHandle>>("ForwardKinematics")
-        .constructor<std::shared_ptr<RobotModelHandle>, std::string, std::string>()
-        .function("compute", emscripten::optional_override([](ForwardKinematicsHandle& self, val joint_angles, val maybe_check_bounds) {
-            const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
-            const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
-            return self.compute(angles, check_bounds);
-        }))
-        .function("computeToLink", emscripten::optional_override([](ForwardKinematicsHandle& self, val joint_angles, const std::string& target_link, val maybe_check_bounds) {
-            const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
-            const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
-            return self.computeToLink(angles, target_link, check_bounds);
-        }))
-        .function("computeMatrix", emscripten::optional_override([](ForwardKinematicsHandle& self, val joint_angles, val maybe_check_bounds) {
-            const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
-            const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
-            return self.computeMatrix(angles, check_bounds);
-        }))
-        .function("computeAllLinkTransforms", emscripten::optional_override([](ForwardKinematicsHandle& self, val joint_angles, val maybe_check_bounds) {
-            const auto angles = toVectorDouble(joint_angles, self.getNumJoints(), "jointAngles");
-            const bool check_bounds = toBoolOrDefault(maybe_check_bounds, false);
-            return self.computeAllLinkTransforms(angles, check_bounds);
-        }))
-        .function("getNumJoints", &ForwardKinematicsHandle::getNumJoints)
-        .function("dispose", &ForwardKinematicsHandle::dispose);
+  class_<ForwardKinematicsHandle>("ForwardKinematics")
+      .smart_ptr<std::shared_ptr<ForwardKinematicsHandle>>("ForwardKinematics")
+      .constructor<std::shared_ptr<RobotModelHandle>, std::string,
+                   std::string>()
+      .function("compute",
+                emscripten::optional_override([](ForwardKinematicsHandle &self,
+                                                 val joint_angles,
+                                                 val maybe_check_bounds) {
+                  const auto angles = toVectorDouble(
+                      joint_angles, self.getNumJoints(), "jointAngles");
+                  const bool check_bounds =
+                      toBoolOrDefault(maybe_check_bounds, false);
+                  return self.compute(angles, check_bounds);
+                }))
+      .function("computeToLink",
+                emscripten::optional_override(
+                    [](ForwardKinematicsHandle &self, val joint_angles,
+                       const std::string &target_link, val maybe_check_bounds) {
+                      const auto angles = toVectorDouble(
+                          joint_angles, self.getNumJoints(), "jointAngles");
+                      const bool check_bounds =
+                          toBoolOrDefault(maybe_check_bounds, false);
+                      return self.computeToLink(angles, target_link,
+                                                check_bounds);
+                    }))
+      .function("computeMatrix",
+                emscripten::optional_override([](ForwardKinematicsHandle &self,
+                                                 val joint_angles,
+                                                 val maybe_check_bounds) {
+                  const auto angles = toVectorDouble(
+                      joint_angles, self.getNumJoints(), "jointAngles");
+                  const bool check_bounds =
+                      toBoolOrDefault(maybe_check_bounds, false);
+                  return self.computeMatrix(angles, check_bounds);
+                }))
+      .function("computeAllLinkTransforms",
+                emscripten::optional_override([](ForwardKinematicsHandle &self,
+                                                 val joint_angles,
+                                                 val maybe_check_bounds) {
+                  const auto angles = toVectorDouble(
+                      joint_angles, self.getNumJoints(), "jointAngles");
+                  const bool check_bounds =
+                      toBoolOrDefault(maybe_check_bounds, false);
+                  return self.computeAllLinkTransforms(angles, check_bounds);
+                }))
+      .function("getNumJoints", &ForwardKinematicsHandle::getNumJoints)
+      .function("dispose", &ForwardKinematicsHandle::dispose);
 
-    class_<JacobianCalculatorHandle>("JacobianCalculator")
-        .smart_ptr<std::shared_ptr<JacobianCalculatorHandle>>("JacobianCalculator")
-        .constructor<std::shared_ptr<RobotModelHandle>, std::string, std::string>()
-        .function("compute", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
-            const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
-            const auto target_link = toStringOrDefault(maybe_target_link, std::string());
-            return self.compute(angles, type, target_link);
-        }))
-        .function("isSingular", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_threshold, val maybe_type, val maybe_target_link) {
+  class_<JacobianCalculatorHandle>("JacobianCalculator")
+      .smart_ptr<std::shared_ptr<JacobianCalculatorHandle>>(
+          "JacobianCalculator")
+      .constructor<std::shared_ptr<RobotModelHandle>, std::string,
+                   std::string>()
+      .function("compute",
+                emscripten::optional_override(
+                    [](JacobianCalculatorHandle &self, val joint_angles,
+                       val maybe_type, val maybe_target_link) {
+                      const auto angles =
+                          toVectorDouble(joint_angles, 0, "jointAngles");
+                      const auto type = toEnumOrDefault<kinex::JacobianType>(
+                          maybe_type, kinex::JacobianType::Analytic);
+                      const auto target_link =
+                          toStringOrDefault(maybe_target_link, std::string());
+                      return self.compute(angles, type, target_link);
+                    }))
+      .function(
+          "isSingular",
+          emscripten::optional_override([](JacobianCalculatorHandle &self,
+                                           val joint_angles,
+                                           val maybe_threshold, val maybe_type,
+                                           val maybe_target_link) {
             const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
             const double threshold = toDoubleOrDefault(maybe_threshold, 1e-6);
-            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
-            const auto target_link = toStringOrDefault(maybe_target_link, std::string());
+            const auto type = toEnumOrDefault<kinex::JacobianType>(
+                maybe_type, kinex::JacobianType::Analytic);
+            const auto target_link =
+                toStringOrDefault(maybe_target_link, std::string());
             return self.isSingular(angles, threshold, type, target_link);
-        }))
-        .function("getManipulability", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
-            const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
-            const auto target_link = toStringOrDefault(maybe_target_link, std::string());
-            return self.getManipulability(angles, type, target_link);
-        }))
-        .function("getConditionNumber", emscripten::optional_override([](JacobianCalculatorHandle& self, val joint_angles, val maybe_type, val maybe_target_link) {
-            const auto angles = toVectorDouble(joint_angles, 0, "jointAngles");
-            const auto type = toEnumOrDefault<kinex::JacobianType>(maybe_type, kinex::JacobianType::Analytic);
-            const auto target_link = toStringOrDefault(maybe_target_link, std::string());
-            return self.getConditionNumber(angles, type, target_link);
-        }))
-        .function("dispose", &JacobianCalculatorHandle::dispose);
+          }))
+      .function("getManipulability",
+                emscripten::optional_override(
+                    [](JacobianCalculatorHandle &self, val joint_angles,
+                       val maybe_type, val maybe_target_link) {
+                      const auto angles =
+                          toVectorDouble(joint_angles, 0, "jointAngles");
+                      const auto type = toEnumOrDefault<kinex::JacobianType>(
+                          maybe_type, kinex::JacobianType::Analytic);
+                      const auto target_link =
+                          toStringOrDefault(maybe_target_link, std::string());
+                      return self.getManipulability(angles, type, target_link);
+                    }))
+      .function("getConditionNumber",
+                emscripten::optional_override(
+                    [](JacobianCalculatorHandle &self, val joint_angles,
+                       val maybe_type, val maybe_target_link) {
+                      const auto angles =
+                          toVectorDouble(joint_angles, 0, "jointAngles");
+                      const auto type = toEnumOrDefault<kinex::JacobianType>(
+                          maybe_type, kinex::JacobianType::Analytic);
+                      const auto target_link =
+                          toStringOrDefault(maybe_target_link, std::string());
+                      return self.getConditionNumber(angles, type, target_link);
+                    }))
+      .function("dispose", &JacobianCalculatorHandle::dispose);
 
-    class_<SQPIKSolverHandle>("SQPIKSolver")
-        .smart_ptr<std::shared_ptr<SQPIKSolverHandle>>("SQPIKSolver")
-        .constructor<std::shared_ptr<RobotModelHandle>, std::string, std::string>()
-        .function("setConfig", &SQPIKSolverHandle::setConfig)
-        .function("getConfig", &SQPIKSolverHandle::getConfig)
-        .function("setPositionOnly", &SQPIKSolverHandle::setPositionOnly)
-        .function("setOrientationOnly", &SQPIKSolverHandle::setOrientationOnly)
-        .function("setWarmStart", emscripten::optional_override([](SQPIKSolverHandle& self, val initial_guess) {
-            const auto guess = toVectorDouble(initial_guess, 0, "initialGuess");
-            self.setWarmStart(guess);
-        }))
-        .function("solve", emscripten::optional_override([](SQPIKSolverHandle& self, const PoseData& target_pose, val initial_guess) {
+  class_<SQPIKSolverHandle>("SQPIKSolver")
+      .smart_ptr<std::shared_ptr<SQPIKSolverHandle>>("SQPIKSolver")
+      .constructor<std::shared_ptr<RobotModelHandle>, std::string,
+                   std::string>()
+      .function("setConfig", &SQPIKSolverHandle::setConfig)
+      .function("getConfig", &SQPIKSolverHandle::getConfig)
+      .function("setPositionOnly", &SQPIKSolverHandle::setPositionOnly)
+      .function("setOrientationOnly", &SQPIKSolverHandle::setOrientationOnly)
+      .function("setWarmStart",
+                emscripten::optional_override(
+                    [](SQPIKSolverHandle &self, val initial_guess) {
+                      const auto guess =
+                          toVectorDouble(initial_guess, 0, "initialGuess");
+                      self.setWarmStart(guess);
+                    }))
+      .function(
+          "solve", emscripten::optional_override([](SQPIKSolverHandle &self,
+                                                    const PoseData &target_pose,
+                                                    val initial_guess) {
             const auto guess = toVectorDouble(initial_guess, 0, "initialGuess");
             return self.solve(target_pose, guess);
-        }))
-        .function("dispose", &SQPIKSolverHandle::dispose);
+          }))
+      .function("dispose", &SQPIKSolverHandle::dispose);
 
-    register_vector<double>("VectorDouble");
-    register_vector<std::string>("VectorString");
-    register_vector<kinex::Visual>("VectorVisual");
-    register_vector<kinex::Collision>("VectorCollision");
-    register_vector<std::shared_ptr<kinex::Link>>("VectorLink");
-    register_vector<std::shared_ptr<kinex::Joint>>("VectorJoint");
+  register_vector<double>("VectorDouble");
+  register_vector<std::string>("VectorString");
+  register_vector<kinex::Visual>("VectorVisual");
+  register_vector<kinex::Collision>("VectorCollision");
+  register_vector<std::shared_ptr<kinex::Link>>("VectorLink");
+  register_vector<std::shared_ptr<kinex::Joint>>("VectorJoint");
 }

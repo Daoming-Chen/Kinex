@@ -83,17 +83,30 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     if(MSVC)
         add_compile_options(/O2)
+        # Disable Eigen debug checks for performance
+        add_compile_definitions(EIGEN_NO_DEBUG)
     else()
         if(EMSCRIPTEN)
             add_compile_options(-O3)
+            add_compile_definitions(EIGEN_NO_DEBUG)
         else()
-            # Use -march=x86-64 instead of native for better compatibility
-            # Users can override with -DCMAKE_CXX_FLAGS="-march=native" for local builds
+            # Allow users to enable -march=native for maximum performance
+            # Default to -march=x86-64 for better compatibility
+            option(ENABLE_NATIVE_ARCH "Enable -march=native for maximum CPU-specific optimizations" OFF)
+            
             if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "amd64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64")
-                add_compile_options(-O3 -march=x86-64)
+                if(ENABLE_NATIVE_ARCH)
+                    message(STATUS "Enabling -march=native for CPU-specific optimizations")
+                    add_compile_options(-O3 -march=native)
+                else()
+                    add_compile_options(-O3 -march=x86-64)
+                endif()
             else()
                 add_compile_options(-O3)
             endif()
+            
+            # Disable Eigen debug checks for performance
+            add_compile_definitions(EIGEN_NO_DEBUG)
         endif()
     endif()
 endif()
