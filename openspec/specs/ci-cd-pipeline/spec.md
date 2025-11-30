@@ -199,3 +199,12 @@ Build scripts and commands MUST work reliably on Linux, macOS, and Windows.
 **And** follow manylinux compatibility requirements for wheels  
 **And** handle Linux-specific dependencies (via apt-get)
 
+### Requirement: CI MUST measure and store performance baselines
+The CI/CD pipeline SHALL add optional performance measurement steps that record FK and IK runtimes for a baseline 6-DOF robot. Results SHALL be tracked in `benchmarks/` for trend analysis.
+
+#### Scenario: CI runs performance guard rails on PRs
+**GIVEN** a pull request modifies IK or FK code
+**WHEN** CI runs the performance benchmarks
+**THEN** the results are stored and compared against recent baselines
+**AND** a warning is created if the runtime regresses more than 10%
+

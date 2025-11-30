@@ -184,3 +184,37 @@ The Robot class SHALL allow users to configure IK solver parameters through the 
 **AND** robot2 uses tolerance 1e-4
 **AND** their IK solvers are completely independent
 
+### Requirement: DaQPSolver wrapper SHALL persist QP arrays
+The `DaQPSolver` wrapper SHALL store `lower_`, `upper_`, and `x_` arrays as persistent members and expose zero-copy pointers to the underlying DAQP C API to prevent vector copies.
+
+#### Scenario: QP solve with persistent arrays
+**GIVEN** a `DaQPSolver` wrapper instance initialized for `n` DOF
+**WHEN** a `solve` call occurs many times in sequence
+**THEN** no heap allocations occur due to per-call vector copies
+**AND** the QP arrays are resized during initialization only
+
+### Requirement: IKSolver SHALL expose warm-start and configurable initial guess policies
+The `IKSolver` interface SHALL support warm-start (previous frame's q), zero initial guess, and random within joint limits as initial guess policies for multi-start strategies.
+
+#### Scenario: Warm start used for a start slot
+**GIVEN** a `RacingIKSolver` configured with `startStrategies = [WarmStart, Zero, Random, Random]`
+**WHEN** a new solve is performed with a previous q solution available
+**THEN** one start uses the previous q as initial guess and may converge faster than other starts
+
+### Requirement: IKSolver SHALL expose diagnostics on multi-start runs
+The `IKSolver` SHALL expose the results and diagnostic summary for all attempted starts even if the first converging start wins.
+
+#### Scenario: Query full multi-start diagnostics
+**GIVEN** a `RacingIKSolver` that attempted 4 starts
+**WHEN** the user queries the solve diagnostics
+**THEN** the system returns per-start convergence flags, iterations, final error, and time spent
+
+### Requirement: IKSolver SHALL provide escape mechanisms for local minima
+The multi-start racing solver SHALL be the default method to avoid local minima; for single-start solves, the solver SHALL expose a retry policy that attempts additional starts whenever single-start fails under a given time budget.
+
+#### Scenario: Retry policy after single start fails
+**GIVEN** a single-start `SQPIKSolver` configured with `enable_retry=true` and `timeout_ms=1` and `max_retries=3`
+**WHEN** the initial attempt fails to converge
+**THEN** the solver tries additional initial guesses up to `max_retries` or the `timeout_ms` budget is reached
+**AND** each retry shares no cross-call memory allocation
+
