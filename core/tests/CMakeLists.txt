@@ -9,10 +9,10 @@ set(TEST_SOURCES
 )
 
 # Create test executable
-add_executable(urdfx_tests ${TEST_SOURCES})
+add_executable(kinex_tests ${TEST_SOURCES})
 
 # Link against core library and GoogleTest
-target_link_libraries(urdfx_tests
+target_link_libraries(kinex_tests
     PRIVATE
         kinex
         GTest::gtest
@@ -20,7 +20,7 @@ target_link_libraries(urdfx_tests
 )
 
 # Include directories
-target_include_directories(urdfx_tests
+target_include_directories(kinex_tests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../src
@@ -29,11 +29,11 @@ target_include_directories(urdfx_tests
 # Add tests to CTest
 include(GoogleTest)
 # Use add_test for better compatibility
-add_test(NAME urdfx_tests COMMAND urdfx_tests)
+add_test(NAME kinex_tests COMMAND kinex_tests)
 
 # On Windows, set PATH to include DLL directories for the test
 if(WIN32 AND BUILD_SHARED_LIBS)
-    set_tests_properties(urdfx_tests PROPERTIES
+    set_tests_properties(kinex_tests PROPERTIES
         ENVIRONMENT "PATH=$<TARGET_FILE_DIR:kinex>;$<TARGET_FILE_DIR:spdlog>;$<TARGET_FILE_DIR:pugixml-shared>;$ENV{PATH}"
     )
 endif()
@@ -49,23 +49,23 @@ file(COPY ${PROJECT_SOURCE_DIR}/examples/models/ur5
 
 # On Windows with shared libraries, copy the DLL to the test directory
 if(WIN32 AND BUILD_SHARED_LIBS)
-    add_custom_command(TARGET urdfx_tests POST_BUILD
+    add_custom_command(TARGET kinex_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:kinex>
-            $<TARGET_FILE_DIR:urdfx_tests>
+            $<TARGET_FILE_DIR:kinex_tests>
         COMMENT "Copying kinex DLL to test directory"
     )
     # Copy spdlog and pugixml DLLs if they exist
-    add_custom_command(TARGET urdfx_tests POST_BUILD
+    add_custom_command(TARGET kinex_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:spdlog>
-            $<TARGET_FILE_DIR:urdfx_tests>
+            $<TARGET_FILE_DIR:kinex_tests>
         COMMENT "Copying spdlog DLL to test directory"
     )
-    add_custom_command(TARGET urdfx_tests POST_BUILD
+    add_custom_command(TARGET kinex_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:pugixml-shared>
-            $<TARGET_FILE_DIR:urdfx_tests>
+            $<TARGET_FILE_DIR:kinex_tests>
         COMMENT "Copying pugixml DLL to test directory"
     )
 endif()

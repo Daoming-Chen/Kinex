@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>urdfx WebAssembly Manual Test</title>
+    <title>kinex WebAssembly Manual Test</title>
     <style>
         body { font-family: sans-serif; margin: 2rem; max-width: 960px; }
         textarea { width: 100%; height: 12rem; font-family: monospace; }
@@ -10,13 +10,13 @@
         button { padding: 0.5rem 1rem; margin-top: 1rem; }
         #status { margin-top: 1rem; font-weight: bold; }
     </style>
-    <script defer src="urdfx.js"></script>
+    <script defer src="kinex.js"></script>
 </head>
 <body>
-    <h1>urdfx WebAssembly Manual Test</h1>
+    <h1>kinex WebAssembly Manual Test</h1>
     <p>
-        This page exercises the urdfx WebAssembly bindings. Build the project with Emscripten so that
-        <code>urdfx.js</code> and <code>urdfx.wasm</code> are located alongside this HTML file. Then open the
+        This page exercises the kinex WebAssembly bindings. Build the project with Emscripten so that
+        <code>kinex.js</code> and <code>kinex.wasm</code> are located alongside this HTML file. Then open the
         page in a browser (served over HTTP) to validate basic functionality.
     </p>
 
@@ -49,14 +49,14 @@
             output.textContent += `${message}\n`;
         }
 
-        async function runUrdfxTests() {
+        async function runKinexTests() {
             output.textContent = '';
             target.textContent = 'Loading module…';
             try {
-                const module = await createUrdfxModule({
+                const module = await createKinexModule({
                     locateFile(file) {
                         if (file.endsWith('.wasm')) {
-                            return 'urdfx.wasm';
+                            return 'kinex.wasm';
                         }
                         return file;
                     },
@@ -90,7 +90,7 @@
         }
 
         button.addEventListener('click', () => {
-            runUrdfxTests().catch((error) => {
+            runKinexTests().catch((error) => {
                 console.error(error);
             });
         });

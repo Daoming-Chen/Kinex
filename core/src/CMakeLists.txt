@@ -1,12 +1,12 @@
 # Core library sources
-set(URDFX_SOURCES
+set(KINEX_SOURCES
     robot_model.cpp
     urdf_parser.cpp
     kinematics.cpp
     inverse_kinematics.cpp
 )
 
-set(URDFX_HEADERS
+set(KINEX_HEADERS
     ${PROJECT_SOURCE_DIR}/include/kinex/logging.h
     ${PROJECT_SOURCE_DIR}/include/kinex/robot_model.h
     ${PROJECT_SOURCE_DIR}/include/kinex/urdf_parser.h
@@ -15,13 +15,13 @@ set(URDFX_HEADERS
 )
 
 # Create core library
-add_library(kinex ${URDFX_SOURCES} ${URDFX_HEADERS})
+add_library(kinex ${KINEX_SOURCES} ${KINEX_HEADERS})
 
 # Set library properties
 set_target_properties(kinex PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
-    PUBLIC_HEADER "${URDFX_HEADERS}"
+    PUBLIC_HEADER "${KINEX_HEADERS}"
 )
 
 # Include directories
@@ -46,12 +46,12 @@ target_link_libraries(kinex
 # Compile definitions
 target_compile_definitions(kinex
     PRIVATE
-        URDFX_BUILD
+        KINEX_BUILD
 )
 
 if(BUILD_SHARED_LIBS)
     target_compile_definitions(kinex
         PUBLIC
-            URDFX_SHARED
+            KINEX_SHARED
     )
 endif()

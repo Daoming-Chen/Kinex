@@ -88,7 +88,7 @@ function vectorToArray(vec) {
   }
   return Array.from(vec);
 }
-window.runUrdfxSmokeTest = async function runUrdfxSmokeTest() {
+window.runKinexSmokeTest = async function runKinexSmokeTest() {
   const module = await createKinexModule({
     locateFile(file) {
       if (file.endsWith('.wasm')) {
@@ -169,7 +169,7 @@ window.runUrdfxSmokeTest = async function runUrdfxSmokeTest() {
   test('loads module and runs kinematics in browser', async () => {
     const page = await browser.newPage();
     await page.goto(`${serverUrl}/test.html`, { waitUntil: 'networkidle0' });
-    const result = await page.evaluate(() => window.runUrdfxSmokeTest());
+    const result = await page.evaluate(() => window.runKinexSmokeTest());
     expect(result.robotName).toBe('two_link');
     expect(result.dof).toBe(1);
     expect(Array.isArray(result.posePosition)).toBe(true);
