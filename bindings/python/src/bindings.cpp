@@ -372,8 +372,28 @@ NB_MODULE(_kinex, m) {
           },
           nb::arg("target_pose"), nb::arg("initial_guess"));
 
+  // 5.5 Global IK Solver Config and Result
+  nb::class_<GlobalSolverConfig>(m, "GlobalSolverConfig")
+      .def(nb::init<>())
+      .def_rw("num_threads", &GlobalSolverConfig::num_threads)
+      .def_rw("num_seeds", &GlobalSolverConfig::num_seeds)
+      .def_rw("max_time_ms", &GlobalSolverConfig::max_time_ms)
+      .def_rw("return_all_solutions", &GlobalSolverConfig::return_all_solutions)
+      .def_rw("unique_threshold", &GlobalSolverConfig::unique_threshold)
+      .def_rw("sqp_config", &GlobalSolverConfig::sqp_config);
+
+  nb::class_<GlobalSolverResult>(m, "GlobalSolverResult")
+      .def(nb::init<>())
+      .def_rw("success", &GlobalSolverResult::success)
+      .def_rw("solutions", &GlobalSolverResult::solutions)
+      .def_rw("statuses", &GlobalSolverResult::statuses)
+      .def_rw("best_status", &GlobalSolverResult::best_status);
+
   // 6. New Unified Robot API
   nb::class_<Robot>(m, "Robot")
+      .def(nb::init<std::shared_ptr<const RobotModel>, const std::string &,
+                    const std::string &>(),
+           nb::arg("robot"), nb::arg("end_link"), nb::arg("base_link") = "")
       .def_static("from_urdf", &Robot::fromURDF, nb::arg("filepath"),
                   nb::arg("end_link"), nb::arg("base_link") = "",
                   nb::call_guard<nb::gil_scoped_release>())
@@ -405,6 +425,24 @@ NB_MODULE(_kinex, m) {
           },
           nb::arg("target"), nb::arg("q_init"), nb::arg("link") = "",
           nb::call_guard<nb::gil_scoped_release>())
+      .def(
+          "solve_robust_ik",
+          [](Robot &self, const Transform &target,
+             const Eigen::VectorXd &q_init, const std::string &link) {
+            auto [solution, status] = self.solveRobustIK(target, q_init, link);
+            return std::make_pair(solution, status);
+          },
+          nb::arg("target"), nb::arg("q_init"), nb::arg("link") = "",
+          nb::call_guard<nb::gil_scoped_release>())
+      .def(
+          "solve_global_ik",
+          [](Robot &self, const Transform &target,
+             const Eigen::VectorXd &q_init, const std::string &link) {
+            GlobalSolverResult result = self.solveGlobalIK(target, q_init, link);
+            return result.solutions;
+          },
+          nb::arg("target"), nb::arg("q_init"), nb::arg("link") = "",
+          nb::call_guard<nb::gil_scoped_release>())
       .def("compute_jacobian", &Robot::computeJacobian, nb::arg("q"),
            nb::arg("link") = "", nb::arg("type") = JacobianType::Analytic)
       .def("get_manipulability", &Robot::getManipulability, nb::arg("q"),
@@ -419,6 +457,8 @@ NB_MODULE(_kinex, m) {
            nb::arg("enable"))
       .def("set_solver_config", &Robot::setSolverConfig, nb::arg("config"))
       .def("get_solver_config", &Robot::getSolverConfig)
+      .def("set_global_solver_config", &Robot::setGlobalSolverConfig, nb::arg("config"))
+      .def("get_global_solver_config", &Robot::getGlobalSolverConfig)
       .def_prop_ro("name", &Robot::getName)
       .def_prop_ro("end_link", &Robot::getEndLink)
       .def_prop_ro("base_link", &Robot::getBaseLink)
