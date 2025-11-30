@@ -204,3 +204,53 @@ TEST_F(RobotTest, InvalidLink) {
 
   EXPECT_THROW(robot.forwardKinematics(q, "bad_link"), std::invalid_argument);
 }
+
+TEST_F(RobotTest, RobustIK) {
+  auto robot = Robot::fromURDFString(simple_urdf_, "link2", "base_link");
+  
+  Eigen::VectorXd q_target(2);
+  q_target << 0.5, 0.5;
+  Transform target = robot.forwardKinematics(q_target);
+  
+  Eigen::VectorXd q_init = Eigen::VectorXd::Zero(2);
+  
+  auto [sol, status] = robot.solveRobustIK(target, q_init);
+  
+  EXPECT_TRUE(status.converged);
+  Transform result_pose = robot.forwardKinematics(sol);
+  EXPECT_LT((result_pose.translation() - target.translation()).norm(), 1e-3);
+}
+
+TEST_F(RobotTest, GlobalIK) {
+  auto robot = Robot::fromURDFString(simple_urdf_, "link2", "base_link");
+  
+  Eigen::VectorXd q_target(2);
+  q_target << 0.5, 0.5;
+  Transform target = robot.forwardKinematics(q_target);
+  
+  Eigen::VectorXd q_init = Eigen::VectorXd::Zero(2);
+  
+  GlobalSolverResult result = robot.solveGlobalIK(target, q_init);
+  
+  EXPECT_TRUE(result.success);
+  EXPECT_GE(result.solutions.size(), 1);
+  
+  for (const auto &sol : result.solutions) {
+    Transform result_pose = robot.forwardKinematics(sol);
+    EXPECT_LT((result_pose.translation() - target.translation()).norm(), 1e-3);
+  }
+}
+
+TEST_F(RobotTest, GlobalSolverConfig) {
+  auto robot = Robot::fromURDFString(simple_urdf_, "link2", "base_link");
+  
+  GlobalSolverConfig config;
+  config.num_seeds = 5;
+  robot.setGlobalSolverConfig(config);
+  
+  EXPECT_EQ(robot.getGlobalSolverConfig().num_seeds, 5);
+  
+  // Verify clone copies config
+  auto cloned = robot.clone();
+  EXPECT_EQ(cloned.getGlobalSolverConfig().num_seeds, 5);
+}

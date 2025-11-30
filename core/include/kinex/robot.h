@@ -2,6 +2,7 @@
 
 #include "kinex/export.h"
 #include "kinex/inverse_kinematics.h"
+#include "kinex/global_inverse_kinematics.h"
 #include "kinex/kinematics.h"
 #include "kinex/robot_model.h"
 #include <memory>
@@ -97,6 +98,24 @@ public:
   void setSolverConfig(const SolverConfig &config);
   SolverConfig getSolverConfig() const;
 
+  // Global / Robust IK
+  /**
+   * @brief Solve IK using robust multi-start strategy (returns single best solution)
+   */
+  std::pair<Eigen::VectorXd, SolverStatus>
+  solveRobustIK(const Transform &target, const Eigen::VectorXd &q_init,
+                const std::string &link = "");
+
+  /**
+   * @brief Solve IK using global exploration strategy (returns all found solutions)
+   */
+  GlobalSolverResult
+  solveGlobalIK(const Transform &target, const Eigen::VectorXd &q_init,
+                const std::string &link = "");
+
+  void setGlobalSolverConfig(const GlobalSolverConfig &config);
+  GlobalSolverConfig getGlobalSolverConfig() const;
+
   // Accessors
   std::shared_ptr<const RobotModel> getRobotModel() const { return model_; }
   const std::string &getName() const { return model_->getName(); }
@@ -115,6 +134,7 @@ private:
 
   // Solver configuration (persisted across lazy instantiations)
   SolverConfig ik_config_;
+  GlobalSolverConfig global_ik_config_;
   bool ik_position_only_ = false;
   bool ik_orientation_only_ = false;
 
@@ -131,11 +151,16 @@ private:
   mutable std::unordered_map<std::string, std::unique_ptr<SQPIKSolver>>
       ik_cache_;
 
+  mutable std::unique_ptr<GlobalIKSolver> global_ik_solver_;
+  mutable std::unordered_map<std::string, std::unique_ptr<GlobalIKSolver>>
+      global_ik_cache_;
+
   // Helper methods
   const std::string &resolveLink(const std::string &link) const;
   ForwardKinematics &ensureFK(const std::string &link) const;
   JacobianCalculator &ensureJacobian(const std::string &link) const;
   SQPIKSolver &ensureIKSolver(const std::string &link);
+  GlobalIKSolver &ensureGlobalIKSolver(const std::string &link);
 };
 
 } // namespace kinex

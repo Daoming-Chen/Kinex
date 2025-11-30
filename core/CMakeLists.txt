@@ -8,6 +8,7 @@ set(KINEX_SOURCES
     src/urdf_parser.cpp
     src/kinematics.cpp
     src/inverse_kinematics.cpp
+    src/global_inverse_kinematics.cpp
 )
 
 set(KINEX_HEADERS
@@ -17,6 +18,7 @@ set(KINEX_HEADERS
     include/kinex/urdf_parser.h
     include/kinex/kinematics.h
     include/kinex/inverse_kinematics.h
+    include/kinex/global_inverse_kinematics.h
     include/kinex/export.h
 )
 

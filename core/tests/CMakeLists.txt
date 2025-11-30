@@ -4,6 +4,7 @@ set(TEST_SOURCES
     test_urdf_parser.cpp
     test_kinematics.cpp
     test_inverse_kinematics.cpp
+    test_global_inverse_kinematics.cpp
     test_robot.cpp
 )
 
