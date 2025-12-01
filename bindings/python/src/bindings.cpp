@@ -308,7 +308,14 @@ NB_MODULE(_kinex, m) {
               &SolverConfig::orientation_anchor_weight)
       .def_rw("joint_limit_margin", &SolverConfig::joint_limit_margin)
       .def_rw("unbounded_joint_limit", &SolverConfig::unbounded_joint_limit)
-      .def_rw("enable_warm_start", &SolverConfig::enable_warm_start);
+      .def_rw("enable_warm_start", &SolverConfig::enable_warm_start)
+      .def_rw("enable_adaptive_damping", &SolverConfig::enable_adaptive_damping)
+      .def_rw("damping_threshold", &SolverConfig::damping_threshold)
+      .def_rw("max_damping", &SolverConfig::max_damping)
+      .def_rw("enable_stagnation_escape", &SolverConfig::enable_stagnation_escape)
+      .def_rw("stagnation_perturbation", &SolverConfig::stagnation_perturbation)
+      .def_rw("stagnation_detect_iters", &SolverConfig::stagnation_detect_iters)
+      .def_rw("stagnation_threshold", &SolverConfig::stagnation_threshold);
 
   nb::class_<SolverStatus>(m, "SolverStatus")
       .def(nb::init<>())

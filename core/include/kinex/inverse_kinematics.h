@@ -34,6 +34,12 @@ struct SolverConfig {
   double damping_threshold =
       0.1; // Manipulability threshold below which damping increases
   double max_damping = 0.1; // Maximum damping factor added at singularity
+
+  // Stagnation escape parameters
+  bool enable_stagnation_escape = true;
+  double stagnation_perturbation = 0.1; // Magnitude of random perturbation
+  size_t stagnation_detect_iters = 5;   // Iterations to detect stagnation
+  double stagnation_threshold = 1e-6;   // Error change threshold
 };
 
 struct SolverStatus {

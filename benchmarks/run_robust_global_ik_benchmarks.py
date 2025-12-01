@@ -135,7 +135,11 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
             if method_name == "robust_ik":
                 # solve_robust_ik returns (solution, status) pair
                 solution, status = robot.solve_robust_ik(target_transform, q_init)
-                solutions = [solution]  # Single solution
+                # Only count as success if status.converged is True
+                if status.converged:
+                    solutions = [solution]
+                else:
+                    solutions = []  # Failure case
                 statuses = [status]
             else:  # global_ik
                 # solve_global_ik returns list of solutions
@@ -144,12 +148,6 @@ def run_benchmark(robot_name, urdf_path, output_dir, num_samples=1000, seed=42):
                 # Create dummy statuses for each solution
                 statuses = []
                 for sol in solutions:
-                    status = kinex.SolverStatus()
-                    status.converged = True
-                    status.iterations = 1  # Placeholder
-                    statuses.append(status)
-                for sol in solutions:
-                    # Create a dummy status for each solution
                     status = kinex.SolverStatus()
                     status.converged = True
                     status.iterations = 1  # Placeholder

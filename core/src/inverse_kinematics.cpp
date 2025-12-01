@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <random>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -267,8 +268,10 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
 
   size_t stagnation_counter = 0;
   double prev_error_norm = std::numeric_limits<double>::max();
-  constexpr double stagnation_threshold = 1e-6;
-  constexpr size_t stagnation_detect_iters = 10;
+
+  // Random number generator for stagnation escape
+  std::mt19937 rng(std::random_device{}());
+  std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
   KINEX_LOG_DEBUG("[IK] Starting solve: DOF={}, max_iter={}, tolerance={}", dof,
                   config_.max_iterations, config_.tolerance);
@@ -293,39 +296,27 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
       break;
     }
 
-    // Stagnation detection (for diagnosis only, no perturbation)
-    if (std::abs(prev_error_norm - error_norm) < stagnation_threshold) {
+    // Stagnation detection and escape
+    if (std::abs(prev_error_norm - error_norm) < config_.stagnation_threshold) {
       stagnation_counter++;
 
-      // Log stagnation when detected
-      if (stagnation_counter == stagnation_detect_iters) {
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(J_, Eigen::ComputeThinU |
-                                                      Eigen::ComputeThinV);
-        const auto &singular_values = svd.singularValues();
-        double cond_number =
-            singular_values(0) / singular_values(singular_values.size() - 1);
+      if (stagnation_counter >= config_.stagnation_detect_iters) {
+        KINEX_LOG_WARN("[IK] Stagnation detected at iter {}, error={:.6e}",
+                       iter, error_norm);
 
-        std::ostringstream oss;
-        oss << "[IK] Stagnation detected at iter " << iter << ":\n";
-        oss << "  Error: " << std::scientific << std::setprecision(4)
-            << error_norm << "\n";
-        oss << "  Jacobian condition number: " << std::fixed
-            << std::setprecision(2) << cond_number << "\n";
-        oss << "  Singular values: [";
-        for (int i = 0; i < singular_values.size(); ++i) {
-          if (i > 0)
-            oss << ", ";
-          oss << std::scientific << std::setprecision(2) << singular_values(i);
+        if (config_.enable_stagnation_escape) {
+          // Apply random perturbation
+          for (size_t i = 0; i < dof; ++i) {
+            q_current_[i] += dist(rng) * config_.stagnation_perturbation;
+          }
+          clampToJointLimits(q_current_);
+          stagnation_counter = 0;
+          prev_error_norm =
+              std::numeric_limits<double>::max(); // Reset error history
+          KINEX_LOG_INFO(
+              "[IK] Applied random perturbation to escape stagnation");
+          continue; // Skip optimization step and re-evaluate FK
         }
-        oss << "]\n";
-        oss << "  Joint config: [";
-        for (size_t i = 0; i < dof; ++i) {
-          if (i > 0)
-            oss << ", ";
-          oss << std::fixed << std::setprecision(3) << q_current_[i];
-        }
-        oss << "]";
-        KINEX_LOG_WARN("{}", oss.str());
       }
     } else {
       stagnation_counter = 0;
