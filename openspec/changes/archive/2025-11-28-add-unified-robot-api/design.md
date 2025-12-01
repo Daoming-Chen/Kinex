@@ -250,7 +250,7 @@ std::pair<Eigen::VectorXd, SolverStatus>
 **Risk**: All v1.x users must update their code when upgrading to v2.0.
 
 **Mitigation**:
-- Major version bump (2.0.0) signals breaking change per semver
+- Major version bump (1.0.0) signals breaking change per semver
 - Comprehensive migration guide with before/after examples
 - Mechanical migration (mostly find-replace `Robot` → `RobotModel`)
 - Script-assisted migration tool (optional, can be provided)
@@ -328,7 +328,7 @@ std::pair<Eigen::VectorXd, SolverStatus>
 4. Create video tutorials if applicable
 
 ### Phase 4: Release Preparation
-1. Version bump to 2.0.0
+1. Version bump to 1.0.0
 2. Comprehensive testing on all platforms
 3. Beta release for early feedback
 4. Final release with migration support

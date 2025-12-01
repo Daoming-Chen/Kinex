@@ -110,7 +110,7 @@ This change creates a unified `Robot` class that provides simple, intuitive acce
 
 ### Migration Path
 This is a **breaking change** requiring:
-1. **Version bump**: 1.x → 2.0.0 (semantic versioning major bump)
+1. **Version bump**: 1.x → 1.0.0 (semantic versioning major bump)
 2. **Migration guide**: Document how to update existing code
 3. **Deprecation period**: Could provide compatibility shim if needed (but not recommended)
 
@@ -137,7 +137,7 @@ auto pose = fk.compute(q);
 **Yes - Major Breaking Change**:
 - All code using `Robot` class must change to `RobotModel`
 - This affects C++, Python, and JavaScript/WASM APIs
-- Requires major version bump (2.0.0)
+- Requires major version bump (1.0.0)
 - User code will need updates, but migration is straightforward (mostly find-replace)
 
 ## Benefits

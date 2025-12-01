@@ -455,7 +455,7 @@
 - [x] 8.4.3 Check for broken links
 
 ### 8.5 Version and Changelog
-- [x] 8.5.1 Update version to 2.0.0 in all relevant files
+- [x] 8.5.1 Update version to 1.0.0 in all relevant files
   - [x] CMakeLists.txt
   - [x] setup.py
   - [x] package.json
