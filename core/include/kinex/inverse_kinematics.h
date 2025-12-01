@@ -40,6 +40,22 @@ struct SolverConfig {
   double stagnation_perturbation = 0.1; // Magnitude of random perturbation
   size_t stagnation_detect_iters = 5;   // Iterations to detect stagnation
   double stagnation_threshold = 1e-6;   // Error change threshold
+
+  // Manipulability maximization (singularity avoidance)
+  bool enable_manipulability_gradient = false; // Disabled by default for backward compatibility
+  double manipulability_weight = 0.001;      // Weight for manipulability gradient
+  double manipulability_min_threshold = 0.01; // Below this, increase weight
+  double manipulability_scale_factor = 5.0;  // Scale factor for weight increase
+
+  // SVD-based damped least squares
+  bool enable_svd_damping = false;           // Use SVD-based damping instead of simple diagonal
+  double svd_damping_lambda_max = 0.5;       // Maximum damping for near-singular directions
+  double svd_singular_threshold = 0.01;      // Singular value threshold for damping
+
+  // Slack variables for feasibility relaxation
+  bool enable_slack_variables = false;       // Disabled by default for backward compatibility
+  double slack_penalty = 100.0;              // Penalty weight for slack variables
+  double slack_max = 0.1;                    // Maximum slack allowed
 };
 
 struct SolverStatus {
@@ -114,6 +130,7 @@ private:
   mutable Eigen::VectorXd g_;
   mutable Eigen::MatrixXd J_;
   mutable Eigen::MatrixXd weighted_jac_;
+  mutable Eigen::VectorXd manip_gradient_;  // Manipulability gradient
 
   Eigen::VectorXd buildTaskError(const Transform &current_pose,
                                  const Transform &target_pose) const;
@@ -124,6 +141,15 @@ private:
   void computeJointBounds(Eigen::VectorXd &lower, Eigen::VectorXd &upper) const;
 
   void clampToJointLimits(Eigen::VectorXd &joints) const;
+
+  // Compute manipulability measure and its gradient
+  double computeManipulability(const Eigen::MatrixXd &J) const;
+  Eigen::VectorXd computeManipulabilityGradient(const Eigen::VectorXd &q,
+                                                 double h = 1e-6) const;
+
+  // Apply SVD-based damped least squares
+  void applySVDDamping(Eigen::MatrixXd &H, const Eigen::MatrixXd &J,
+                       double lambda_max, double threshold) const;
 };
 
 } // namespace kinex

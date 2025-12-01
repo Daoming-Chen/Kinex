@@ -171,6 +171,7 @@ SQPIKSolver::SQPIKSolver(std::shared_ptr<const RobotModel> robot,
   g_.resize(dof_idx);
   J_.resize(6, dof_idx);
   weighted_jac_.resize(6, dof_idx);
+  manip_gradient_.resize(dof_idx);
 }
 
 SQPIKSolver::~SQPIKSolver() = default;
@@ -235,6 +236,83 @@ void SQPIKSolver::clampToJointLimits(Eigen::VectorXd &joints) const {
   Eigen::VectorXd upper;
   computeJointBounds(lower, upper);
   joints = joints.cwiseMax(lower).cwiseMin(upper);
+}
+
+double SQPIKSolver::computeManipulability(const Eigen::MatrixXd &J) const {
+  // Yoshikawa manipulability measure: w = sqrt(det(J*J^T))
+  // For non-square Jacobians, this measures how far from singularity we are
+  Eigen::MatrixXd JJT = J * J.transpose();
+  double det = JJT.determinant();
+  return std::sqrt(std::max(det, 0.0));
+}
+
+Eigen::VectorXd
+SQPIKSolver::computeManipulabilityGradient(const Eigen::VectorXd &q,
+                                           double h) const {
+  // Numerical gradient of manipulability w.r.t. joint angles
+  // This gives us the direction to move to increase manipulability
+  const size_t dof = fk_.getNumJoints();
+  Eigen::VectorXd gradient(static_cast<Eigen::Index>(dof));
+
+  // Compute gradient using finite differences (central difference)
+  Eigen::VectorXd q_perturbed = q;
+  for (size_t i = 0; i < dof; ++i) {
+    Eigen::Index idx = static_cast<Eigen::Index>(i);
+    q_perturbed[idx] = q[idx] + h;
+    Eigen::MatrixXd J_plus = jacobian_.compute(q_perturbed);
+    double w_plus = computeManipulability(J_plus);
+
+    q_perturbed[idx] = q[idx] - h;
+    Eigen::MatrixXd J_minus = jacobian_.compute(q_perturbed);
+    double w_minus = computeManipulability(J_minus);
+
+    gradient[idx] = (w_plus - w_minus) / (2.0 * h);
+    q_perturbed[idx] = q[idx]; // Reset
+  }
+
+  return gradient;
+}
+
+void SQPIKSolver::applySVDDamping(Eigen::MatrixXd &H, const Eigen::MatrixXd &J,
+                                  double lambda_max, double threshold) const {
+  // Compute SVD of Jacobian to identify near-singular directions
+  // Then apply stronger damping along those directions
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(J, Eigen::ComputeThinU |
+                                               Eigen::ComputeThinV);
+  const Eigen::VectorXd &sigma = svd.singularValues();
+  const Eigen::MatrixXd &V = svd.matrixV();
+
+  // Get the maximum singular value for normalization
+  double sigma_max = sigma(0);
+  if (sigma_max < 1e-10) {
+    // Jacobian is essentially zero, add large damping everywhere
+    H.diagonal().array() += lambda_max;
+    return;
+  }
+
+  // Build damping matrix: add more damping for small singular values
+  // Using Nakamura's method: lambda_i = lambda_max * (1 - (sigma_i/sigma_max)^2)
+  // for sigma_i < threshold * sigma_max
+  const size_t dof = static_cast<size_t>(H.rows());
+  Eigen::MatrixXd damping_contribution =
+      Eigen::MatrixXd::Zero(static_cast<Eigen::Index>(dof),
+                            static_cast<Eigen::Index>(dof));
+
+  for (Eigen::Index i = 0; i < sigma.size(); ++i) {
+    double sigma_ratio = sigma(i) / sigma_max;
+    if (sigma_ratio < threshold) {
+      // This direction is near-singular, add damping
+      double factor = 1.0 - (sigma_ratio / threshold);
+      double lambda_i = lambda_max * factor * factor;
+
+      // Add damping along this direction in joint space
+      // The direction in joint space is V.col(i)
+      Eigen::VectorXd v_i = V.col(i);
+      damping_contribution += lambda_i * (v_i * v_i.transpose());
+    }
+  }
+
+  H += damping_contribution;
 }
 
 SolverStatus SQPIKSolver::solve(const Transform &target_pose,
@@ -329,12 +407,20 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
     // Compute Hessian approximation (reuse pre-allocated H_)
     H_.noalias() = weighted_jac_.transpose() * weighted_jac_;
 
-    double damping = config_.regularization;
-    if (config_.enable_adaptive_damping) {
-      // Calculate manipulability measure w = sqrt(det(J*J^T))
-      Eigen::MatrixXd JJT = J_ * J_.transpose();
-      double w = std::sqrt(std::abs(JJT.determinant()));
+    // Compute manipulability for adaptive strategies
+    double w = computeManipulability(J_);
 
+    // Apply damping based on selected strategy
+    double damping = config_.regularization;
+
+    if (config_.enable_svd_damping) {
+      // Use SVD-based damping for direction-dependent regularization
+      applySVDDamping(H_, J_, config_.svd_damping_lambda_max,
+                      config_.svd_singular_threshold);
+    }
+
+    if (config_.enable_adaptive_damping) {
+      // Add scalar damping based on manipulability
       if (w < config_.damping_threshold) {
         double factor = (1.0 - w / config_.damping_threshold);
         damping += config_.max_damping * factor * factor;
@@ -344,7 +430,38 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
     H_.diagonal().array() += damping;
 
     // Compute gradient (reuse pre-allocated g_)
+    // Primary term: minimize task error
     g_.noalias() = -weighted_jac_.transpose() * weighted_error_;
+
+    // Add manipulability gradient term (singularity avoidance)
+    // This pushes the solution away from singular configurations
+    if (config_.enable_manipulability_gradient) {
+      manip_gradient_ = computeManipulabilityGradient(q_current_);
+
+      // Dynamic weight: decreases as we approach convergence
+      // This ensures manipulability doesn't interfere with final precision
+      double convergence_ratio = error_norm / config_.tolerance;
+      double convergence_decay = std::min(1.0, convergence_ratio);
+
+      // Scale the manipulability weight based on:
+      // 1. How close to singularity we are (increase near singularity)
+      // 2. How close to convergence we are (decrease near convergence)
+      double manip_weight = config_.manipulability_weight * convergence_decay;
+
+      if (w < config_.manipulability_min_threshold && w > 1e-10) {
+        // Increase weight as we approach singularity
+        double ratio = config_.manipulability_min_threshold / w;
+        manip_weight *= config_.manipulability_scale_factor * ratio;
+      }
+
+      // The gradient of -w (negative because we want to maximize w)
+      // gets added to the cost gradient
+      g_.noalias() -= manip_weight * manip_gradient_;
+
+      KINEX_LOG_DEBUG("[IK] iter {}: manipulability={:.6e}, manip_weight={:.6e}, "
+                      "convergence_decay={:.4f}",
+                      iter, w, manip_weight, convergence_decay);
+    }
 
     // Compute delta bounds (reuse pre-allocated arrays)
     lower_delta_.noalias() = lower_bounds_ - q_current_;
@@ -353,10 +470,56 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
     bool qp_ok =
         qp_solver_ && qp_solver_->solve(H_, g_, lower_delta_, upper_delta_,
                                         delta_, status.qp_status);
+
     if (!qp_ok) {
       status.qp_status = EXIT_NONCONVEX;
-      delta_.noalias() = H_.ldlt().solve(-g_);
-      status.message = "Fallback damping step";
+
+      if (config_.enable_slack_variables) {
+        // Use SVD-based damped pseudoinverse as fallback
+        // This approach is more robust near singularities
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(
+            weighted_jac_, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+        const Eigen::VectorXd &sigma = svd.singularValues();
+        const Eigen::MatrixXd &U = svd.matrixU();
+        const Eigen::MatrixXd &V = svd.matrixV();
+
+        // Compute damped pseudoinverse: J^+ = V * Σ^+ * U^T
+        // where Σ^+ uses Tikhonov regularization: σ_i / (σ_i² + λ²)
+        double lambda_sq = config_.slack_penalty * config_.slack_penalty;
+        if (w < config_.damping_threshold) {
+          // Increase damping near singularity
+          lambda_sq *= (config_.damping_threshold / (w + 1e-10));
+        }
+
+        Eigen::MatrixXd sigma_inv = Eigen::MatrixXd::Zero(V.cols(), U.cols());
+        for (Eigen::Index i = 0; i < sigma.size(); ++i) {
+          double si = sigma(i);
+          sigma_inv(i, i) = si / (si * si + lambda_sq);
+        }
+
+        Eigen::MatrixXd J_pinv_damped = V * sigma_inv * U.transpose();
+        delta_.noalias() = J_pinv_damped * weighted_error_;
+
+        // Add manipulability gradient if enabled
+        if (config_.enable_manipulability_gradient) {
+          // Project manipulability gradient into null space
+          // N = I - J^+ * J
+          Eigen::Index dof_idx = static_cast<Eigen::Index>(dof);
+          Eigen::MatrixXd J_pinv_J = J_pinv_damped * weighted_jac_;
+          Eigen::MatrixXd N =
+              Eigen::MatrixXd::Identity(dof_idx, dof_idx) - J_pinv_J;
+          delta_.noalias() +=
+              config_.manipulability_weight * (N * manip_gradient_);
+        }
+
+        status.message = "Using damped pseudoinverse fallback";
+        KINEX_LOG_DEBUG("[IK] QP failed, using damped pseudoinverse");
+      } else {
+        // Original LDLT fallback
+        delta_.noalias() = H_.ldlt().solve(-g_);
+        status.message = "Fallback damping step";
+      }
     }
 
     double step_norm = delta_.norm();
@@ -388,8 +551,29 @@ SolverStatus SQPIKSolver::solve(const Transform &target_pose,
     }
 
     if (!accepted) {
-      q_current_ += delta_;
-      q_current_ = q_current_.cwiseMax(lower_bounds_).cwiseMin(upper_bounds_);
+      // Line search failed - try a more conservative approach
+      if (config_.enable_slack_variables && w < config_.damping_threshold) {
+        // Near singularity with failed line search: use very small step
+        // in the direction that improves manipulability
+        double small_alpha = config_.line_search_min_alpha * 0.1;
+        Eigen::VectorXd conservative_step = small_alpha * delta_;
+
+        // Also move slightly in the manipulability gradient direction
+        if (config_.enable_manipulability_gradient && manip_gradient_.norm() > 1e-10) {
+          conservative_step += small_alpha * config_.manipulability_weight *
+                               manip_gradient_.normalized();
+        }
+
+        q_current_ += conservative_step;
+        q_current_ = q_current_.cwiseMax(lower_bounds_).cwiseMin(upper_bounds_);
+
+        KINEX_LOG_DEBUG("[IK] Line search failed near singularity, using "
+                        "conservative step with manip gradient");
+      } else {
+        // Standard fallback: apply the computed step
+        q_current_ += delta_;
+        q_current_ = q_current_.cwiseMax(lower_bounds_).cwiseMin(upper_bounds_);
+      }
     }
 
     status.final_error_norm = error_norm;
